@@ -156,10 +156,10 @@ export const UNITS = {
   MANA_COLLECTOR: {
     id: 'mana_collector',
     name: 'Mana Collector',
-    cost: 6,
-    hp: 800,
+    cost: 7,
+    hp: 400,
     type: 'building',
-    lifetime: 70,
+    lifetime: 40,
     manaProduction: 0.5,
     productionInterval: 3.5,
   },
