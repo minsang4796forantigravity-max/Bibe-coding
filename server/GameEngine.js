@@ -294,6 +294,15 @@ class GameEngine {
 
         if (!unitStats || playerState.mana < unitStats.cost) return;
 
+        // 마나 수집기 제한: 최대 3개
+        if (cardId === 'mana_collector') {
+            const collectorCount = playerState.units.filter(u => u.cardId === 'mana_collector').length;
+            if (collectorCount >= 3) {
+                console.log(`Player ${playerId} already has 3 mana collectors`);
+                return; // 배치 불가
+            }
+        }
+
         playerState.mana -= unitStats.cost;
 
         if (unitStats.type === 'spell') {
@@ -325,9 +334,40 @@ class GameEngine {
         // Cycle Card
         const idx = playerState.hand.indexOf(cardId);
         if (idx !== -1) {
-            playerState.hand[idx] = playerState.nextCard;
-            const randomCard = playerState.deck[Math.floor(Math.random() * playerState.deck.length)];
-            playerState.nextCard = randomCard;
+            // 마나 수집기를 배치한 후, 현재 3개인지 확인
+            const isMaxCollectors = cardId === 'mana_collector' &&
+                playerState.units.filter(u => u.cardId === 'mana_collector').length >= 3;
+
+            let nextCardToUse = playerState.nextCard;
+
+            // 만약 nextCard가 마나 수집기인데 이미 3개라면, 다른 카드로 교체
+            if (nextCardToUse === 'mana_collector' && isMaxCollectors) {
+                // deck에서 마나 수집기가 아닌 카드를 찾음
+                const availableCards = playerState.deck.filter(c => c !== 'mana_collector');
+                if (availableCards.length > 0) {
+                    nextCardToUse = availableCards[Math.floor(Math.random() * availableCards.length)];
+                }
+            }
+
+            playerState.hand[idx] = nextCardToUse;
+
+            // 새로운 nextCard 선택 (마나 수집기가 3개면 제외)
+            let newNextCard;
+            const collectorCount = playerState.units.filter(u => u.cardId === 'mana_collector').length;
+
+            if (collectorCount >= 3) {
+                // 마나 수집기 제외하고 선택
+                const availableCards = playerState.deck.filter(c => c !== 'mana_collector');
+                if (availableCards.length > 0) {
+                    newNextCard = availableCards[Math.floor(Math.random() * availableCards.length)];
+                } else {
+                    newNextCard = playerState.deck[Math.floor(Math.random() * playerState.deck.length)];
+                }
+            } else {
+                newNextCard = playerState.deck[Math.floor(Math.random() * playerState.deck.length)];
+            }
+
+            playerState.nextCard = newNextCard;
         }
     }
 
