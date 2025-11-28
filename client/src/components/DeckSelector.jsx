@@ -63,22 +63,33 @@ export function DeckSelector({ onDeckSelected }) {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
-            boxSizing: 'border-box',
+            overflow: 'auto',
+            WebkitOverflowScrolling: 'touch',
         }}>
-            <h1 style={{ color: 'white', marginBottom: '10px' }}>덱을 선택하세요</h1>
-            <p style={{ color: '#aaa', marginBottom: '30px' }}>
-                {selectedCards.length}/7 카드 선택됨
-            </p>
+            <div style={{
+                position: 'sticky',
+                top: 0,
+                backgroundColor: '#1a1a1a',
+                width: '100%',
+                padding: '20px 0',
+                textAlign: 'center',
+                zIndex: 10,
+                borderBottom: '2px solid #333',
+            }}>
+                <h1 style={{ color: 'white', margin: '0 0 10px 0' }}>덱을 선택하세요</h1>
+                <p style={{ color: '#aaa', margin: 0 }}>
+                    {selectedCards.length}/7 카드 선택됨
+                </p>
+            </div>
 
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
                 gap: '15px',
                 maxWidth: '900px',
                 width: '100%',
-                marginBottom: '30px',
+                padding: '20px',
+                marginBottom: '80px',
             }}>
                 {ALL_CARDS.map(cardId => {
                     const isSelected = selectedCards.includes(cardId);
@@ -90,8 +101,8 @@ export function DeckSelector({ onDeckSelected }) {
                             onClick={() => toggleCard(cardId)}
                             style={{
                                 position: 'relative',
-                                width: '120px',
-                                height: '150px',
+                                width: '100%',
+                                paddingBottom: '125%',
                                 backgroundImage: `url(${CARD_IMAGES[cardId]})`,
                                 backgroundSize: 'cover',
                                 backgroundPosition: 'center',
@@ -100,11 +111,10 @@ export function DeckSelector({ onDeckSelected }) {
                                 cursor: selectedCards.length < 7 || isSelected ? 'pointer' : 'not-allowed',
                                 opacity: (!isSelected && selectedCards.length >= 7) ? 0.3 : 1,
                                 transition: 'all 0.2s',
-                                transform: isSelected ? 'scale(1.05)' : 'scale(1)',
+                                transform: isSelected ? 'scale(1.02)' : 'scale(1)',
                                 boxShadow: isSelected ? '0 0 20px #f1c40f' : 'none',
                             }}
                         >
-                            {/* Cost Badge */}
                             <div style={{
                                 position: 'absolute',
                                 top: '5px',
@@ -119,7 +129,6 @@ export function DeckSelector({ onDeckSelected }) {
                                 {unitStats.cost}
                             </div>
 
-                            {/* Selected Checkmark */}
                             {isSelected && (
                                 <div style={{
                                     position: 'absolute',
@@ -140,7 +149,6 @@ export function DeckSelector({ onDeckSelected }) {
                                 </div>
                             )}
 
-                            {/* Card Name */}
                             <div style={{
                                 position: 'absolute',
                                 bottom: '0',
@@ -149,7 +157,7 @@ export function DeckSelector({ onDeckSelected }) {
                                 backgroundColor: 'rgba(0,0,0,0.8)',
                                 color: 'white',
                                 padding: '5px',
-                                fontSize: '12px',
+                                fontSize: '11px',
                                 textAlign: 'center',
                                 borderBottomLeftRadius: '8px',
                                 borderBottomRightRadius: '8px',
@@ -161,24 +169,36 @@ export function DeckSelector({ onDeckSelected }) {
                 })}
             </div>
 
-            <button
-                onClick={handleConfirm}
-                disabled={selectedCards.length !== 7}
-                style={{
-                    padding: '15px 40px',
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    backgroundColor: selectedCards.length === 7 ? '#27ae60' : '#555',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '10px',
-                    cursor: selectedCards.length === 7 ? 'pointer' : 'not-allowed',
-                    transition: 'all 0.2s',
-                    boxShadow: selectedCards.length === 7 ? '0 4px 10px rgba(39, 174, 96, 0.5)' : 'none',
-                }}
-            >
-                게임 시작
-            </button>
+            <div style={{
+                position: 'fixed',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                backgroundColor: '#1a1a1a',
+                padding: '20px',
+                textAlign: 'center',
+                borderTop: '2px solid #333',
+                zIndex: 10,
+            }}>
+                <button
+                    onClick={handleConfirm}
+                    disabled={selectedCards.length !== 7}
+                    style={{
+                        padding: '15px 40px',
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        backgroundColor: selectedCards.length === 7 ? '#27ae60' : '#555',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '10px',
+                        cursor: selectedCards.length === 7 ? 'pointer' : 'not-allowed',
+                        transition: 'all 0.2s',
+                        boxShadow: selectedCards.length === 7 ? '0 4px 10px rgba(39, 174, 96, 0.5)' : 'none',
+                    }}
+                >
+                    게임 시작
+                </button>
+            </div>
         </div>
     );
 }
