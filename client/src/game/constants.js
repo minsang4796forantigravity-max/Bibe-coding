@@ -304,7 +304,7 @@ export const EVOLVED_STATS = {
     hp: 130,
     damage: 85,
     speed: 2.8,
-    count: 7,
+    count: 10,
   },
 
   // === 2 코스트 ===
