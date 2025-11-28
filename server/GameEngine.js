@@ -23,6 +23,8 @@ class GameEngine {
                 hand: [],
                 nextCard: null,
             },
+            projectiles: [],
+            activeSpells: [],
             gameOver: false,
             winner: null,
         };
@@ -72,6 +74,8 @@ class GameEngine {
                     target: undefined,
                 }))
             },
+            projectiles: this.state.projectiles,
+            activeSpells: this.state.activeSpells,
             gameOver: this.state.gameOver,
             winner: this.state.winner,
         };
@@ -102,9 +106,15 @@ class GameEngine {
             this.state.p2.mana = Math.min(GAME_CONFIG.MAX_MANA, this.state.p2.mana + GAME_CONFIG.MANA_REGEN_RATE * dt);
         }
 
+        // Update Spells
+        this.updateSpells(dt);
+
         // Move & Update Units
         this.updateUnits(this.state.p1, 1, dt);
         this.updateUnits(this.state.p2, -1, dt);
+
+        // Update Projectiles
+        this.updateProjectiles(dt);
 
         // Combat
         this.handleCombat(dt);
@@ -123,9 +133,51 @@ class GameEngine {
         }
     }
 
+    updateSpells(dt) {
+        this.state.activeSpells.forEach(spell => {
+            spell.duration -= dt;
+
+            if (spell.id === 'tornado') {
+                const enemyId = spell.ownerId === 'p1' ? 'p2' : 'p1';
+                const enemies = this.state[enemyId].units;
+                enemies.forEach(u => {
+                    const dist = Math.hypot(u.x - spell.x, u.y - spell.y);
+                    if (dist <= spell.radius) {
+                        const angle = Math.atan2(spell.y - u.y, spell.x - u.x);
+                        u.x += Math.cos(angle) * spell.pullForce * dt;
+                        u.y += Math.sin(angle) * spell.pullForce * dt;
+                        u.hp -= spell.damagePerSecond * dt;
+                    }
+                });
+            } else if (spell.id === 'heal') {
+                const friends = this.state[spell.ownerId].units;
+                friends.forEach(u => {
+                    if (Math.hypot(u.x - spell.x, u.y - spell.y) <= spell.radius) {
+                        u.hp = Math.min(u.maxHp, u.hp + spell.healPerSecond * dt);
+                    }
+                });
+            }
+        });
+        this.state.activeSpells = this.state.activeSpells.filter(s => s.duration > 0);
+    }
+
     updateUnits(playerState, direction, dt) {
         playerState.units.forEach(unit => {
-            // Spawner Logic (Goblin Hut, Witch)
+            // Apply Rage
+            let currentSpeed = unit.speed;
+            let currentAttackSpeed = unit.attackSpeed;
+
+            const rageSpell = this.state.activeSpells.find(s =>
+                s.id === 'rage' && s.ownerId === playerState.id &&
+                Math.hypot(unit.x - s.x, unit.y - s.y) <= s.radius
+            );
+
+            if (rageSpell) {
+                currentSpeed *= rageSpell.speedBuff;
+                currentAttackSpeed /= rageSpell.attackSpeedBuff;
+            }
+
+            // Spawner Logic
             if (unit.spawnUnit) {
                 unit.spawnTimer = (unit.spawnTimer || 0) + dt;
                 if (unit.spawnTimer >= unit.spawnInterval) {
@@ -140,12 +192,11 @@ class GameEngine {
             if (unit.type === 'building') {
                 if (unit.lifetime !== undefined) {
                     unit.lifetime -= dt;
-                    const lifetimeRatio = Math.max(0, unit.lifetime) / UNITS[unit.cardId.toUpperCase()].lifetime;
-                    unit.hp = unit.maxHp * lifetimeRatio;
+                    const decayAmount = (unit.maxHp / UNITS[unit.cardId.toUpperCase()].lifetime) * dt;
+                    unit.hp -= decayAmount;
                     if (unit.lifetime <= 0) unit.hp = 0;
                 }
 
-                // Mana Collector Logic
                 if (unit.manaProduction) {
                     unit.productionTimer = (unit.productionTimer || 0) + dt;
                     if (unit.productionTimer >= unit.productionInterval) {
@@ -158,7 +209,7 @@ class GameEngine {
 
             // Unit Movement
             if (!unit.target) {
-                const targetTowerX = 5; // Center
+                const targetTowerX = 5;
                 const targetTowerY = direction > 0 ? GAME_CONFIG.FIELD_HEIGHT : 0;
 
                 const dx = targetTowerX - unit.x;
@@ -166,35 +217,69 @@ class GameEngine {
                 const distance = Math.hypot(dx, dy);
 
                 if (distance > 0.1) {
-                    unit.x += (dx / distance) * unit.speed * dt;
-                    unit.y += (dy / distance) * unit.speed * dt;
+                    unit.x += (dx / distance) * currentSpeed * dt;
+                    unit.y += (dy / distance) * currentSpeed * dt;
                 }
             }
+
+            // Store modified attackSpeed for combat
+            unit.currentAttackSpeed = currentAttackSpeed;
         });
+    }
+
+    updateProjectiles(dt) {
+        this.state.projectiles.forEach(p => {
+            let target = null;
+            if (p.targetId === 'tower_p1') {
+                target = { x: 5, y: 0, type: 'tower' };
+            } else if (p.targetId === 'tower_p2') {
+                target = { x: 5, y: GAME_CONFIG.FIELD_HEIGHT, type: 'tower' };
+            } else {
+                // Find unit
+                const p1Unit = this.state.p1.units.find(u => u.id === p.targetId);
+                const p2Unit = this.state.p2.units.find(u => u.id === p.targetId);
+                target = p1Unit || p2Unit;
+            }
+
+            let tx, ty;
+            if (target) {
+                tx = target.x;
+                ty = target.y;
+            } else {
+                tx = p.targetX;
+                ty = p.targetY;
+            }
+
+            const dx = tx - p.x;
+            const dy = ty - p.y;
+            const dist = Math.hypot(dx, dy);
+
+            if (dist < 0.5) {
+                p.hit = true;
+                if (target) {
+                    this.dealDamage(p.damage, target, p.targetPlayerId);
+                }
+            } else {
+                p.x += (dx / dist) * p.speed * dt;
+                p.y += (dy / dist) * p.speed * dt;
+            }
+        });
+        this.state.projectiles = this.state.projectiles.filter(p => !p.hit);
     }
 
     handleCombat(dt) {
         const p1Units = this.state.p1.units;
         const p2Units = this.state.p2.units;
 
-        const findTarget = (u, enemies, enemyTowerY) => {
+        const findTarget = (u, enemies, enemyTowerY, enemyTowerId) => {
             let target = null;
             let minDist = Infinity;
 
-            // Prioritize favorite target if exists
             const potentialTargets = enemies.filter(e => {
-                // Flying Check: Ground Melee cannot hit Flying
                 if (e.type === 'flying' && u.type === 'ground' && u.range < 2) return false;
-
-                // Favorite Target Check
                 if (u.favoriteTarget && u.favoriteTarget !== e.type) return false;
-
                 return true;
             });
-
-            // If no favorite targets found, and unit has a favorite target, it ignores others?
-            // Usually in Clash Royale, if favorite target is 'building', it ONLY targets buildings.
-            // If favorite target is not set (undefined), it targets anything.
 
             const targetsToCheck = u.favoriteTarget ? potentialTargets : enemies.filter(e => {
                 if (e.type === 'flying' && u.type === 'ground' && u.range < 2) return false;
@@ -210,12 +295,10 @@ class GameEngine {
             });
 
             if (!target && u.type !== 'building') {
-                // Check Tower
-                // Tower is a building.
                 if (!u.favoriteTarget || u.favoriteTarget === 'building') {
                     const distToTowerCenter = Math.hypot(u.x - 5, u.y - enemyTowerY);
                     if (distToTowerCenter <= u.range) {
-                        target = { type: 'tower', y: enemyTowerY, x: 5 };
+                        target = { type: 'tower', y: enemyTowerY, x: 5, id: enemyTowerId };
                     }
                 }
             }
@@ -224,10 +307,11 @@ class GameEngine {
 
         // P1 Units
         p1Units.forEach(u1 => {
-            u1.target = findTarget(u1, p2Units, GAME_CONFIG.FIELD_HEIGHT);
+            u1.target = findTarget(u1, p2Units, GAME_CONFIG.FIELD_HEIGHT, 'tower_p2');
             if (u1.target) {
                 u1.attackTimer = (u1.attackTimer || 0) + dt;
-                if (u1.attackTimer >= u1.attackSpeed) {
+                const attackSpeed = u1.currentAttackSpeed || u1.attackSpeed;
+                if (u1.attackTimer >= attackSpeed) {
                     u1.attackTimer = 0;
                     this.performAttack(u1, u1.target, 'p2', p2Units);
                 }
@@ -236,10 +320,11 @@ class GameEngine {
 
         // P2 Units
         p2Units.forEach(u2 => {
-            u2.target = findTarget(u2, p1Units, 0);
+            u2.target = findTarget(u2, p1Units, 0, 'tower_p1');
             if (u2.target) {
                 u2.attackTimer = (u2.attackTimer || 0) + dt;
-                if (u2.attackTimer >= u2.attackSpeed) {
+                const attackSpeed = u2.currentAttackSpeed || u2.attackSpeed;
+                if (u2.attackTimer >= attackSpeed) {
                     u2.attackTimer = 0;
                     this.performAttack(u2, u2.target, 'p1', p1Units);
                 }
@@ -247,55 +332,50 @@ class GameEngine {
         });
 
         // Tower Attacks
-        this.towerAttack(this.state.p1, p2Units, 5, 0, dt);
-        this.towerAttack(this.state.p2, p1Units, 5, GAME_CONFIG.FIELD_HEIGHT, dt);
+        this.towerAttack(this.state.p1, p2Units, 5, 0, dt, 'tower_p1');
+        this.towerAttack(this.state.p2, p1Units, 5, GAME_CONFIG.FIELD_HEIGHT, dt, 'tower_p2');
 
-        // Cleanup
-        this.state.p1.units = this.state.p1.units.filter(u => u.hp > 0);
-        this.state.p2.units = this.state.p2.units.filter(u => u.hp > 0);
+        // Cleanup & Death Damage
+        const handleDeath = (u, playerId) => {
+            if (u.hp <= 0) {
+                if (u.deathDamage) {
+                    const enemyId = playerId === 'p1' ? 'p2' : 'p1';
+                    const enemyUnits = this.state[enemyId].units;
+                    this.dealSplashDamage(u.x, u.y, u.deathDamageRadius, u.deathDamage, enemyId, enemyUnits);
+                }
+                return false;
+            }
+            return true;
+        };
+
+        this.state.p1.units = this.state.p1.units.filter(u => handleDeath(u, 'p1'));
+        this.state.p2.units = this.state.p2.units.filter(u => handleDeath(u, 'p2'));
     }
 
     performAttack(attacker, target, targetPlayerId, enemyUnits) {
-        if (attacker.selfDestruct) {
-            attacker.hp = 0; // Die immediately
+        if (attacker.projectile) {
+            this.state.projectiles.push({
+                x: attacker.x,
+                y: attacker.y,
+                targetId: target.id || (target.type === 'tower' ? (target.y === 0 ? 'tower_p1' : 'tower_p2') : null),
+                targetX: target.x,
+                targetY: target.y,
+                damage: attacker.damage,
+                speed: attacker.projectileSpeed,
+                type: attacker.projectile,
+                targetPlayerId: targetPlayerId,
+                ownerId: attacker.ownerId
+            });
+        } else if (attacker.selfDestruct) {
+            attacker.hp = 0;
             this.dealSplashDamage(attacker.x, attacker.y, attacker.splash, attacker.damage, targetPlayerId, enemyUnits);
         } else if (attacker.splash) {
-            // Splash damage centers on target
             this.dealSplashDamage(target.x, target.y, attacker.splash, attacker.damage, targetPlayerId, enemyUnits);
         } else {
             this.dealDamage(attacker.damage, target, targetPlayerId);
         }
     }
 
-    dealSplashDamage(x, y, radius, damage, targetPlayerId, enemyUnits) {
-        // Damage Units
-        enemyUnits.forEach(u => {
-            if (Math.hypot(u.x - x, u.y - y) <= radius) {
-                u.hp -= damage;
-            }
-        });
-
-        // Tower Damage Logic
-        // Fireball (radius 2.5) should NOT hit tower.
-        // Other splash units (Bomber, Wizard) SHOULD hit tower if close enough?
-        // For now, let's assume ONLY Fireball has radius 2.5 and others are smaller or we check cardId?
-        // But dealSplashDamage doesn't know cardId.
-        // Let's assume splash damage DOES NOT hit tower by default unless it's a unit attacking the tower directly?
-        // But if Bomber attacks a unit near tower, tower should take damage?
-        // User request: "Fireball cannot hit tower".
-        // Simplest fix: Check radius. Fireball is 2.5. Others are usually smaller.
-        // Or better, pass a flag `canHitTower`.
-        // But for now, I will just disable tower damage in splash completely as requested for Fireball, 
-        // and assume other splash units target units.
-        // Wait, if Bomber attacks a unit, and tower is in range, tower should probably take damage.
-        // But the user specifically asked for Fireball.
-        // Let's rely on the fact that Fireball is a Spell and handled separately in deployCard.
-        // In deployCard, I call dealSplashDamage.
-        // I will modify dealSplashDamage to take an optional `canHitTower` param, default true.
-        // And pass false for Fireball.
-    }
-
-    // Redefining dealSplashDamage to support canHitTower
     dealSplashDamage(x, y, radius, damage, targetPlayerId, enemyUnits, canHitTower = true) {
         enemyUnits.forEach(u => {
             if (Math.hypot(u.x - x, u.y - y) <= radius) {
@@ -311,7 +391,7 @@ class GameEngine {
         }
     }
 
-    towerAttack(ownerState, enemyUnits, towerX, towerY, dt) {
+    towerAttack(ownerState, enemyUnits, towerX, towerY, dt, towerId) {
         const towerStats = UNITS.TOWER;
         let target = null;
         let minDist = Infinity;
@@ -328,7 +408,21 @@ class GameEngine {
             ownerState.towerAttackTimer = (ownerState.towerAttackTimer || 0) + dt;
             if (ownerState.towerAttackTimer >= towerStats.attackSpeed) {
                 ownerState.towerAttackTimer = 0;
-                target.hp -= towerStats.damage;
+                // Tower projectile? For now instant, or add projectile to tower too?
+                // User asked for "shooting guys". Tower shoots too.
+                // Let's add projectile to tower.
+                this.state.projectiles.push({
+                    x: towerX,
+                    y: towerY,
+                    targetId: target.id,
+                    targetX: target.x,
+                    targetY: target.y,
+                    damage: towerStats.damage,
+                    speed: 15,
+                    type: 'arrow', // Tower shoots arrows
+                    targetPlayerId: ownerState.id === this.state.p1.id ? 'p2' : 'p1',
+                    ownerId: ownerState.id
+                });
             }
         }
     }
@@ -347,12 +441,9 @@ class GameEngine {
 
         if (!unitStats || playerState.mana < unitStats.cost) return;
 
-        // Mana Collector Limit: Max 3
         if (cardId === 'mana_collector') {
             const collectorCount = playerState.units.filter(u => u.cardId === 'mana_collector').length;
-            if (collectorCount >= 3) {
-                return;
-            }
+            if (collectorCount >= 3) return;
         }
 
         playerState.mana -= unitStats.cost;
@@ -361,8 +452,15 @@ class GameEngine {
             if (cardId === 'fireball') {
                 const enemyId = playerId === 'p1' ? 'p2' : 'p1';
                 const enemyUnits = this.state[enemyId].units;
-                // Fireball: canHitTower = false
                 this.dealSplashDamage(x, y, unitStats.radius, unitStats.damage, enemyId, enemyUnits, false);
+            } else if (['tornado', 'rage', 'heal'].includes(cardId)) {
+                this.state.activeSpells.push({
+                    ...unitStats,
+                    x: x,
+                    y: y,
+                    ownerId: playerId,
+                    duration: unitStats.duration,
+                });
             }
         } else {
             const count = unitStats.count || 1;
@@ -379,6 +477,7 @@ class GameEngine {
                     hp: unitStats.hp,
                     maxHp: unitStats.hp,
                     attackTimer: 0,
+                    ownerId: playerId,
                 });
             }
         }
@@ -431,6 +530,7 @@ class GameEngine {
             hp: unitStats.hp,
             maxHp: unitStats.hp,
             attackTimer: 0,
+            ownerId: playerState.id,
         });
     }
 }

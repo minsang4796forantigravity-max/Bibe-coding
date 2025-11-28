@@ -50,7 +50,6 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
 
     const isP1 = playerId === 'p1';
 
-    // 터치와 마우스 이벤트 모두 처리
     const getEventCoords = (e) => {
         const rect = e.currentTarget.getBoundingClientRect();
         let clientX, clientY;
@@ -211,6 +210,44 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                     </div>
                 </div>
 
+                {/* Active Spells */}
+                {gameState.activeSpells && gameState.activeSpells.map((spell, idx) => {
+                    let viewX, viewY;
+                    if (isP1) {
+                        viewX = spell.x;
+                        viewY = spell.y;
+                    } else {
+                        viewX = GAME_CONFIG.FIELD_WIDTH - spell.x;
+                        viewY = GAME_CONFIG.FIELD_HEIGHT - spell.y;
+                    }
+
+                    const left = (viewX / GAME_CONFIG.FIELD_WIDTH) * 100;
+                    const bottom = (viewY / GAME_CONFIG.FIELD_HEIGHT) * 100;
+                    const radiusPercent = (spell.radius / GAME_CONFIG.FIELD_WIDTH) * 100;
+
+                    let color = 'rgba(255, 255, 255, 0.3)';
+                    if (spell.id === 'tornado') color = 'rgba(100, 100, 255, 0.4)';
+                    if (spell.id === 'rage') color = 'rgba(200, 0, 255, 0.4)';
+                    if (spell.id === 'heal') color = 'rgba(255, 255, 0, 0.4)';
+
+                    return (
+                        <div key={`spell_${idx}`} style={{
+                            position: 'absolute',
+                            left: `${left}%`,
+                            bottom: `${bottom}%`,
+                            width: `${radiusPercent * 2}%`,
+                            height: `${radiusPercent * 2 * (GAME_CONFIG.FIELD_WIDTH / GAME_CONFIG.FIELD_HEIGHT)}%`,
+                            transform: 'translate(-50%, 50%)',
+                            backgroundColor: color,
+                            borderRadius: '50%',
+                            pointerEvents: 'none',
+                            zIndex: 4,
+                            border: '2px solid rgba(255,255,255,0.5)',
+                            boxShadow: `0 0 20px ${color}`,
+                        }} />
+                    );
+                })}
+
                 {/* Units */}
                 {[...gameState.p1.units.map(u => ({ ...u, owner: 'p1' })), ...gameState.p2.units.map(u => ({ ...u, owner: 'p2' }))].map(unit => {
                     let viewX, viewY;
@@ -276,6 +313,44 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                                 }} />
                             </div>
                         </div>
+                    );
+                })}
+
+                {/* Projectiles */}
+                {gameState.projectiles && gameState.projectiles.map((proj, idx) => {
+                    let viewX, viewY;
+                    if (isP1) {
+                        viewX = proj.x;
+                        viewY = proj.y;
+                    } else {
+                        viewX = GAME_CONFIG.FIELD_WIDTH - proj.x;
+                        viewY = GAME_CONFIG.FIELD_HEIGHT - proj.y;
+                    }
+
+                    const left = (viewX / GAME_CONFIG.FIELD_WIDTH) * 100;
+                    const bottom = (viewY / GAME_CONFIG.FIELD_HEIGHT) * 100;
+
+                    let color = 'black';
+                    let size = '6px';
+                    if (proj.type === 'fireball_small') { color = 'orange'; size = '10px'; }
+                    if (proj.type === 'magic_bolt') { color = 'purple'; size = '8px'; }
+                    if (proj.type === 'cannonball') { color = 'black'; size = '12px'; }
+                    if (proj.type === 'arrow') { color = 'brown'; size = '6px'; }
+                    if (proj.type === 'bullet') { color = 'silver'; size = '4px'; }
+
+                    return (
+                        <div key={`proj_${idx}`} style={{
+                            position: 'absolute',
+                            left: `${left}%`,
+                            bottom: `${bottom}%`,
+                            width: size,
+                            height: size,
+                            transform: 'translate(-50%, 50%)',
+                            backgroundColor: color,
+                            borderRadius: '50%',
+                            zIndex: 20,
+                            boxShadow: `0 0 5px ${color}`,
+                        }} />
                     );
                 })}
 
