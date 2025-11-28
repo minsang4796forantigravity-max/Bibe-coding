@@ -1,4 +1,4 @@
-const { UNITS, GAME_CONFIG } = require('./constants');
+const { UNITS, EVOLVED_STATS, GAME_CONFIG } = require('./constants');
 
 class GameEngine {
     constructor(roomId, io) {
@@ -13,6 +13,7 @@ class GameEngine {
                 deck: [],
                 hand: [],
                 nextCard: null,
+                evolutions: [], // 진화 카드 목록
             },
             p2: {
                 id: null,
@@ -22,6 +23,7 @@ class GameEngine {
                 deck: [],
                 hand: [],
                 nextCard: null,
+                evolutions: [], // 진화 카드 목록
             },
             projectiles: [],
             activeSpells: [],
@@ -35,18 +37,28 @@ class GameEngine {
     addPlayer(socketId, selectedDeck) {
         if (!this.state.p1.id) {
             this.state.p1.id = socketId;
-            if (selectedDeck && selectedDeck.length === 7) {
-                this.state.p1.deck = selectedDeck;
-                this.state.p1.hand = selectedDeck.slice(0, 4);
-                this.state.p1.nextCard = selectedDeck[4];
+            if (selectedDeck && selectedDeck.length === 9) {
+                // 덱 구조: [card1, card2, ..., card7, evo1, evo2]
+                const regularCards = selectedDeck.slice(0, 7);
+                const evolutionCards = selectedDeck.slice(7, 9);
+
+                this.state.p1.deck = regularCards;
+                this.state.p1.evolutions = evolutionCards;
+                this.state.p1.hand = regularCards.slice(0, 6); // 6장 핸드
+                this.state.p1.nextCard = regularCards[6];
             }
             return 'p1';
         } else if (!this.state.p2.id) {
             this.state.p2.id = socketId;
-            if (selectedDeck && selectedDeck.length === 7) {
-                this.state.p2.deck = selectedDeck;
-                this.state.p2.hand = selectedDeck.slice(0, 4);
-                this.state.p2.nextCard = selectedDeck[4];
+            if (selectedDeck && selectedDeck.length === 9) {
+                // 덱 구조: [card1, card2, ..., card7, evo1, evo2]
+                const regularCards = selectedDeck.slice(0, 7);
+                const evolutionCards = selectedDeck.slice(7, 9);
+
+                this.state.p2.deck = regularCards;
+                this.state.p2.evolutions = evolutionCards;
+                this.state.p2.hand = regularCards.slice(0, 6); // 6장 핸드
+                this.state.p2.nextCard = regularCards[6];
             }
             return 'p2';
         }
@@ -444,9 +456,21 @@ class GameEngine {
 
     deployCard(playerId, cardId, x, y) {
         const playerState = this.state[playerId];
-        const unitStats = UNITS[cardId.toUpperCase()];
+        let unitStats = UNITS[cardId.toUpperCase()];
 
         if (!unitStats || playerState.mana < unitStats.cost) return;
+
+        // 진화 카드인지 확인하고 진화 스탯 적용
+        const isEvolved = playerState.evolutions.includes(cardId);
+        if (isEvolved && EVOLVED_STATS[cardId.toUpperCase()]) {
+            // 기본 스탯과 진화 스탯 병합
+            unitStats = {
+                ...unitStats,
+                ...EVOLVED_STATS[cardId.toUpperCase()],
+                id: unitStats.id, // ID는 유지
+                name: unitStats.name + ' ⭐', // 진화 표시
+            };
+        }
 
         if (cardId === 'mana_collector') {
             const collectorCount = playerState.units.filter(u => u.cardId === 'mana_collector').length;
@@ -485,6 +509,7 @@ class GameEngine {
                     maxHp: unitStats.hp,
                     attackTimer: 0,
                     ownerId: playerId,
+                    isEvolved: isEvolved, // 진화 여부 추가
                 });
             }
         }

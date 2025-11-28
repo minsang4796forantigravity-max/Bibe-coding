@@ -310,36 +310,58 @@ export function PlayerView({ playerId, gameState, onDeploy, isRotated }) {
                 <div style={{
                     display: 'flex',
                     justifyContent: 'center',
-                    gap: '10px',
+                    gap: '8px', // 6개 카드를 위해 간격 줄임
                     flex: 1,
                 }}>
                     {playerState.hand.map((cardId, index) => {
                         const unitStats = UNITS[cardId.toUpperCase()];
                         const canAfford = playerState.mana >= unitStats.cost;
-                        const isSelected = selectedCard === cardId; // Simple selection logic (might need index if duplicates)
-                        // Actually better to select by index to handle duplicates, but for now simple.
+                        const isSelected = selectedCard === cardId;
+                        const isEvolved = playerState.evolutions && playerState.evolutions.includes(cardId);
 
                         return (
                             <div
                                 key={index}
                                 onClick={() => canAfford && setSelectedCard(cardId)}
                                 style={{
-                                    width: '60px',
-                                    height: '80px',
+                                    width: '55px', // 60px → 55px (6개를 위해 축소)
+                                    height: '75px', // 80px → 75px
                                     backgroundColor: isSelected ? '#f1c40f' : (canAfford ? '#444' : '#222'),
                                     backgroundImage: `url(${CARD_IMAGES[cardId]})`,
                                     backgroundSize: 'cover',
                                     backgroundPosition: 'center',
                                     borderRadius: '5px',
-                                    border: isSelected ? '3px solid white' : '1px solid #000',
+                                    border: isEvolved
+                                        ? (isSelected ? '3px solid #f39c12' : '2px solid #f39c12')
+                                        : (isSelected ? '3px solid white' : '1px solid #000'),
                                     opacity: canAfford ? 1 : 0.5,
                                     display: 'flex',
                                     flexDirection: 'column',
                                     justifyContent: 'flex-end',
                                     cursor: 'pointer',
                                     position: 'relative',
+                                    boxShadow: isEvolved ? '0 0 15px rgba(243, 156, 18, 0.6)' : 'none',
                                 }}
                             >
+                                {/* 진화 표시 */}
+                                {isEvolved && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '-5px',
+                                        right: '-5px',
+                                        backgroundColor: '#f39c12',
+                                        borderRadius: '50%',
+                                        width: '20px',
+                                        height: '20px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '12px',
+                                        zIndex: 1,
+                                    }}>
+                                        ⭐
+                                    </div>
+                                )}
                                 <div style={{
                                     backgroundColor: 'rgba(0,0,0,0.7)',
                                     color: '#3498db',
@@ -356,7 +378,7 @@ export function PlayerView({ playerId, gameState, onDeploy, isRotated }) {
                                 <div style={{
                                     backgroundColor: 'rgba(0,0,0,0.7)',
                                     color: 'white',
-                                    fontSize: '10px',
+                                    fontSize: '9px', // 10px → 9px
                                     textAlign: 'center',
                                     padding: '2px',
                                 }}>
@@ -368,16 +390,16 @@ export function PlayerView({ playerId, gameState, onDeploy, isRotated }) {
 
                     {/* Next Card Preview */}
                     <div style={{
-                        width: '40px',
-                        height: '50px',
-                        marginLeft: '10px',
+                        width: '35px', // 40px → 35px
+                        height: '47px', // 50px → 47px
+                        marginLeft: '5px',
                         opacity: 0.7,
                         backgroundImage: `url(${CARD_IMAGES[playerState.nextCard]})`,
                         backgroundSize: 'cover',
                         borderRadius: '3px',
                         alignSelf: 'center',
                     }}>
-                        <div style={{ fontSize: '8px', backgroundColor: 'black', color: 'white' }}>Next</div>
+                        <div style={{ fontSize: '7px', backgroundColor: 'black', color: 'white' }}>Next</div>
                     </div>
                 </div>
             </div>

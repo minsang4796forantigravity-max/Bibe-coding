@@ -297,6 +297,157 @@ export const UNITS = {
   }
 };
 
+// 진화 스탯: 각 유닛마다 개별적으로 조정된 강화 스탯
+export const EVOLVED_STATS = {
+  // === 1 코스트 ===
+  SKELETONS: {
+    hp: 130,
+    damage: 85,
+    speed: 2.8,
+    count: 7,
+  },
+
+  // === 2 코스트 ===
+  GOBLIN: {
+    hp: 200,
+    damage: 130,
+    speed: 2.8,
+    attackSpeed: 0.95,
+  },
+
+  // === 3 코스트 ===
+  KNIGHT: {
+    hp: 2000,
+    damage: 200,
+    speed: 1.4,
+  },
+  ARCHER: {
+    hp: 300,
+    damage: 115,
+    range: 6.5,
+    attackSpeed: 1.0,
+  },
+  BOMBER: {
+    hp: 250,
+    damage: 180,
+    splash: 2.0,
+    speed: 1.8,
+  },
+  KAMIKAZE: {
+    hp: 230,
+    damage: 950,
+    splash: 3.0,
+    speed: 4.0,
+  },
+
+  // === 4 코스트 ===
+  CANNON: {
+    hp: 800,
+    damage: 210,
+    range: 7.0,
+    attackSpeed: 0.75,
+  },
+  SNIPER: {
+    hp: 350,
+    damage: 320,
+    range: 12,
+    attackSpeed: 2.7,
+    projectileSpeed: 25,
+  },
+  VALKYRIE: {
+    hp: 2100,
+    damage: 290,
+    splash: 2.0,
+    speed: 1.7,
+  },
+  HOG_RIDER: {
+    hp: 1800,
+    damage: 340,
+    speed: 3.0,
+    attackSpeed: 1.4,
+  },
+  BABY_DRAGON: {
+    hp: 1350,
+    damage: 175,
+    splash: 2.0,
+    speed: 2.1,
+    range: 3.5,
+  },
+
+  // === 스펠 ===
+  FIREBALL: {
+    damage: 850,
+    radius: 2.0,
+  },
+  TORNADO: {
+    radius: 2.5,
+    duration: 4,
+    damagePerSecond: 70,
+    pullForce: 4,
+  },
+  RAGE: {
+    radius: 3.0,
+    duration: 8,
+    speedBuff: 1.5,
+    attackSpeedBuff: 1.5,
+  },
+  HEAL: {
+    radius: 2.5,
+    duration: 4.5,
+    healPerSecond: 150,
+  },
+
+  // === 5 코스트 ===
+  GIANT: {
+    hp: 4500,
+    damage: 270,
+    speed: 1.2,
+    attackSpeed: 1.3,
+  },
+  WIZARD: {
+    hp: 800,
+    damage: 230,
+    splash: 2.5,
+    range: 6.5,
+    attackSpeed: 1.5,
+  },
+  WITCH: {
+    hp: 950,
+    damage: 95,
+    spawnInterval: 5.5,
+    spawnCount: 4,
+    range: 6.0,
+  },
+  BARBARIANS: {
+    hp: 800,
+    damage: 200,
+    speed: 1.7,
+    attackSpeed: 1.2,
+    count: 5,
+  },
+  BALLOON: {
+    hp: 1900,
+    damage: 800,
+    speed: 1.8,
+    deathDamage: 300,
+    deathDamageRadius: 3.5,
+    attackSpeed: 2.7,
+  },
+  GOBLIN_HUT: {
+    hp: 1400,
+    lifetime: 55,
+    spawnInterval: 5,
+  },
+
+  // === 6 코스트 ===
+  MANA_COLLECTOR: {
+    hp: 4500,
+    lifetime: 80,
+    manaProduction: 0.7,
+    productionInterval: 3.0,
+  },
+};
+
 export const GAME_CONFIG = {
   MANA_REGEN_RATE: 0.5,
   MAX_MANA: 20,

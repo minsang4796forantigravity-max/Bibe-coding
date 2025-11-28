@@ -60,20 +60,47 @@ const CARD_IMAGES = {
 
 export function DeckSelector({ onDeckSelected }) {
     const [selectedCards, setSelectedCards] = useState([]);
+    const [evolutionCards, setEvolutionCards] = useState([]);
+    const [phase, setPhase] = useState(1); // 1: 카드 선택, 2: 진화 선택
 
     const toggleCard = (cardId) => {
-        if (selectedCards.includes(cardId)) {
-            setSelectedCards(selectedCards.filter(c => c !== cardId));
-        } else if (selectedCards.length < 7) {
-            setSelectedCards([...selectedCards, cardId]);
+        if (phase === 1) {
+            // Phase 1: 일반 카드 선택 (7장)
+            if (selectedCards.includes(cardId)) {
+                setSelectedCards(selectedCards.filter(c => c !== cardId));
+            } else if (selectedCards.length < 7) {
+                setSelectedCards([...selectedCards, cardId]);
+            }
+        } else {
+            // Phase 2: 진화 카드 선택 (2장)
+            if (evolutionCards.includes(cardId)) {
+                setEvolutionCards(evolutionCards.filter(c => c !== cardId));
+            } else if (evolutionCards.length < 2) {
+                setEvolutionCards([...evolutionCards, cardId]);
+            }
         }
+    };
+
+    const handleNext = () => {
+        if (selectedCards.length === 7) {
+            setPhase(2);
+        }
+    };
+
+    const handleBack = () => {
+        setPhase(1);
+        setEvolutionCards([]);
     };
 
     const handleConfirm = () => {
-        if (selectedCards.length === 7) {
-            onDeckSelected(selectedCards);
+        if (selectedCards.length === 7 && evolutionCards.length === 2) {
+            // 덱 구조: [card1, ..., card7, evo1, evo2]
+            const finalDeck = [...selectedCards, ...evolutionCards];
+            onDeckSelected(finalDeck);
         }
     };
+
+    const cardsToShow = phase === 1 ? ALL_CARDS : selectedCards;
 
     return (
         <div style={{
@@ -96,10 +123,20 @@ export function DeckSelector({ onDeckSelected }) {
                 zIndex: 10,
                 borderBottom: '2px solid #333',
             }}>
-                <h1 style={{ color: 'white', margin: '0 0 10px 0' }}>덱을 선택하세요</h1>
+                <h1 style={{ color: 'white', margin: '0 0 10px 0' }}>
+                    {phase === 1 ? '단계 1: 덱 카드 선택' : '단계 2: 진화 카드 선택'}
+                </h1>
                 <p style={{ color: '#aaa', margin: 0 }}>
-                    {selectedCards.length}/7 카드 선택됨
+                    {phase === 1
+                        ? `${selectedCards.length}/7 카드 선택됨`
+                        : `${evolutionCards.length}/2 진화 카드 선택됨`
+                    }
                 </p>
+                {phase === 2 && (
+                    <p style={{ color: '#f39c12', fontSize: '14px', margin: '5px 0 0 0' }}>
+                        ⭐ 선택한 카드가 강화된 능력치로 배치됩니다
+                    </p>
+                )}
             </div>
 
             <div style={{
@@ -111,8 +148,10 @@ export function DeckSelector({ onDeckSelected }) {
                 padding: '20px',
                 marginBottom: '80px',
             }}>
-                {ALL_CARDS.map(cardId => {
-                    const isSelected = selectedCards.includes(cardId);
+                {cardsToShow.map(cardId => {
+                    const isSelected = phase === 1
+                        ? selectedCards.includes(cardId)
+                        : evolutionCards.includes(cardId);
                     const unitStats = UNITS[cardId.toUpperCase()];
 
                     return (
@@ -127,12 +166,20 @@ export function DeckSelector({ onDeckSelected }) {
                                 backgroundSize: 'cover',
                                 backgroundPosition: 'center',
                                 borderRadius: '10px',
-                                border: isSelected ? '4px solid #f1c40f' : '2px solid #555',
-                                cursor: selectedCards.length < 7 || isSelected ? 'pointer' : 'not-allowed',
-                                opacity: (!isSelected && selectedCards.length >= 7) ? 0.3 : 1,
+                                border: isSelected
+                                    ? (phase === 2 ? '4px solid #f39c12' : '4px solid #f1c40f')
+                                    : '2px solid #555',
+                                cursor: (phase === 1 && selectedCards.length < 7) ||
+                                    (phase === 2 && evolutionCards.length < 2) ||
+                                    isSelected ? 'pointer' : 'not-allowed',
+                                opacity: (!isSelected &&
+                                    ((phase === 1 && selectedCards.length >= 7) ||
+                                        (phase === 2 && evolutionCards.length >= 2))) ? 0.3 : 1,
                                 transition: 'all 0.2s',
                                 transform: isSelected ? 'scale(1.02)' : 'scale(1)',
-                                boxShadow: isSelected ? '0 0 20px #f1c40f' : 'none',
+                                boxShadow: isSelected
+                                    ? (phase === 2 ? '0 0 25px #f39c12' : '0 0 20px #f1c40f')
+                                    : 'none',
                             }}
                         >
                             <div style={{
@@ -154,7 +201,7 @@ export function DeckSelector({ onDeckSelected }) {
                                     position: 'absolute',
                                     top: '5px',
                                     right: '5px',
-                                    backgroundColor: '#f1c40f',
+                                    backgroundColor: phase === 2 ? '#f39c12' : '#f1c40f',
                                     color: 'black',
                                     borderRadius: '50%',
                                     width: '30px',
@@ -163,9 +210,9 @@ export function DeckSelector({ onDeckSelected }) {
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     fontWeight: 'bold',
-                                    fontSize: '18px',
+                                    fontSize: phase === 2 ? '16px' : '18px',
                                 }}>
-                                    ✓
+                                    {phase === 2 ? '⭐' : '✓'}
                                 </div>
                             )}
 
@@ -199,25 +246,67 @@ export function DeckSelector({ onDeckSelected }) {
                 textAlign: 'center',
                 borderTop: '2px solid #333',
                 zIndex: 10,
+                display: 'flex',
+                gap: '10px',
+                justifyContent: 'center',
             }}>
-                <button
-                    onClick={handleConfirm}
-                    disabled={selectedCards.length !== 7}
-                    style={{
-                        padding: '15px 40px',
-                        fontSize: '18px',
-                        fontWeight: 'bold',
-                        backgroundColor: selectedCards.length === 7 ? '#27ae60' : '#555',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '10px',
-                        cursor: selectedCards.length === 7 ? 'pointer' : 'not-allowed',
-                        transition: 'all 0.2s',
-                        boxShadow: selectedCards.length === 7 ? '0 4px 10px rgba(39, 174, 96, 0.5)' : 'none',
-                    }}
-                >
-                    게임 시작
-                </button>
+                {phase === 2 && (
+                    <button
+                        onClick={handleBack}
+                        style={{
+                            padding: '15px 30px',
+                            fontSize: '18px',
+                            fontWeight: 'bold',
+                            backgroundColor: '#555',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '10px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                        }}
+                    >
+                        ← 이전
+                    </button>
+                )}
+                {phase === 1 ? (
+                    <button
+                        onClick={handleNext}
+                        disabled={selectedCards.length !== 7}
+                        style={{
+                            padding: '15px 40px',
+                            fontSize: '18px',
+                            fontWeight: 'bold',
+                            backgroundColor: selectedCards.length === 7 ? '#3498db' : '#555',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '10px',
+                            cursor: selectedCards.length === 7 ? 'pointer' : 'not-allowed',
+                            transition: 'all 0.2s',
+                            boxShadow: selectedCards.length === 7 ? '0 4px 10px rgba(52, 152, 219, 0.5)' : 'none',
+                        }}
+                    >
+                        다음: 진화 선택 →
+                    </button>
+                ) : (
+                    <button
+                        onClick={handleConfirm}
+                        disabled={evolutionCards.length !== 2}
+                        style={{
+                            padding: '15px 40px',
+                            fontSize: '18px',
+                            fontWeight: 'bold',
+                            backgroundColor: evolutionCards.length === 2 ? '#27ae60' : '#555',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '10px',
+                            cursor: evolutionCards.length === 2 ? 'pointer' : 'not-allowed',
+                            transition: 'all 0.2s',
+                            boxShadow: evolutionCards.length === 2 ? '0 4px 10px rgba(39, 174, 96, 0.5)' : 'none',
+                        }}
+                    >
+                        게임 시작
+                    </button>
+                )}
             </div>
         </div>
     );
