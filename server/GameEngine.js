@@ -116,8 +116,13 @@ class GameEngine {
     updateUnits(playerState, direction, dt) {
         playerState.units.forEach(unit => {
             if (unit.type === 'building') {
-                unit.lifetime -= dt;
-                if (unit.lifetime <= 0) unit.hp = 0;
+                if (unit.lifetime !== undefined) {
+                    unit.lifetime -= dt;
+                    // 시간에 따라 HP도 감소 (lifetime이 0이 되면 HP도 0)
+                    const lifetimeRatio = Math.max(0, unit.lifetime) / UNITS[unit.cardId.toUpperCase()].lifetime;
+                    unit.hp = unit.maxHp * lifetimeRatio;
+                    if (unit.lifetime <= 0) unit.hp = 0;
+                }
 
                 // Mana Collector Logic
                 if (unit.manaProduction) {
@@ -138,8 +143,21 @@ class GameEngine {
                 }
                 return;
             }
+
+            // 유닛이 타겟이 없으면 적 타워 쪽으로 이동
             if (!unit.target) {
-                unit.y += unit.speed * direction * dt;
+                const targetTowerX = 5; // 타워 중앙
+                const targetTowerY = direction > 0 ? GAME_CONFIG.FIELD_HEIGHT : 0;
+
+                // 타워 방향으로 이동
+                const dx = targetTowerX - unit.x;
+                const dy = targetTowerY - unit.y;
+                const distance = Math.hypot(dx, dy);
+
+                if (distance > 0.1) {
+                    unit.x += (dx / distance) * unit.speed * dt;
+                    unit.y += (dy / distance) * unit.speed * dt;
+                }
             }
         });
     }

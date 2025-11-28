@@ -33,6 +33,7 @@ const CARD_IMAGES = {
 
 export function BattleScreen({ gameState, playerId, onDeploy }) {
     const [selectedCard, setSelectedCard] = useState(null);
+    const [targetPos, setTargetPos] = useState(null);
     const myState = gameState[playerId];
     const opponentId = playerId === 'p1' ? 'p2' : 'p1';
     const opponentState = gameState[opponentId];
@@ -55,12 +56,44 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
             gameY = GAME_CONFIG.FIELD_HEIGHT - relativeY;
         }
 
-        // Deploy limit check (My side only)
-        const myY = isP1 ? gameY : (GAME_CONFIG.FIELD_HEIGHT - gameY);
-        if (myY <= GAME_CONFIG.FIELD_HEIGHT * 0.45) {
+        // 스펠은 전체 맵에 배치 가능, 유닛은 자기 진영만
+        const unitStats = UNITS[selectedCard.toUpperCase()];
+        const isSpell = unitStats && unitStats.type === 'spell';
+
+        if (isSpell) {
+            // 스펠은 어디든 배치 가능
             onDeploy(selectedCard, gameX, gameY);
             setSelectedCard(null);
+        } else {
+            // 유닛은 자기 진영만 (45% 이하)
+            const myY = isP1 ? gameY : (GAME_CONFIG.FIELD_HEIGHT - gameY);
+            if (myY <= GAME_CONFIG.FIELD_HEIGHT * 0.45) {
+                onDeploy(selectedCard, gameX, gameY);
+                setSelectedCard(null);
+            }
         }
+    };
+
+    const handleMouseMove = (e) => {
+        if (!selectedCard) {
+            setTargetPos(null);
+            return;
+        }
+
+        const rect = e.currentTarget.getBoundingClientRect();
+        const relativeX = e.nativeEvent.offsetX / rect.width * GAME_CONFIG.FIELD_WIDTH;
+        const relativeY = (rect.height - e.nativeEvent.offsetY) / rect.height * GAME_CONFIG.FIELD_HEIGHT;
+
+        let gameX, gameY;
+        if (isP1) {
+            gameX = relativeX;
+            gameY = relativeY;
+        } else {
+            gameX = GAME_CONFIG.FIELD_WIDTH - relativeX;
+            gameY = GAME_CONFIG.FIELD_HEIGHT - relativeY;
+        }
+
+        setTargetPos({ x: gameX, y: gameY });
     };
 
     return (
@@ -69,6 +102,7 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
             <div
                 className="game-field"
                 onClick={handleFieldClick}
+                onMouseMove={handleMouseMove}
                 style={{
                     flex: 1,
                     position: 'relative',
@@ -211,6 +245,57 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                         </div>
                     );
                 })}
+
+                {/* Targeting Indicator */}
+                {targetPos && selectedCard && (
+                    <>
+                        {/* Convert game coords to view coords */}
+                        {(() => {
+                            let viewX, viewY;
+                            if (isP1) {
+                                viewX = targetPos.x;
+                                viewY = targetPos.y;
+                            } else {
+                                viewX = GAME_CONFIG.FIELD_WIDTH - targetPos.x;
+                                viewY = GAME_CONFIG.FIELD_HEIGHT - targetPos.y;
+                            }
+                            const left = (viewX / GAME_CONFIG.FIELD_WIDTH) * 100;
+                            const bottom = (viewY / GAME_CONFIG.FIELD_HEIGHT) * 100;
+
+                            const unitStats = UNITS[selectedCard.toUpperCase()];
+                            const radius = unitStats.type === 'spell' ? unitStats.radius || 2 : 1;
+                            const radiusPercent = (radius / GAME_CONFIG.FIELD_WIDTH) * 100;
+
+                            return (
+                                <div style={{
+                                    position: 'absolute',
+                                    left: `${left}%`,
+                                    bottom: `${bottom}%`,
+                                    width: `${radiusPercent * 2}%`,
+                                    height: `${radiusPercent * 2 * (GAME_CONFIG.FIELD_WIDTH / GAME_CONFIG.FIELD_HEIGHT)}%`,
+                                    transform: 'translate(-50%, 50%)',
+                                    border: '3px dashed #f39c12',
+                                    borderRadius: '50%',
+                                    backgroundColor: 'rgba(243, 156, 18, 0.2)',
+                                    pointerEvents: 'none',
+                                    zIndex: 15,
+                                }}>
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '50%',
+                                        left: '50%',
+                                        transform: 'translate(-50%, -50%)',
+                                        width: '8px',
+                                        height: '8px',
+                                        backgroundColor: '#f39c12',
+                                        borderRadius: '50%',
+                                        boxShadow: '0 0 10px #f39c12',
+                                    }}></div>
+                                </div>
+                            );
+                        })()}
+                    </>
+                )}
             </div>
 
             {/* HUD */}
