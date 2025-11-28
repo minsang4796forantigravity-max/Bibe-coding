@@ -141,11 +141,18 @@ class GameEngine {
                 const enemyId = spell.ownerId === 'p1' ? 'p2' : 'p1';
                 const enemies = this.state[enemyId].units;
                 enemies.forEach(u => {
+                    if (u.type === 'building') return; // Don't pull buildings
+
                     const dist = Math.hypot(u.x - spell.x, u.y - spell.y);
                     if (dist <= spell.radius) {
                         const angle = Math.atan2(spell.y - u.y, spell.x - u.x);
                         u.x += Math.cos(angle) * spell.pullForce * dt;
                         u.y += Math.sin(angle) * spell.pullForce * dt;
+
+                        // Clamp to field
+                        u.x = Math.max(0, Math.min(GAME_CONFIG.FIELD_WIDTH, u.x));
+                        u.y = Math.max(0, Math.min(GAME_CONFIG.FIELD_HEIGHT, u.y));
+
                         u.hp -= spell.damagePerSecond * dt;
                     }
                 });

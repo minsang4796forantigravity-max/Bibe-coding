@@ -265,6 +265,25 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
 
                     if (unit.type === 'spell') return null;
 
+                    // Spell Effects
+                    let spellEffectStyle = {};
+                    if (gameState.activeSpells) {
+                        gameState.activeSpells.forEach(spell => {
+                            if (spell.ownerId === unit.owner && (spell.id === 'rage' || spell.id === 'heal')) {
+                                const dist = Math.hypot(unit.x - spell.x, unit.y - spell.y);
+                                if (dist <= spell.radius) {
+                                    if (spell.id === 'rage') {
+                                        spellEffectStyle.filter = 'sepia(1) hue-rotate(250deg) saturate(5)'; // Strong Purple tint
+                                        spellEffectStyle.boxShadow = '0 0 15px #9b59b6';
+                                    } else if (spell.id === 'heal') {
+                                        spellEffectStyle.filter = 'sepia(1) hue-rotate(50deg) saturate(5)'; // Strong Yellow tint
+                                        spellEffectStyle.boxShadow = '0 0 15px #f1c40f';
+                                    }
+                                }
+                            }
+                        });
+                    }
+
                     return (
                         <div
                             key={unit.id}
@@ -282,6 +301,7 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                                 transition: 'left 0.1s linear, bottom 0.1s linear',
                                 zIndex: 5,
                                 boxShadow: '0 4px 6px rgba(0,0,0,0.5)',
+                                ...spellEffectStyle
                             }}
                         >
                             <div style={{
