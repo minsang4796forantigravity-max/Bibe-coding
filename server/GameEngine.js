@@ -10,18 +10,18 @@ class GameEngine {
                 mana: 5,
                 units: [],
                 hp: 3000,
-                deck: ['knight', 'archer', 'giant', 'wizard', 'skeletons', 'cannon', 'bomber', 'kamikaze', 'fireball', 'mana_collector', 'sniper', 'goblin_hut'],
-                hand: ['bomber', 'sniper', 'goblin_hut', 'mana_collector'],
-                nextCard: 'fireball',
+                deck: [],
+                hand: [],
+                nextCard: null,
             },
             p2: {
                 id: null,
                 mana: 5,
                 units: [],
                 hp: 3000,
-                deck: ['knight', 'archer', 'giant', 'wizard', 'skeletons', 'cannon', 'bomber', 'kamikaze', 'fireball', 'mana_collector', 'sniper', 'goblin_hut'],
-                hand: ['bomber', 'sniper', 'goblin_hut', 'mana_collector'],
-                nextCard: 'fireball',
+                deck: [],
+                hand: [],
+                nextCard: null,
             },
             gameOver: false,
             winner: null,
@@ -55,21 +55,21 @@ class GameEngine {
         this.lastTime = Date.now();
         this.interval = setInterval(() => this.loop(), 1000 / GAME_CONFIG.FPS);
     }
+
     getSerializableState() {
-        // Deep copy 하되, 순환 참조 제거
         const stateCopy = {
             p1: {
                 ...this.state.p1,
                 units: this.state.p1.units.map(u => ({
                     ...u,
-                    target: undefined, // target 제거 (순환 참조 방지)
+                    target: undefined,
                 }))
             },
             p2: {
                 ...this.state.p2,
                 units: this.state.p2.units.map(u => ({
                     ...u,
-                    target: undefined, // target 제거 (순환 참조 방지)
+                    target: undefined,
                 }))
             },
             gameOver: this.state.gameOver,
@@ -125,10 +125,21 @@ class GameEngine {
 
     updateUnits(playerState, direction, dt) {
         playerState.units.forEach(unit => {
+            // Spawner Logic (Goblin Hut, Witch)
+            if (unit.spawnUnit) {
+                unit.spawnTimer = (unit.spawnTimer || 0) + dt;
+                if (unit.spawnTimer >= unit.spawnInterval) {
+                    unit.spawnTimer = 0;
+                    const count = unit.spawnCount || 1;
+                    for (let i = 0; i < count; i++) {
+                        this.spawnUnit(playerState, unit.spawnUnit, unit.x, unit.y);
+                    }
+                }
+            }
+
             if (unit.type === 'building') {
                 if (unit.lifetime !== undefined) {
                     unit.lifetime -= dt;
-                    // 시간에 따라 HP도 감소 (lifetime이 0이 되면 HP도 0)
                     const lifetimeRatio = Math.max(0, unit.lifetime) / UNITS[unit.cardId.toUpperCase()].lifetime;
                     unit.hp = unit.maxHp * lifetimeRatio;
                     if (unit.lifetime <= 0) unit.hp = 0;
@@ -142,24 +153,14 @@ class GameEngine {
                         playerState.mana = Math.min(GAME_CONFIG.MAX_MANA, playerState.mana + unit.manaProduction);
                     }
                 }
-
-                // Spawner Logic (Goblin Hut)
-                if (unit.spawnUnit) {
-                    unit.spawnTimer = (unit.spawnTimer || 0) + dt;
-                    if (unit.spawnTimer >= unit.spawnInterval) {
-                        unit.spawnTimer = 0;
-                        this.spawnUnit(playerState, unit.spawnUnit, unit.x, unit.y);
-                    }
-                }
                 return;
             }
 
-            // 유닛이 타겟이 없으면 적 타워 쪽으로 이동
+            // Unit Movement
             if (!unit.target) {
-                const targetTowerX = 5; // 타워 중앙
+                const targetTowerX = 5; // Center
                 const targetTowerY = direction > 0 ? GAME_CONFIG.FIELD_HEIGHT : 0;
 
-                // 타워 방향으로 이동
                 const dx = targetTowerX - unit.x;
                 const dy = targetTowerY - unit.y;
                 const distance = Math.hypot(dx, dy);
@@ -176,12 +177,31 @@ class GameEngine {
         const p1Units = this.state.p1.units;
         const p2Units = this.state.p2.units;
 
-        // Helper to find target
         const findTarget = (u, enemies, enemyTowerY) => {
             let target = null;
             let minDist = Infinity;
 
-            enemies.forEach(e => {
+            // Prioritize favorite target if exists
+            const potentialTargets = enemies.filter(e => {
+                // Flying Check: Ground Melee cannot hit Flying
+                if (e.type === 'flying' && u.type === 'ground' && u.range < 2) return false;
+
+                // Favorite Target Check
+                if (u.favoriteTarget && u.favoriteTarget !== e.type) return false;
+
+                return true;
+            });
+
+            // If no favorite targets found, and unit has a favorite target, it ignores others?
+            // Usually in Clash Royale, if favorite target is 'building', it ONLY targets buildings.
+            // If favorite target is not set (undefined), it targets anything.
+
+            const targetsToCheck = u.favoriteTarget ? potentialTargets : enemies.filter(e => {
+                if (e.type === 'flying' && u.type === 'ground' && u.range < 2) return false;
+                return true;
+            });
+
+            targetsToCheck.forEach(e => {
                 const dist = Math.hypot(u.x - e.x, u.y - e.y);
                 if (dist <= u.range && dist < minDist) {
                     minDist = dist;
@@ -191,9 +211,12 @@ class GameEngine {
 
             if (!target && u.type !== 'building') {
                 // Check Tower
-                const distToTowerCenter = Math.hypot(u.x - 5, u.y - enemyTowerY);
-                if (distToTowerCenter <= u.range) {
-                    target = { type: 'tower', y: enemyTowerY, x: 5 };
+                // Tower is a building.
+                if (!u.favoriteTarget || u.favoriteTarget === 'building') {
+                    const distToTowerCenter = Math.hypot(u.x - 5, u.y - enemyTowerY);
+                    if (distToTowerCenter <= u.range) {
+                        target = { type: 'tower', y: enemyTowerY, x: 5 };
+                    }
                 }
             }
             return target;
@@ -237,6 +260,7 @@ class GameEngine {
             attacker.hp = 0; // Die immediately
             this.dealSplashDamage(attacker.x, attacker.y, attacker.splash, attacker.damage, targetPlayerId, enemyUnits);
         } else if (attacker.splash) {
+            // Splash damage centers on target
             this.dealSplashDamage(target.x, target.y, attacker.splash, attacker.damage, targetPlayerId, enemyUnits);
         } else {
             this.dealDamage(attacker.damage, target, targetPlayerId);
@@ -251,10 +275,39 @@ class GameEngine {
             }
         });
 
-        // Damage Tower
-        const towerY = targetPlayerId === 'p1' ? 0 : GAME_CONFIG.FIELD_HEIGHT;
-        if (Math.hypot(5 - x, towerY - y) <= radius) {
-            this.state[targetPlayerId].hp -= damage;
+        // Tower Damage Logic
+        // Fireball (radius 2.5) should NOT hit tower.
+        // Other splash units (Bomber, Wizard) SHOULD hit tower if close enough?
+        // For now, let's assume ONLY Fireball has radius 2.5 and others are smaller or we check cardId?
+        // But dealSplashDamage doesn't know cardId.
+        // Let's assume splash damage DOES NOT hit tower by default unless it's a unit attacking the tower directly?
+        // But if Bomber attacks a unit near tower, tower should take damage?
+        // User request: "Fireball cannot hit tower".
+        // Simplest fix: Check radius. Fireball is 2.5. Others are usually smaller.
+        // Or better, pass a flag `canHitTower`.
+        // But for now, I will just disable tower damage in splash completely as requested for Fireball, 
+        // and assume other splash units target units.
+        // Wait, if Bomber attacks a unit, and tower is in range, tower should probably take damage.
+        // But the user specifically asked for Fireball.
+        // Let's rely on the fact that Fireball is a Spell and handled separately in deployCard.
+        // In deployCard, I call dealSplashDamage.
+        // I will modify dealSplashDamage to take an optional `canHitTower` param, default true.
+        // And pass false for Fireball.
+    }
+
+    // Redefining dealSplashDamage to support canHitTower
+    dealSplashDamage(x, y, radius, damage, targetPlayerId, enemyUnits, canHitTower = true) {
+        enemyUnits.forEach(u => {
+            if (Math.hypot(u.x - x, u.y - y) <= radius) {
+                u.hp -= damage;
+            }
+        });
+
+        if (canHitTower) {
+            const towerY = targetPlayerId === 'p1' ? 0 : GAME_CONFIG.FIELD_HEIGHT;
+            if (Math.hypot(5 - x, towerY - y) <= radius) {
+                this.state[targetPlayerId].hp -= damage;
+            }
         }
     }
 
@@ -294,12 +347,11 @@ class GameEngine {
 
         if (!unitStats || playerState.mana < unitStats.cost) return;
 
-        // 마나 수집기 제한: 최대 3개
+        // Mana Collector Limit: Max 3
         if (cardId === 'mana_collector') {
             const collectorCount = playerState.units.filter(u => u.cardId === 'mana_collector').length;
             if (collectorCount >= 3) {
-                console.log(`Player ${playerId} already has 3 mana collectors`);
-                return; // 배치 불가
+                return;
             }
         }
 
@@ -307,10 +359,10 @@ class GameEngine {
 
         if (unitStats.type === 'spell') {
             if (cardId === 'fireball') {
-                // Determine enemy ID
                 const enemyId = playerId === 'p1' ? 'p2' : 'p1';
                 const enemyUnits = this.state[enemyId].units;
-                this.dealSplashDamage(x, y, unitStats.radius, unitStats.damage, enemyId, enemyUnits);
+                // Fireball: canHitTower = false
+                this.dealSplashDamage(x, y, unitStats.radius, unitStats.damage, enemyId, enemyUnits, false);
             }
         } else {
             const count = unitStats.count || 1;
@@ -320,7 +372,7 @@ class GameEngine {
 
                 playerState.units.push({
                     ...unitStats,
-                    cardId: cardId, // Explicitly store cardId for rendering
+                    cardId: cardId,
                     id: `${cardId}_${Date.now()}_${i}`,
                     x: Math.max(0, Math.min(GAME_CONFIG.FIELD_WIDTH, x + offsetX)),
                     y: Math.max(0, Math.min(GAME_CONFIG.FIELD_HEIGHT, y + offsetY)),
@@ -334,15 +386,12 @@ class GameEngine {
         // Cycle Card
         const idx = playerState.hand.indexOf(cardId);
         if (idx !== -1) {
-            // 마나 수집기를 배치한 후, 현재 3개인지 확인
             const isMaxCollectors = cardId === 'mana_collector' &&
                 playerState.units.filter(u => u.cardId === 'mana_collector').length >= 3;
 
             let nextCardToUse = playerState.nextCard;
 
-            // 만약 nextCard가 마나 수집기인데 이미 3개라면, 다른 카드로 교체
             if (nextCardToUse === 'mana_collector' && isMaxCollectors) {
-                // deck에서 마나 수집기가 아닌 카드를 찾음
                 const availableCards = playerState.deck.filter(c => c !== 'mana_collector');
                 if (availableCards.length > 0) {
                     nextCardToUse = availableCards[Math.floor(Math.random() * availableCards.length)];
@@ -351,12 +400,10 @@ class GameEngine {
 
             playerState.hand[idx] = nextCardToUse;
 
-            // 새로운 nextCard 선택 (마나 수집기가 3개면 제외)
             let newNextCard;
             const collectorCount = playerState.units.filter(u => u.cardId === 'mana_collector').length;
 
             if (collectorCount >= 3) {
-                // 마나 수집기 제외하고 선택
                 const availableCards = playerState.deck.filter(c => c !== 'mana_collector');
                 if (availableCards.length > 0) {
                     newNextCard = availableCards[Math.floor(Math.random() * availableCards.length)];

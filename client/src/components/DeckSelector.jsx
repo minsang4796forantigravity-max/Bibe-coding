@@ -4,7 +4,8 @@ import { UNITS } from '../game/constants';
 // 모든 사용 가능한 카드 목록
 const ALL_CARDS = [
     'skeletons', 'goblin', 'knight', 'archer', 'bomber', 'kamikaze',
-    'cannon', 'sniper', 'fireball', 'giant', 'wizard', 'goblin_hut', 'mana_collector'
+    'cannon', 'sniper', 'fireball', 'giant', 'wizard', 'goblin_hut', 'mana_collector',
+    'valkyrie', 'hog_rider', 'witch', 'baby_dragon', 'barbarians'
 ];
 
 // 카드 이미지 import
@@ -21,6 +22,11 @@ import manaCollectorImg from '../assets/mana_collector_card.png';
 import sniperImg from '../assets/sniper_card.png';
 import goblinHutImg from '../assets/goblin_hut_card.png';
 import goblinImg from '../assets/goblin_card.png';
+import valkyrieImg from '../assets/valkyrie_card.png';
+import hogRiderImg from '../assets/hog_rider_card.png';
+import witchImg from '../assets/witch_card.png';
+import babyDragonImg from '../assets/baby_dragon_card.png';
+import barbariansImg from '../assets/barbarians_card.png';
 
 const CARD_IMAGES = {
     knight: knightImg,
@@ -36,6 +42,11 @@ const CARD_IMAGES = {
     sniper: sniperImg,
     goblin_hut: goblinHutImg,
     goblin: goblinImg,
+    valkyrie: valkyrieImg,
+    hog_rider: hogRiderImg,
+    witch: witchImg,
+    baby_dragon: babyDragonImg,
+    barbarians: barbariansImg,
 };
 
 export function DeckSelector({ onDeckSelected }) {

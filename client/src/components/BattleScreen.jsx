@@ -14,6 +14,11 @@ import sniperImg from '../assets/sniper_card.png';
 import goblinHutImg from '../assets/goblin_hut_card.png';
 import goblinImg from '../assets/goblin_card.png';
 import towerImg from '../assets/tower_asset.png';
+import valkyrieImg from '../assets/valkyrie_card.png';
+import hogRiderImg from '../assets/hog_rider_card.png';
+import witchImg from '../assets/witch_card.png';
+import babyDragonImg from '../assets/baby_dragon_card.png';
+import barbariansImg from '../assets/barbarians_card.png';
 
 const CARD_IMAGES = {
     knight: knightImg,
@@ -29,6 +34,11 @@ const CARD_IMAGES = {
     sniper: sniperImg,
     goblin_hut: goblinHutImg,
     goblin: goblinImg,
+    valkyrie: valkyrieImg,
+    hog_rider: hogRiderImg,
+    witch: witchImg,
+    baby_dragon: babyDragonImg,
+    barbarians: barbariansImg,
 };
 
 export function BattleScreen({ gameState, playerId, onDeploy }) {
