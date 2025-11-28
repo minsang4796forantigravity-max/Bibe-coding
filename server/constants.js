@@ -177,8 +177,8 @@ const UNITS = {
 };
 
 const GAME_CONFIG = {
-    MANA_REGEN_RATE: 1.0,
-    MAX_MANA: 10,
+    MANA_REGEN_RATE: 0.5,
+    MAX_MANA: 20,
     FIELD_WIDTH: 10,
     FIELD_HEIGHT: 18,
     FPS: 30,

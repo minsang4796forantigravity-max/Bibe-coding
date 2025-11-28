@@ -20,14 +20,14 @@ const games = {}; // roomId -> GameEngine
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
-    socket.on('join_game', (roomId) => {
+    socket.on('join_game', (roomId, selectedDeck) => {
         let game = games[roomId];
         if (!game) {
             game = new GameEngine(roomId, io);
             games[roomId] = game;
         }
 
-        const playerRole = game.addPlayer(socket.id);
+        const playerRole = game.addPlayer(socket.id, selectedDeck || []); // 덱 정보 전달
         if (playerRole) {
             socket.join(roomId);
             socket.emit('game_start', {

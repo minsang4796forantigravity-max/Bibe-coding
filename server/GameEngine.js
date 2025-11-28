@@ -30,12 +30,22 @@ class GameEngine {
         this.lastTime = Date.now();
     }
 
-    addPlayer(socketId) {
+    addPlayer(socketId, selectedDeck) {
         if (!this.state.p1.id) {
             this.state.p1.id = socketId;
+            if (selectedDeck && selectedDeck.length === 7) {
+                this.state.p1.deck = selectedDeck;
+                this.state.p1.hand = selectedDeck.slice(0, 4);
+                this.state.p1.nextCard = selectedDeck[4];
+            }
             return 'p1';
         } else if (!this.state.p2.id) {
             this.state.p2.id = socketId;
+            if (selectedDeck && selectedDeck.length === 7) {
+                this.state.p2.deck = selectedDeck;
+                this.state.p2.hand = selectedDeck.slice(0, 4);
+                this.state.p2.nextCard = selectedDeck[4];
+            }
             return 'p2';
         }
         return null;

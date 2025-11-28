@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BattleScreen } from './components/BattleScreen';
+import { DeckSelector } from './components/DeckSelector';
 import { socket } from './socket';
 import './App.css';
 
@@ -23,7 +24,8 @@ function App() {
   const [gameState, setGameState] = useState(null);
   const [playerId, setPlayerId] = useState(null);
   const [roomId, setRoomId] = useState('');
-  const [status, setStatus] = useState('lobby'); // lobby, waiting, playing
+  const [selectedDeck, setSelectedDeck] = useState(null);
+  const [status, setStatus] = useState('lobby'); // lobby, deck_select, waiting, playing
 
   useEffect(() => {
 
@@ -66,24 +68,34 @@ function App() {
     };
   }, []);
 
-const handleJoin = () => {
-  const id = String(roomId).trim();   // 공백 제거 + 문자열 통일
+  const handleJoinClick = () => {
+    setStatus('deck_select');
+  };
 
-  console.log("join_game emit:", id);
+  const handleDeckSelected = (deck) => {
+    setSelectedDeck(deck);
+    const id = String(roomId).trim();
 
-  if (!socket.connected) {
-    socket.connect();
-  }
+    console.log("join_game emit:", id, "with deck:", deck);
 
-  socket.emit("join_game", id);
-  setStatus("waiting");
-};
+    if (!socket.connected) {
+      socket.connect();
+    }
+
+    socket.emit("join_game", id, deck); // 덱 정보 전송
+    setStatus("waiting");
+  };
+
   const handleDeploy = (cardId, x, y) => {
     socket.emit('deploy_card', { cardId, x, y });
   };
 
   if (status === 'playing' && gameState) {
     return <BattleScreen gameState={gameState} playerId={playerId} onDeploy={handleDeploy} />;
+  }
+
+  if (status === 'deck_select') {
+    return <DeckSelector onDeckSelected={handleDeckSelected} />;
   }
 
   return (
@@ -102,7 +114,7 @@ const handleJoin = () => {
             onChange={e => setRoomId(e.target.value)}
             style={{ padding: '10px', fontSize: '16px' }}
           />
-          <button onClick={handleJoin} style={{ padding: '10px', fontSize: '16px', cursor: 'pointer' }}>
+          <button onClick={handleJoinClick} style={{ padding: '10px', fontSize: '16px', cursor: 'pointer' }}>
             Join Game
           </button>
         </div>
@@ -112,6 +124,7 @@ const handleJoin = () => {
         <div>
           <h2>Waiting for opponent...</h2>
           <p>Room ID: {roomId}</p>
+          <p>Selected {selectedDeck?.length || 0} cards</p>
         </div>
       )}
     </div>

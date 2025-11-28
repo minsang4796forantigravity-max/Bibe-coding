@@ -96,6 +96,10 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
         setTargetPos({ x: gameX, y: gameY });
     };
 
+    const handleMouseLeave = () => {
+        setTargetPos(null);
+    };
+
     return (
         <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#222', overflow: 'hidden' }}>
             {/* Game Field */}
@@ -103,6 +107,7 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                 className="game-field"
                 onClick={handleFieldClick}
                 onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
                 style={{
                     flex: 1,
                     position: 'relative',
