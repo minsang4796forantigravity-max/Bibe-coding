@@ -69,6 +69,10 @@ function App() {
   }, []);
 
   const handleJoinClick = () => {
+    if (!roomId.trim()) {
+      alert('방 번호를 입력해주세요!');
+      return;
+    }
     setStatus('deck_select');
   };
 
@@ -109,22 +113,35 @@ function App() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <input
             type="text"
-            placeholder="Enter Room ID (e.g. 123)"
+            placeholder="방 번호 입력 (예: 123)"
             value={roomId}
             onChange={e => setRoomId(e.target.value)}
-            style={{ padding: '10px', fontSize: '16px' }}
+            style={{ padding: '10px', fontSize: '16px', width: '250px' }}
           />
-          <button onClick={handleJoinClick} style={{ padding: '10px', fontSize: '16px', cursor: 'pointer' }}>
-            Join Game
+          <button
+            onClick={handleJoinClick}
+            disabled={!roomId.trim()}
+            style={{
+              padding: '10px',
+              fontSize: '16px',
+              cursor: roomId.trim() ? 'pointer' : 'not-allowed',
+              backgroundColor: roomId.trim() ? '#3498db' : '#95a5a6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              fontWeight: 'bold',
+            }}
+          >
+            덱 선택하기
           </button>
         </div>
       )}
 
       {status === 'waiting' && (
-        <div>
-          <h2>Waiting for opponent...</h2>
-          <p>Room ID: {roomId}</p>
-          <p>Selected {selectedDeck?.length || 0} cards</p>
+        <div style={{ textAlign: 'center' }}>
+          <h2>상대를 기다리는 중...</h2>
+          <p style={{ fontSize: '18px', color: '#f39c12' }}>방 번호: {roomId}</p>
+          <p style={{ color: '#2ecc71' }}>✓ {selectedDeck?.length || 0}장 선택 완료</p>
         </div>
       )}
     </div>
