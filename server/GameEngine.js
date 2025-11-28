@@ -46,10 +46,26 @@ class GameEngine {
         this.interval = setInterval(() => this.loop(), 1000 / GAME_CONFIG.FPS);
     }
     getSerializableState() {
-        // 필요하면 deep copy / 필터링
-        return JSON.parse(JSON.stringify(this.state));
-        // 또는 단순히
-        // return this.state;
+        // Deep copy 하되, 순환 참조 제거
+        const stateCopy = {
+            p1: {
+                ...this.state.p1,
+                units: this.state.p1.units.map(u => ({
+                    ...u,
+                    target: undefined, // target 제거 (순환 참조 방지)
+                }))
+            },
+            p2: {
+                ...this.state.p2,
+                units: this.state.p2.units.map(u => ({
+                    ...u,
+                    target: undefined, // target 제거 (순환 참조 방지)
+                }))
+            },
+            gameOver: this.state.gameOver,
+            winner: this.state.winner,
+        };
+        return stateCopy;
     }
 
     stop() {
