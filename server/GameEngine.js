@@ -80,7 +80,7 @@ class GameEngine {
         this.lastTime = now;
 
         this.update(dt);
-        this.io.to(this.roomId).emit('game_update', this.state);
+        this.io.to(this.roomId).emit('game_update', this.getSerializableState());
     }
 
     update(dt) {
