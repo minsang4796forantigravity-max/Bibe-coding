@@ -243,10 +243,12 @@ export function PlayerView({ playerId, gameState, onDeploy, isRotated }) {
                                 width: '30px',
                                 height: '30px',
                                 transform: 'translate(-50%, 50%)',
-                                backgroundImage: `url(${CARD_IMAGES[unit.id.split('_')[0]] || knightImg})`, // Fallback
+                                backgroundImage: `url(${CARD_IMAGES[unit.id.split('_')[0]] || knightImg})`,
                                 backgroundSize: 'cover',
                                 borderRadius: '50%',
-                                border: `2px solid ${unit.color}`,
+                                border: unit.isEvolved ? '2px solid #f39c12' : `2px solid ${unit.color}`,
+                                filter: unit.isEvolved ? 'brightness(1.3) saturate(1.5)' : 'none',
+                                boxShadow: unit.isEvolved ? '0 0 10px rgba(243, 156, 18, 0.8)' : 'none',
                                 transition: 'left 0.1s linear, bottom 0.1s linear',
                                 zIndex: 5,
                             }}
@@ -324,8 +326,8 @@ export function PlayerView({ playerId, gameState, onDeploy, isRotated }) {
                                 key={index}
                                 onClick={() => canAfford && setSelectedCard(cardId)}
                                 style={{
-                                    width: '55px', // 60px → 55px (6개를 위해 축소)
-                                    height: '75px', // 80px → 75px
+                                    width: '55px',
+                                    height: '75px',
                                     backgroundColor: isSelected ? '#f1c40f' : (canAfford ? '#444' : '#222'),
                                     backgroundImage: `url(${CARD_IMAGES[cardId]})`,
                                     backgroundSize: 'cover',
@@ -340,7 +342,9 @@ export function PlayerView({ playerId, gameState, onDeploy, isRotated }) {
                                     justifyContent: 'flex-end',
                                     cursor: 'pointer',
                                     position: 'relative',
-                                    boxShadow: isEvolved ? '0 0 15px rgba(243, 156, 18, 0.6)' : 'none',
+                                    boxShadow: isEvolved ? '0 0 15px rgba(243, 156, 18, 0.8)' : 'none',
+                                    filter: isEvolved ? 'brightness(1.1) saturate(1.3)' : 'none',
+                                    animation: isEvolved ? 'pulseGlow 2s ease-in-out infinite' : 'none',
                                 }}
                             >
                                 {/* 진화 표시 */}
@@ -389,18 +393,45 @@ export function PlayerView({ playerId, gameState, onDeploy, isRotated }) {
                     })}
 
                     {/* Next Card Preview */}
-                    <div style={{
-                        width: '35px', // 40px → 35px
-                        height: '47px', // 50px → 47px
-                        marginLeft: '5px',
-                        opacity: 0.7,
-                        backgroundImage: `url(${CARD_IMAGES[playerState.nextCard]})`,
-                        backgroundSize: 'cover',
-                        borderRadius: '3px',
-                        alignSelf: 'center',
-                    }}>
-                        <div style={{ fontSize: '7px', backgroundColor: 'black', color: 'white' }}>Next</div>
-                    </div>
+                    {playerState.nextCard && (
+                        <div style={{
+                            width: '40px',
+                            height: '55px',
+                            marginLeft: '8px',
+                            opacity: 0.8,
+                            backgroundImage: `url(${CARD_IMAGES[playerState.nextCard]})`,
+                            backgroundSize: 'cover',
+                            borderRadius: '5px',
+                            alignSelf: 'center',
+                            border: '1px solid #555',
+                            position: 'relative',
+                            backgroundColor: '#222',
+                        }}>
+                            <div style={{
+                                fontSize: '8px',
+                                backgroundColor: 'rgba(0,0,0,0.9)',
+                                color: '#f1c40f',
+                                fontWeight: 'bold',
+                                padding: '2px',
+                                textAlign: 'center',
+                                borderTopLeftRadius: '5px',
+                                borderTopRightRadius: '5px',
+                            }}>NEXT</div>
+                            <div style={{
+                                position: 'absolute',
+                                bottom: '2px',
+                                left: '2px',
+                                backgroundColor: 'rgba(0,0,0,0.8)',
+                                color: '#3498db',
+                                fontSize: '10px',
+                                fontWeight: 'bold',
+                                padding: '1px 4px',
+                                borderRadius: '3px',
+                            }}>
+                                {UNITS[playerState.nextCard.toUpperCase()]?.cost}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
