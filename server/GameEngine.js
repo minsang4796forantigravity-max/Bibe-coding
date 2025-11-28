@@ -45,6 +45,12 @@ class GameEngine {
         this.lastTime = Date.now();
         this.interval = setInterval(() => this.loop(), 1000 / GAME_CONFIG.FPS);
     }
+    getSerializableState() {
+        // 필요하면 deep copy / 필터링
+        return JSON.parse(JSON.stringify(this.state));
+        // 또는 단순히
+        // return this.state;
+    }
 
     stop() {
         clearInterval(this.interval);
