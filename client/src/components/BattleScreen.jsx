@@ -40,12 +40,33 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
 
     const isP1 = playerId === 'p1';
 
+    // 터치와 마우스 이벤트 모두 처리
+    const getEventCoords = (e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        let clientX, clientY;
+
+        if (e.touches && e.touches[0]) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else if (e.changedTouches && e.changedTouches[0]) {
+            clientX = e.changedTouches[0].clientX;
+            clientY = e.changedTouches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+
+        const relativeX = (clientX - rect.left) / rect.width * GAME_CONFIG.FIELD_WIDTH;
+        const relativeY = (rect.bottom - clientY) / rect.height * GAME_CONFIG.FIELD_HEIGHT;
+
+        return { relativeX, relativeY };
+    };
+
     const handleFieldClick = (e) => {
         if (!selectedCard) return;
+        e.preventDefault();
 
-        const rect = e.currentTarget.getBoundingClientRect();
-        const relativeX = e.nativeEvent.offsetX / rect.width * GAME_CONFIG.FIELD_WIDTH;
-        const relativeY = (rect.height - e.nativeEvent.offsetY) / rect.height * GAME_CONFIG.FIELD_HEIGHT;
+        const { relativeX, relativeY } = getEventCoords(e);
 
         let gameX, gameY;
         if (isP1) {
@@ -56,20 +77,19 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
             gameY = GAME_CONFIG.FIELD_HEIGHT - relativeY;
         }
 
-        // 스펠은 전체 맵에 배치 가능, 유닛은 자기 진영만
         const unitStats = UNITS[selectedCard.toUpperCase()];
         const isSpell = unitStats && unitStats.type === 'spell';
 
         if (isSpell) {
-            // 스펠은 어디든 배치 가능
             onDeploy(selectedCard, gameX, gameY);
             setSelectedCard(null);
+            setTargetPos(null);
         } else {
-            // 유닛은 자기 진영만 (45% 이하)
             const myY = isP1 ? gameY : (GAME_CONFIG.FIELD_HEIGHT - gameY);
             if (myY <= GAME_CONFIG.FIELD_HEIGHT * 0.45) {
                 onDeploy(selectedCard, gameX, gameY);
                 setSelectedCard(null);
+                setTargetPos(null);
             }
         }
     };
@@ -80,9 +100,7 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
             return;
         }
 
-        const rect = e.currentTarget.getBoundingClientRect();
-        const relativeX = e.nativeEvent.offsetX / rect.width * GAME_CONFIG.FIELD_WIDTH;
-        const relativeY = (rect.height - e.nativeEvent.offsetY) / rect.height * GAME_CONFIG.FIELD_HEIGHT;
+        const { relativeX, relativeY } = getEventCoords(e);
 
         let gameX, gameY;
         if (isP1) {
@@ -101,13 +119,16 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
     };
 
     return (
-        <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#222', overflow: 'hidden' }}>
+        <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#222', overflow: 'hidden', touchAction: 'none' }}>
             {/* Game Field */}
             <div
                 className="game-field"
                 onClick={handleFieldClick}
+                onTouchEnd={handleFieldClick}
                 onMouseMove={handleMouseMove}
+                onTouchMove={handleMouseMove}
                 onMouseLeave={handleMouseLeave}
+                onTouchCancel={handleMouseLeave}
                 style={{
                     flex: 1,
                     position: 'relative',
@@ -118,7 +139,7 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                     boxShadow: 'inset 0 0 50px rgba(0,0,0,0.5)',
                 }}
             >
-                {/* Grid/Background hint */}
+                {/* Grid */}
                 <div style={{
                     position: 'absolute',
                     bottom: 0,
@@ -143,40 +164,39 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                     zIndex: 1,
                 }}></div>
 
-                {/* Towers */}
-                {/* My Tower (Bottom) */}
+                {/* My Tower */}
                 <div style={{
                     position: 'absolute',
                     left: '50%',
-                    bottom: '5%',
-                    transform: 'translate(-50%, 50%)',
-                    width: '80px',
-                    height: '80px',
+                    bottom: 0,
+                    transform: 'translateX(-50%)',
+                    width: '60px',
+                    height: '60px',
                     backgroundImage: `url(${towerImg})`,
                     backgroundSize: 'contain',
                     backgroundRepeat: 'no-repeat',
                     zIndex: 10,
                 }}>
-                    <div style={{ position: 'absolute', top: -25, left: 0, right: 0, textAlign: 'center', color: 'white', fontSize: 14, fontWeight: 'bold', textShadow: '1px 1px 2px black' }}>
+                    <div style={{ position: 'absolute', top: -20, left: 0, right: 0, textAlign: 'center', color: 'white', fontSize: 14, fontWeight: 'bold', textShadow: '1px 1px 2px black' }}>
                         {myState.hp}
                     </div>
                 </div>
 
-                {/* Opponent Tower (Top) */}
+                {/* Opponent Tower */}
                 <div style={{
                     position: 'absolute',
                     left: '50%',
-                    top: '5%',
-                    transform: 'translate(-50%, -50%)',
-                    width: '80px',
-                    height: '80px',
+                    top: 0,
+                    transform: 'translateX(-50%)',
+                    width: '60px',
+                    height: '60px',
                     backgroundImage: `url(${towerImg})`,
                     backgroundSize: 'contain',
                     backgroundRepeat: 'no-repeat',
                     filter: 'hue-rotate(180deg)',
                     zIndex: 10,
                 }}>
-                    <div style={{ position: 'absolute', bottom: -25, left: 0, right: 0, textAlign: 'center', color: 'white', fontSize: 14, fontWeight: 'bold', textShadow: '1px 1px 2px black' }}>
+                    <div style={{ position: 'absolute', bottom: -20, left: 0, right: 0, textAlign: 'center', color: 'white', fontSize: 14, fontWeight: 'bold', textShadow: '1px 1px 2px black' }}>
                         {opponentState.hp}
                     </div>
                 </div>
@@ -196,8 +216,7 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                     const bottom = (viewY / GAME_CONFIG.FIELD_HEIGHT) * 100;
                     const isMine = unit.owner === playerId;
 
-                    // Spell Effect (Fireball) - Temporary visual
-                    if (unit.type === 'spell') return null; // Spells are instant, handled by effects (TODO)
+                    if (unit.type === 'spell') return null;
 
                     return (
                         <div
@@ -218,7 +237,6 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                                 boxShadow: '0 4px 6px rgba(0,0,0,0.5)',
                             }}
                         >
-                            {/* Level Badge */}
                             <div style={{
                                 position: 'absolute',
                                 bottom: -5,
@@ -252,172 +270,119 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                 })}
 
                 {/* Targeting Indicator */}
-                {targetPos && selectedCard && (
-                    <>
-                        {/* Convert game coords to view coords */}
-                        {(() => {
-                            let viewX, viewY;
-                            if (isP1) {
-                                viewX = targetPos.x;
-                                viewY = targetPos.y;
-                            } else {
-                                viewX = GAME_CONFIG.FIELD_WIDTH - targetPos.x;
-                                viewY = GAME_CONFIG.FIELD_HEIGHT - targetPos.y;
-                            }
-                            const left = (viewX / GAME_CONFIG.FIELD_WIDTH) * 100;
-                            const bottom = (viewY / GAME_CONFIG.FIELD_HEIGHT) * 100;
+                {targetPos && selectedCard && (() => {
+                    let viewX, viewY;
+                    if (isP1) {
+                        viewX = targetPos.x;
+                        viewY = targetPos.y;
+                    } else {
+                        viewX = GAME_CONFIG.FIELD_WIDTH - targetPos.x;
+                        viewY = GAME_CONFIG.FIELD_HEIGHT - targetPos.y;
+                    }
+                    const left = (viewX / GAME_CONFIG.FIELD_WIDTH) * 100;
+                    const bottom = (viewY / GAME_CONFIG.FIELD_HEIGHT) * 100;
 
-                            const unitStats = UNITS[selectedCard.toUpperCase()];
-                            const radius = unitStats.type === 'spell' ? unitStats.radius || 2 : 1;
-                            const radiusPercent = (radius / GAME_CONFIG.FIELD_WIDTH) * 100;
+                    const unitStats = UNITS[selectedCard.toUpperCase()];
+                    const radius = unitStats.type === 'spell' ? unitStats.radius || 2 : 1;
+                    const radiusPercent = (radius / GAME_CONFIG.FIELD_WIDTH) * 100;
 
-                            return (
-                                <div style={{
-                                    position: 'absolute',
-                                    left: `${left}%`,
-                                    bottom: `${bottom}%`,
-                                    width: `${radiusPercent * 2}%`,
-                                    height: `${radiusPercent * 2 * (GAME_CONFIG.FIELD_WIDTH / GAME_CONFIG.FIELD_HEIGHT)}%`,
-                                    transform: 'translate(-50%, 50%)',
-                                    border: '3px dashed #f39c12',
-                                    borderRadius: '50%',
-                                    backgroundColor: 'rgba(243, 156, 18, 0.2)',
-                                    pointerEvents: 'none',
-                                    zIndex: 15,
-                                }}>
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: '50%',
-                                        left: '50%',
-                                        transform: 'translate(-50%, -50%)',
-                                        width: '8px',
-                                        height: '8px',
-                                        backgroundColor: '#f39c12',
-                                        borderRadius: '50%',
-                                        boxShadow: '0 0 10px #f39c12',
-                                    }}></div>
-                                </div>
-                            );
-                        })()}
-                    </>
-                )}
+                    return (
+                        <div style={{
+                            position: 'absolute',
+                            left: `${left}%`,
+                            bottom: `${bottom}%`,
+                            width: `${radiusPercent * 2}%`,
+                            height: `${radiusPercent * 2 * (GAME_CONFIG.FIELD_WIDTH / GAME_CONFIG.FIELD_HEIGHT)}%`,
+                            transform: 'translate(-50%, 50%)',
+                            border: '3px dashed #f39c12',
+                            borderRadius: '50%',
+                            backgroundColor: 'rgba(243, 156, 18, 0.2)',
+                            pointerEvents: 'none',
+                            zIndex: 15,
+                        }}>
+                            <div style={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                width: '8px',
+                                height: '8px',
+                                backgroundColor: '#f39c12',
+                                borderRadius: '50%',
+                                boxShadow: '0 0 10px #f39c12',
+                            }}></div>
+                        </div>
+                    );
+                })()}
             </div>
 
             {/* HUD */}
-            <div className="hud" style={{
-                height: '140px',
-                backgroundColor: '#1a1a1a',
+            <div style={{
+                height: '150px',
+                backgroundColor: '#34495e',
                 display: 'flex',
                 flexDirection: 'column',
                 padding: '10px',
-                boxSizing: 'border-box',
-                borderTop: '2px solid #444',
+                boxShadow: '0 -4px 6px rgba(0,0,0,0.3)',
             }}>
                 {/* Mana Bar */}
-                <div style={{
-                    height: '24px',
-                    backgroundColor: '#000',
-                    marginBottom: '10px',
-                    borderRadius: '12px',
-                    overflow: 'hidden',
-                    position: 'relative',
-                    border: '1px solid #555',
-                }}>
-                    <div style={{
-                        width: `${(myState.mana / GAME_CONFIG.MAX_MANA) * 100}%`,
-                        height: '100%',
-                        backgroundColor: '#9b59b6', // Elixir color
-                        transition: 'width 0.1s linear',
-                        boxShadow: '0 0 10px #9b59b6',
-                    }} />
-                    <span style={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        color: 'white',
-                        fontSize: '14px',
-                        fontWeight: 'bold',
-                        textShadow: '1px 1px 1px black',
-                    }}>{Math.floor(myState.mana)}</span>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', gap: '10px' }}>
+                    <div style={{ color: '#d35400', fontWeight: 'bold', fontSize: '18px', minWidth: '90px' }}>
+                        마나: {Math.floor(myState.mana)}/{GAME_CONFIG.MAX_MANA}
+                    </div>
+                    <div style={{ flex: 1, height: '20px', backgroundColor: '#2c3e50', borderRadius: '10px', border: '2px solid #34495e', overflow: 'hidden' }}>
+                        <div style={{
+                            height: '100%',
+                            width: `${(myState.mana / GAME_CONFIG.MAX_MANA) * 100}%`,
+                            backgroundColor: '#d35400',
+                            transition: 'width 0.2s',
+                            borderRadius: '8px',
+                        }} />
+                    </div>
                 </div>
 
                 {/* Hand */}
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    gap: '15px',
-                    flex: 1,
-                }}>
-                    {myState.hand.map((cardId, index) => {
-                        const unitStats = UNITS[cardId.toUpperCase()];
-                        const canAfford = myState.mana >= unitStats.cost;
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                    {myState.hand.map((cardId, idx) => {
+                        const cardStats = UNITS[cardId.toUpperCase()];
+                        const canAfford = myState.mana >= cardStats.cost;
                         const isSelected = selectedCard === cardId;
 
                         return (
                             <div
-                                key={index}
-                                onClick={() => canAfford && setSelectedCard(cardId)}
+                                key={idx}
+                                onClick={() => canAfford && setSelectedCard(isSelected ? null : cardId)}
                                 style={{
-                                    width: '70px',
-                                    height: '90px',
-                                    backgroundColor: isSelected ? '#f1c40f' : (canAfford ? '#333' : '#111'),
+                                    width: '80px',
+                                    height: '100px',
                                     backgroundImage: `url(${CARD_IMAGES[cardId]})`,
                                     backgroundSize: 'cover',
-                                    backgroundPosition: 'center',
                                     borderRadius: '8px',
-                                    border: isSelected ? '3px solid white' : (canAfford ? '2px solid #555' : '2px solid #222'),
-                                    opacity: canAfford ? 1 : 0.4,
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    justifyContent: 'flex-end',
-                                    cursor: 'pointer',
+                                    border: isSelected ? '4px solid #f1c40f' : canAfford ? '2px solid #2ecc71' : '2px solid #7f8c8d',
+                                    cursor: canAfford ? 'pointer' : 'not-allowed',
+                                    opacity: canAfford ? 1 : 0.5,
                                     position: 'relative',
-                                    transform: isSelected ? 'translateY(-10px)' : 'none',
-                                    transition: 'transform 0.1s',
+                                    transition: 'all 0.2s',
+                                    transform: isSelected ? 'translateY(-10px) scale(1.1)' : 'translateY(0)',
+                                    boxShadow: isSelected ? '0 8px 16px rgba(241, 196, 15, 0.5)' : '0 4px 6px rgba(0,0,0,0.3)',
                                 }}
                             >
                                 <div style={{
-                                    backgroundColor: 'rgba(0,0,0,0.8)',
-                                    color: '#d35400',
-                                    fontWeight: 'bold',
-                                    textAlign: 'center',
-                                    borderTopLeftRadius: '5px',
                                     position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    padding: '2px 6px',
-                                    borderBottomRightRadius: '5px',
+                                    top: '5px',
+                                    left: '5px',
+                                    backgroundColor: 'rgba(0,0,0,0.8)',
+                                    color: canAfford ? '#d35400' : '#95a5a6',
+                                    fontWeight: 'bold',
+                                    padding: '3px 7px',
+                                    borderRadius: '5px',
+                                    fontSize: '14px',
                                 }}>
-                                    {unitStats.cost}
+                                    {cardStats.cost}
                                 </div>
                             </div>
                         );
                     })}
-
-                    {/* Next Card */}
-                    <div style={{
-                        width: '50px',
-                        height: '60px',
-                        marginLeft: '10px',
-                        opacity: 0.6,
-                        backgroundImage: `url(${CARD_IMAGES[myState.nextCard]})`,
-                        backgroundSize: 'cover',
-                        borderRadius: '5px',
-                        alignSelf: 'center',
-                        position: 'relative',
-                        border: '1px solid #444',
-                    }}>
-                        <div style={{
-                            fontSize: '10px',
-                            backgroundColor: 'black',
-                            color: 'white',
-                            position: 'absolute',
-                            top: -15,
-                            width: '100%',
-                            textAlign: 'center'
-                        }}>Next</div>
-                    </div>
                 </div>
             </div>
         </div>
