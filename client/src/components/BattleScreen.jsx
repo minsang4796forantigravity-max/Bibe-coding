@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { GAME_CONFIG, UNITS } from '../game/constants';
 import knightImg from '../assets/knight_card.png';
 import archerImg from '../assets/archer_card.png';
@@ -19,6 +19,10 @@ import hogRiderImg from '../assets/hog_rider_card.png';
 import witchImg from '../assets/witch_card.png';
 import babyDragonImg from '../assets/baby_dragon_card.png';
 import barbariansImg from '../assets/barbarians_card.png';
+import tornadoImg from '../assets/tornado_card.png';
+import rageImg from '../assets/rage_card.png';
+import healImg from '../assets/heal_card.png';
+import balloonImg from '../assets/balloon_card.png';
 
 const CARD_IMAGES = {
     knight: knightImg,
@@ -39,112 +43,123 @@ const CARD_IMAGES = {
     witch: witchImg,
     baby_dragon: babyDragonImg,
     barbarians: barbariansImg,
+    tornado: tornadoImg,
+    rage: rageImg,
+    heal: healImg,
+    balloon: balloonImg,
 };
 
 export function BattleScreen({ gameState, playerId, onDeploy }) {
-    const [selectedCard, setSelectedCard] = useState(null);
-    const [targetPos, setTargetPos] = useState(null);
+    const [dragCard, setDragCard] = useState(null);
+    const [dragPos, setDragPos] = useState(null); // { x, y } screen coords
+    const fieldRef = useRef(null);
+
     const myState = gameState[playerId];
     const opponentId = playerId === 'p1' ? 'p2' : 'p1';
     const opponentState = gameState[opponentId];
-
     const isP1 = playerId === 'p1';
 
-    const getEventCoords = (e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        let clientX, clientY;
-
+    const getClientCoords = (e) => {
         if (e.touches && e.touches[0]) {
-            clientX = e.touches[0].clientX;
-            clientY = e.touches[0].clientY;
+            return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
         } else if (e.changedTouches && e.changedTouches[0]) {
-            clientX = e.changedTouches[0].clientX;
-            clientY = e.changedTouches[0].clientY;
-        } else {
-            clientX = e.clientX;
-            clientY = e.clientY;
+            return { clientX: e.changedTouches[0].clientX, clientY: e.changedTouches[0].clientY };
         }
-
-        const relativeX = (clientX - rect.left) / rect.width * GAME_CONFIG.FIELD_WIDTH;
-        const relativeY = (rect.bottom - clientY) / rect.height * GAME_CONFIG.FIELD_HEIGHT;
-
-        return { relativeX, relativeY };
+        return { clientX: e.clientX, clientY: e.clientY };
     };
 
-    const handleFieldClick = (e) => {
-        if (!selectedCard) return;
-        e.preventDefault();
+    const handleDragStart = (e, cardId) => {
+        const cardStats = UNITS[cardId.toUpperCase()];
+        if (myState.mana < cardStats.cost) return;
 
-        const { relativeX, relativeY } = getEventCoords(e);
+        // Prevent default to stop scrolling on mobile
+        // e.preventDefault(); 
 
-        let gameX, gameY;
-        if (isP1) {
-            gameX = relativeX;
-            gameY = relativeY;
-        } else {
-            gameX = GAME_CONFIG.FIELD_WIDTH - relativeX;
-            gameY = GAME_CONFIG.FIELD_HEIGHT - relativeY;
-        }
+        setDragCard(cardId);
+        const { clientX, clientY } = getClientCoords(e);
+        setDragPos({ x: clientX, y: clientY });
+    };
 
-        const unitStats = UNITS[selectedCard.toUpperCase()];
-        const isSpell = unitStats && unitStats.type === 'spell';
+    const handleDragMove = (e) => {
+        if (!dragCard) return;
+        const { clientX, clientY } = getClientCoords(e);
+        setDragPos({ x: clientX, y: clientY });
+    };
 
-        if (isSpell) {
-            onDeploy(selectedCard, gameX, gameY);
-            setSelectedCard(null);
-            setTargetPos(null);
-        } else {
-            const myY = isP1 ? gameY : (GAME_CONFIG.FIELD_HEIGHT - gameY);
-            if (myY <= GAME_CONFIG.FIELD_HEIGHT * 0.45) {
-                onDeploy(selectedCard, gameX, gameY);
-                setSelectedCard(null);
-                setTargetPos(null);
+    const handleDragEnd = (e) => {
+        if (!dragCard) return;
+
+        const { clientX, clientY } = getClientCoords(e);
+
+        if (fieldRef.current) {
+            const rect = fieldRef.current.getBoundingClientRect();
+
+            // Check if dropped inside field
+            if (
+                clientX >= rect.left &&
+                clientX <= rect.right &&
+                clientY >= rect.top &&
+                clientY <= rect.bottom
+            ) {
+                const relativeX = (clientX - rect.left) / rect.width * GAME_CONFIG.FIELD_WIDTH;
+                const relativeY = (rect.bottom - clientY) / rect.height * GAME_CONFIG.FIELD_HEIGHT;
+
+                let gameX, gameY;
+                if (isP1) {
+                    gameX = relativeX;
+                    gameY = relativeY;
+                } else {
+                    gameX = GAME_CONFIG.FIELD_WIDTH - relativeX;
+                    gameY = GAME_CONFIG.FIELD_HEIGHT - relativeY;
+                }
+
+                const unitStats = UNITS[dragCard.toUpperCase()];
+                const isSpell = unitStats.type === 'spell';
+                const myY = isP1 ? gameY : (GAME_CONFIG.FIELD_HEIGHT - gameY);
+
+                if (isSpell || myY <= GAME_CONFIG.FIELD_HEIGHT * 0.45) {
+                    onDeploy(dragCard, gameX, gameY);
+                }
             }
         }
+
+        setDragCard(null);
+        setDragPos(null);
     };
 
-    const handleMouseMove = (e) => {
-        if (!selectedCard) {
-            setTargetPos(null);
-            return;
-        }
-
-        const { relativeX, relativeY } = getEventCoords(e);
-
-        let gameX, gameY;
-        if (isP1) {
-            gameX = relativeX;
-            gameY = relativeY;
+    // Global event listeners for drag move/end
+    useEffect(() => {
+        if (dragCard) {
+            window.addEventListener('mousemove', handleDragMove);
+            window.addEventListener('mouseup', handleDragEnd);
+            window.addEventListener('touchmove', handleDragMove, { passive: false });
+            window.addEventListener('touchend', handleDragEnd);
         } else {
-            gameX = GAME_CONFIG.FIELD_WIDTH - relativeX;
-            gameY = GAME_CONFIG.FIELD_HEIGHT - relativeY;
+            window.removeEventListener('mousemove', handleDragMove);
+            window.removeEventListener('mouseup', handleDragEnd);
+            window.removeEventListener('touchmove', handleDragMove);
+            window.removeEventListener('touchend', handleDragEnd);
         }
-
-        setTargetPos({ x: gameX, y: gameY });
-    };
-
-    const handleMouseLeave = () => {
-        setTargetPos(null);
-    };
+        return () => {
+            window.removeEventListener('mousemove', handleDragMove);
+            window.removeEventListener('mouseup', handleDragEnd);
+            window.removeEventListener('touchmove', handleDragMove);
+            window.removeEventListener('touchend', handleDragEnd);
+        };
+    }, [dragCard]);
 
     return (
         <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#222', overflow: 'hidden', touchAction: 'none' }}>
             {/* Game Field */}
             <div
+                ref={fieldRef}
                 className="game-field"
-                onClick={handleFieldClick}
-                onTouchEnd={handleFieldClick}
-                onMouseMove={handleMouseMove}
-                onTouchMove={handleMouseMove}
-                onMouseLeave={handleMouseLeave}
-                onTouchCancel={handleMouseLeave}
                 style={{
                     flex: 1,
                     position: 'relative',
                     backgroundColor: '#2c3e50',
                     backgroundImage: 'linear-gradient(to bottom, #2c3e50, #34495e 40%, #27ae60 40%, #2ecc71 60%, #34495e 60%, #2c3e50)',
                     overflow: 'hidden',
-                    cursor: selectedCard ? 'crosshair' : 'default',
                     boxShadow: 'inset 0 0 50px rgba(0,0,0,0.5)',
                 }}
             >
@@ -273,10 +288,10 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                                 const dist = Math.hypot(unit.x - spell.x, unit.y - spell.y);
                                 if (dist <= spell.radius) {
                                     if (spell.id === 'rage') {
-                                        spellEffectStyle.filter = 'sepia(1) hue-rotate(250deg) saturate(5)'; // Strong Purple tint
+                                        spellEffectStyle.filter = 'sepia(1) hue-rotate(250deg) saturate(5)';
                                         spellEffectStyle.boxShadow = '0 0 15px #9b59b6';
                                     } else if (spell.id === 'heal') {
-                                        spellEffectStyle.filter = 'sepia(1) hue-rotate(50deg) saturate(5)'; // Strong Yellow tint
+                                        spellEffectStyle.filter = 'sepia(1) hue-rotate(50deg) saturate(5)';
                                         spellEffectStyle.boxShadow = '0 0 15px #f1c40f';
                                     }
                                 }
@@ -374,51 +389,60 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                     );
                 })}
 
-                {/* Targeting Indicator */}
-                {targetPos && selectedCard && (() => {
-                    let viewX, viewY;
-                    if (isP1) {
-                        viewX = targetPos.x;
-                        viewY = targetPos.y;
-                    } else {
-                        viewX = GAME_CONFIG.FIELD_WIDTH - targetPos.x;
-                        viewY = GAME_CONFIG.FIELD_HEIGHT - targetPos.y;
-                    }
-                    const left = (viewX / GAME_CONFIG.FIELD_WIDTH) * 100;
-                    const bottom = (viewY / GAME_CONFIG.FIELD_HEIGHT) * 100;
-
-                    const unitStats = UNITS[selectedCard.toUpperCase()];
-                    const radius = unitStats.type === 'spell' ? unitStats.radius || 2 : 1;
-                    const radiusPercent = (radius / GAME_CONFIG.FIELD_WIDTH) * 100;
-
-                    return (
+                {/* Drag Preview */}
+                {dragCard && dragPos && (
+                    <div style={{
+                        position: 'fixed',
+                        left: dragPos.x,
+                        top: dragPos.y,
+                        transform: 'translate(-50%, -50%)',
+                        pointerEvents: 'none',
+                        zIndex: 100,
+                        opacity: 0.8,
+                    }}>
                         <div style={{
-                            position: 'absolute',
-                            left: `${left}%`,
-                            bottom: `${bottom}%`,
-                            width: `${radiusPercent * 2}%`,
-                            height: `${radiusPercent * 2 * (GAME_CONFIG.FIELD_WIDTH / GAME_CONFIG.FIELD_HEIGHT)}%`,
-                            transform: 'translate(-50%, 50%)',
-                            border: '3px dashed #f39c12',
+                            width: '60px',
+                            height: '60px',
+                            backgroundImage: `url(${CARD_IMAGES[dragCard]})`,
+                            backgroundSize: 'cover',
                             borderRadius: '50%',
-                            backgroundColor: 'rgba(243, 156, 18, 0.2)',
-                            pointerEvents: 'none',
-                            zIndex: 15,
-                        }}>
-                            <div style={{
-                                position: 'absolute',
-                                top: '50%',
-                                left: '50%',
-                                transform: 'translate(-50%, -50%)',
-                                width: '8px',
-                                height: '8px',
-                                backgroundColor: '#f39c12',
-                                borderRadius: '50%',
-                                boxShadow: '0 0 10px #f39c12',
-                            }}></div>
-                        </div>
-                    );
-                })()}
+                            border: '3px solid #f1c40f',
+                            boxShadow: '0 0 20px rgba(241, 196, 15, 0.8)',
+                        }}></div>
+
+                        {/* Range Indicator if over field */}
+                        {(() => {
+                            if (!fieldRef.current) return null;
+                            const rect = fieldRef.current.getBoundingClientRect();
+                            if (
+                                dragPos.x >= rect.left &&
+                                dragPos.x <= rect.right &&
+                                dragPos.y >= rect.top &&
+                                dragPos.y <= rect.bottom
+                            ) {
+                                const unitStats = UNITS[dragCard.toUpperCase()];
+                                const radius = unitStats.type === 'spell' ? unitStats.radius || 2 : 1;
+                                // Calculate pixel radius based on field width
+                                const pixelRadius = (radius / GAME_CONFIG.FIELD_WIDTH) * rect.width;
+
+                                return (
+                                    <div style={{
+                                        position: 'absolute',
+                                        left: '50%',
+                                        top: '50%',
+                                        width: `${pixelRadius * 2}px`,
+                                        height: `${pixelRadius * 2}px`,
+                                        transform: 'translate(-50%, -50%)',
+                                        border: '2px dashed rgba(255,255,255,0.8)',
+                                        borderRadius: '50%',
+                                        backgroundColor: 'rgba(255,255,255,0.2)',
+                                    }}></div>
+                                );
+                            }
+                            return null;
+                        })()}
+                    </div>
+                )}
             </div>
 
             {/* HUD */}
@@ -429,6 +453,7 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                 flexDirection: 'column',
                 padding: '10px',
                 boxShadow: '0 -4px 6px rgba(0,0,0,0.3)',
+                zIndex: 50,
             }}>
                 {/* Mana Bar */}
                 <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', gap: '10px' }}>
@@ -451,25 +476,27 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                     {myState.hand.map((cardId, idx) => {
                         const cardStats = UNITS[cardId.toUpperCase()];
                         const canAfford = myState.mana >= cardStats.cost;
-                        const isSelected = selectedCard === cardId;
+                        const isDragging = dragCard === cardId;
 
                         return (
                             <div
                                 key={idx}
-                                onClick={() => canAfford && setSelectedCard(isSelected ? null : cardId)}
+                                onMouseDown={(e) => canAfford && handleDragStart(e, cardId)}
+                                onTouchStart={(e) => canAfford && handleDragStart(e, cardId)}
                                 style={{
                                     width: '80px',
                                     height: '100px',
                                     backgroundImage: `url(${CARD_IMAGES[cardId]})`,
                                     backgroundSize: 'cover',
                                     borderRadius: '8px',
-                                    border: isSelected ? '4px solid #f1c40f' : canAfford ? '2px solid #2ecc71' : '2px solid #7f8c8d',
-                                    cursor: canAfford ? 'pointer' : 'not-allowed',
-                                    opacity: canAfford ? 1 : 0.5,
+                                    border: isDragging ? '4px solid #f1c40f' : canAfford ? '2px solid #2ecc71' : '2px solid #7f8c8d',
+                                    cursor: canAfford ? 'grab' : 'not-allowed',
+                                    opacity: isDragging ? 0.5 : (canAfford ? 1 : 0.5),
                                     position: 'relative',
-                                    transition: 'all 0.2s',
-                                    transform: isSelected ? 'translateY(-10px) scale(1.1)' : 'translateY(0)',
-                                    boxShadow: isSelected ? '0 8px 16px rgba(241, 196, 15, 0.5)' : '0 4px 6px rgba(0,0,0,0.3)',
+                                    transition: 'transform 0.1s',
+                                    transform: isDragging ? 'scale(0.9)' : 'scale(1)',
+                                    boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+                                    touchAction: 'none',
                                 }}
                             >
                                 <div style={{
