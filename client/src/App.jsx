@@ -1,0 +1,121 @@
+import React, { useState, useEffect } from 'react';
+import { BattleScreen } from './components/BattleScreen';
+import { socket } from './socket';
+import './App.css';
+
+// 최상단에 넣기 (import 위는 안됨)
+const ACCESS_PASSWORD = "000";
+
+// 페이지 로드 시 비밀번호 확인
+function checkAccessPassword() {
+  const input = prompt("입장 비밀번호를 입력하세요:");
+  if (input !== ACCESS_PASSWORD) {
+    alert("비밀번호가 틀렸습니다.");
+    window.location.href = "https://www.google.com"; // 돌려보냄
+  }
+}
+
+// 한 번만 실행
+checkAccessPassword();
+
+function App() {
+  const [isConnected, setIsConnected] = useState(socket.connected);
+  const [gameState, setGameState] = useState(null);
+  const [playerId, setPlayerId] = useState(null);
+  const [roomId, setRoomId] = useState('');
+  const [status, setStatus] = useState('lobby'); // lobby, waiting, playing
+
+  useEffect(() => {
+
+    function onConnect() {
+      setIsConnected(true);
+    }
+
+    function onDisconnect() {
+      setIsConnected(false);
+    }
+
+    function onGameStart({ state, player }) {
+      setGameState(state);
+      setPlayerId(player);
+      setStatus('playing');
+    }
+
+    function onGameUpdate(state) {
+      setGameState(state);
+    }
+
+    function onGameOver({ winner }) {
+      alert(`${winner} Wins!`);
+      window.location.reload();
+    }
+
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    socket.on('game_start', onGameStart);
+    socket.on('game_update', onGameUpdate);
+    socket.on('game_over', onGameOver);
+
+    return () => {
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+      socket.off('game_start', onGameStart);
+      socket.off('game_update', onGameUpdate);
+      socket.off('game_over', onGameOver);
+      socket.disconnect();
+    };
+  }, []);
+
+const handleJoin = () => {
+  const id = String(roomId).trim();   // 공백 제거 + 문자열 통일
+
+  console.log("join_game emit:", id);
+
+  if (!socket.connected) {
+    socket.connect();
+  }
+
+  socket.emit("join_game", id);
+  setStatus("waiting");
+};
+  const handleDeploy = (cardId, x, y) => {
+    socket.emit('deploy_card', { cardId, x, y });
+  };
+
+  if (status === 'playing' && gameState) {
+    return <BattleScreen gameState={gameState} playerId={playerId} onDeploy={handleDeploy} />;
+  }
+
+  return (
+    <div className="App" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '20px' }}>
+      <h1>Battle Cards Online</h1>
+      <div style={{ color: isConnected ? 'green' : 'red' }}>
+        Server: {isConnected ? 'Connected' : 'Disconnected'}
+      </div>
+
+      {status === 'lobby' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <input
+            type="text"
+            placeholder="Enter Room ID (e.g. 123)"
+            value={roomId}
+            onChange={e => setRoomId(e.target.value)}
+            style={{ padding: '10px', fontSize: '16px' }}
+          />
+          <button onClick={handleJoin} style={{ padding: '10px', fontSize: '16px', cursor: 'pointer' }}>
+            Join Game
+          </button>
+        </div>
+      )}
+
+      {status === 'waiting' && (
+        <div>
+          <h2>Waiting for opponent...</h2>
+          <p>Room ID: {roomId}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default App;
