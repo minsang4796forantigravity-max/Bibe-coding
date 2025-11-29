@@ -158,6 +158,7 @@ const UNITS = {
         damage: 650,
         type: 'spell',
         radius: 1.5,
+        speed: 15, // Added speed for projectile
     },
     TORNADO: {
         id: 'tornado',
@@ -196,7 +197,8 @@ const UNITS = {
         damage: 240,
         knockback: 2.0,
         width: 1.5,
-        distance: 10,
+        range: 10, // distance -> range
+        speed: 10, // Added speed
     },
     FREEZE: {
         id: 'freeze',
@@ -229,6 +231,7 @@ const UNITS = {
         type: 'spell',
         spawnUnit: 'goblin',
         spawnCount: 3,
+        speed: 15, // Added speed
     },
 
     // === 5 코스트: 강력한 유닛 & 건물 ===

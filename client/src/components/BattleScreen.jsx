@@ -432,6 +432,23 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                             }} />
                         );
                     }
+                    if (proj.type === 'fireball') {
+                        return (
+                            <div key={`proj_${idx}`} style={{
+                                position: 'absolute',
+                                left: `${left}%`,
+                                bottom: `${bottom}%`,
+                                width: '30px',
+                                height: '30px',
+                                transform: 'translate(-50%, 50%)',
+                                backgroundImage: `url(${CARD_IMAGES.fireball})`,
+                                backgroundSize: 'cover',
+                                zIndex: 20,
+                                boxShadow: '0 0 10px orange',
+                                borderRadius: '50%',
+                            }} />
+                        );
+                    }
 
                     return (
                         <div key={`proj_${idx}`} style={{

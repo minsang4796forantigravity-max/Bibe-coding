@@ -320,6 +320,22 @@ class GameEngine {
                     p.x += (dx / dist) * p.speed * dt;
                     p.y += (dy / dist) * p.speed * dt;
                 }
+            } else if (p.type === 'fireball') {
+                // Fireball flying to target
+                const dx = p.targetX - p.x;
+                const dy = p.targetY - p.y;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist < 0.5) {
+                    // Arrived! Explode
+                    p.hit = true;
+                    const enemyId = p.ownerId === 'p1' ? 'p2' : 'p1';
+                    const enemyUnits = this.state[enemyId].units;
+                    this.dealSplashDamage(p.targetX, p.targetY, p.radius, p.damage, enemyId, enemyUnits, false);
+                } else {
+                    p.x += (dx / dist) * p.speed * dt;
+                    p.y += (dy / dist) * p.speed * dt;
+                }
             } else {
                 // Normal projectile logic
                 let target = null;
@@ -571,9 +587,18 @@ class GameEngine {
 
         if (unitStats.type === 'spell') {
             if (cardId === 'fireball') {
-                const enemyId = playerId === 'p1' ? 'p2' : 'p1';
-                const enemyUnits = this.state[enemyId].units;
-                this.dealSplashDamage(x, y, unitStats.radius, unitStats.damage, enemyId, enemyUnits, false);
+                // Fireball Projectile Logic
+                this.state.projectiles.push({
+                    x: playerId === 'p1' ? 5 : 5, // Start from King Tower
+                    y: playerId === 'p1' ? 0 : GAME_CONFIG.FIELD_HEIGHT,
+                    targetX: x,
+                    targetY: y,
+                    type: 'fireball',
+                    ownerId: playerId,
+                    speed: unitStats.speed,
+                    damage: unitStats.damage,
+                    radius: unitStats.radius,
+                });
             } else if (cardId === 'log') {
                 // Log Spell Logic
                 const direction = playerId === 'p1' ? 1 : -1;
