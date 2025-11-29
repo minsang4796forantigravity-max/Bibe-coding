@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'; // Rebuild trigger
 import { UNITS } from '../game/constants';
 import '../styles/evolution-effects.css';
 
