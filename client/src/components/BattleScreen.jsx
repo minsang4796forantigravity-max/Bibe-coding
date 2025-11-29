@@ -23,6 +23,10 @@ import tornadoImg from '../assets/tornado_card.png';
 import rageImg from '../assets/rage_card.png';
 import healImg from '../assets/heal_card.png';
 import balloonImg from '../assets/balloon_card.png';
+import logImg from '../assets/log_card.png';
+import freezeImg from '../assets/freeze_card.png';
+import electroWizardImg from '../assets/electro_wizard_card.png';
+import goblinBarrelImg from '../assets/goblin_barrel_card.png';
 
 const CARD_IMAGES = {
     knight: knightImg,
@@ -47,6 +51,10 @@ const CARD_IMAGES = {
     rage: rageImg,
     heal: healImg,
     balloon: balloonImg,
+    log: logImg,
+    freeze: freezeImg,
+    electro_wizard: electroWizardImg,
+    goblin_barrel: goblinBarrelImg,
 };
 
 export function BattleScreen({ gameState, playerId, onDeploy }) {
@@ -244,6 +252,7 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                     if (spell.id === 'tornado') color = 'rgba(100, 100, 255, 0.4)';
                     if (spell.id === 'rage') color = 'rgba(200, 0, 255, 0.4)';
                     if (spell.id === 'heal') color = 'rgba(255, 255, 0, 0.4)';
+                    if (spell.id === 'freeze') color = 'rgba(0, 255, 255, 0.4)';
 
                     return (
                         <div key={`spell_${idx}`} style={{
@@ -296,7 +305,24 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                                     }
                                 }
                             }
+
                         });
+                    }
+
+                    // Status Effects (Frozen/Stunned)
+                    // Check if unit is frozen or stunned (server sends timestamps)
+                    const now = Date.now(); // Approximate, server time is authority but visual can use local
+                    // Note: Server sends absolute timestamps. We assume clocks are roughly synced or just check existence.
+                    // Actually, let's just check if the property exists and is in future.
+                    // Since we don't have exact server time offset, we'll trust the timestamp is close enough.
+                    if (unit.frozenUntil && unit.frozenUntil > Date.now()) {
+                        spellEffectStyle.filter = (spellEffectStyle.filter || '') + ' hue-rotate(180deg) saturate(2) brightness(1.5)';
+                        spellEffectStyle.boxShadow = '0 0 15px #00ffff';
+                        spellEffectStyle.borderColor = '#00ffff';
+                    }
+                    if (unit.stunnedUntil && unit.stunnedUntil > Date.now()) {
+                        spellEffectStyle.filter = (spellEffectStyle.filter || '') + ' brightness(2) contrast(1.5)';
+                        spellEffectStyle.boxShadow = '0 0 15px #f1c40f';
                     }
 
                     return (
@@ -372,6 +398,40 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                     if (proj.type === 'cannonball') { color = 'black'; size = '12px'; }
                     if (proj.type === 'arrow') { color = 'brown'; size = '6px'; }
                     if (proj.type === 'bullet') { color = 'silver'; size = '4px'; }
+                    if (proj.type === 'zap') { color = '#f1c40f'; size = '4px'; } // Electro Wizard
+
+                    // Image-based projectiles
+                    if (proj.type === 'log') {
+                        return (
+                            <div key={`proj_${idx}`} style={{
+                                position: 'absolute',
+                                left: `${left}%`,
+                                bottom: `${bottom}%`,
+                                width: '40px',
+                                height: '20px',
+                                transform: 'translate(-50%, 50%)',
+                                backgroundImage: `url(${CARD_IMAGES.log})`,
+                                backgroundSize: 'cover',
+                                zIndex: 20,
+                                boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+                            }} />
+                        );
+                    }
+                    if (proj.type === 'goblin_barrel') {
+                        return (
+                            <div key={`proj_${idx}`} style={{
+                                position: 'absolute',
+                                left: `${left}%`,
+                                bottom: `${bottom}%`,
+                                width: '25px',
+                                height: '25px',
+                                transform: 'translate(-50%, 50%) rotate(180deg)', // Flying barrel
+                                backgroundImage: `url(${CARD_IMAGES.goblin_barrel})`,
+                                backgroundSize: 'cover',
+                                zIndex: 20,
+                            }} />
+                        );
+                    }
 
                     return (
                         <div key={`proj_${idx}`} style={{

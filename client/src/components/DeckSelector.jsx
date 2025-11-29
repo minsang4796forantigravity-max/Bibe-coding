@@ -164,6 +164,11 @@ export function DeckSelector({ onDeckSelected }) {
                         : evolutionCards.includes(cardId);
                     const unitStats = UNITS[cardId.toUpperCase()];
 
+                    if (!unitStats) {
+                        console.warn(`[DeckSelector] Missing stats for card: ${cardId}`);
+                        return null;
+                    }
+
                     return (
                         <div
                             key={cardId}
