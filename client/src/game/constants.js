@@ -316,7 +316,7 @@ export const UNITS = {
     type: 'building',
     lifetime: 40,
     spawnUnit: 'goblin',
-    spawnInterval: 6,
+    spawnInterval: 3,
   },
 
   // === 6 코스트: 투자형 건물 ===

@@ -157,7 +157,7 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
     }, [dragCard]);
 
     return (
-        <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#222', overflow: 'hidden', touchAction: 'none' }}>
+        <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', overflow: 'hidden', touchAction: 'none' }}>
             {/* Game Field */}
             <div
                 ref={fieldRef}
@@ -165,10 +165,9 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                 style={{
                     flex: 1,
                     position: 'relative',
-                    backgroundColor: '#2c3e50',
-                    backgroundImage: 'linear-gradient(to bottom, #2c3e50, #34495e 40%, #27ae60 40%, #2ecc71 60%, #34495e 60%, #2c3e50)',
+                    background: 'linear-gradient(180deg, #0f3460 0%, #16213e 45%, #1a5f3a 50%, #2d8659 55%, #16213e 100%)',
                     overflow: 'hidden',
-                    boxShadow: 'inset 0 0 50px rgba(0,0,0,0.5)',
+                    boxShadow: 'inset 0 0 100px rgba(0,0,0,0.7), 0 0 50px rgba(26,188,156,0.3)',
                 }}
             >
                 {/* Grid */}
@@ -524,32 +523,48 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
 
             {/* HUD */}
             <div style={{
-                height: '150px',
-                backgroundColor: '#34495e',
+                height: '160px',
+                background: 'linear-gradient(180deg, #1e2a3a 0%, #2c3e50 100%)',
                 display: 'flex',
                 flexDirection: 'column',
-                padding: '10px',
-                boxShadow: '0 -4px 6px rgba(0,0,0,0.3)',
+                padding: '15px',
+                boxShadow: '0 -8px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)',
                 zIndex: 50,
+                borderTop: '2px solid rgba(52,152,219,0.3)',
             }}>
                 {/* Mana Bar */}
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', gap: '10px' }}>
-                    <div style={{ color: '#d35400', fontWeight: 'bold', fontSize: '18px', minWidth: '90px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', gap: '12px' }}>
+                    <div style={{
+                        color: '#f39c12',
+                        fontWeight: 'bold',
+                        fontSize: '20px',
+                        minWidth: '100px',
+                        textShadow: '0 0 10px rgba(243,156,18,0.5), 2px 2px 4px rgba(0,0,0,0.8)',
+                    }}>
                         마나: {Math.floor(myState.mana)}/{GAME_CONFIG.MAX_MANA}
                     </div>
-                    <div style={{ flex: 1, height: '20px', backgroundColor: '#2c3e50', borderRadius: '10px', border: '2px solid #34495e', overflow: 'hidden' }}>
+                    <div style={{
+                        flex: 1,
+                        height: '24px',
+                        background: 'linear-gradient(180deg, #1a252f 0%, #0f1419 100%)',
+                        borderRadius: '12px',
+                        border: '2px solid rgba(243,156,18,0.3)',
+                        overflow: 'hidden',
+                        boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.8)',
+                    }}>
                         <div style={{
                             height: '100%',
                             width: `${(myState.mana / GAME_CONFIG.MAX_MANA) * 100}%`,
-                            backgroundColor: '#d35400',
-                            transition: 'width 0.2s',
-                            borderRadius: '8px',
+                            background: 'linear-gradient(90deg, #e67e22 0%, #f39c12 50%, #f1c40f 100%)',
+                            transition: 'width 0.3s ease',
+                            borderRadius: '10px',
+                            boxShadow: '0 0 15px rgba(243,156,18,0.8), inset 0 1px 0 rgba(255,255,255,0.3)',
                         }} />
                     </div>
                 </div>
 
                 {/* Hand */}
-                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
                     {myState.hand.map((cardId, idx) => {
                         const cardStats = UNITS[cardId.toUpperCase()];
                         const canAfford = myState.mana >= cardStats.cost;
@@ -561,31 +576,34 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                                 onMouseDown={(e) => canAfford && handleDragStart(e, cardId)}
                                 onTouchStart={(e) => canAfford && handleDragStart(e, cardId)}
                                 style={{
-                                    width: '80px',
-                                    height: '100px',
+                                    width: '85px',
+                                    height: '105px',
                                     backgroundImage: `url(${CARD_IMAGES[cardId]})`,
                                     backgroundSize: 'cover',
-                                    borderRadius: '8px',
-                                    border: isDragging ? '4px solid #f1c40f' : canAfford ? '2px solid #2ecc71' : '2px solid #7f8c8d',
+                                    borderRadius: '10px',
+                                    border: isDragging ? '3px solid #f1c40f' : canAfford ? '3px solid #2ecc71' : '3px solid #7f8c8d',
                                     cursor: canAfford ? 'grab' : 'not-allowed',
-                                    opacity: isDragging ? 0.5 : (canAfford ? 1 : 0.5),
+                                    opacity: isDragging ? 0.6 : (canAfford ? 1 : 0.5),
                                     position: 'relative',
-                                    transition: 'transform 0.1s',
-                                    transform: isDragging ? 'scale(0.9)' : 'scale(1)',
-                                    boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+                                    transition: 'all 0.2s ease',
+                                    transform: isDragging ? 'scale(0.95)' : 'scale(1)',
+                                    boxShadow: canAfford ? '0 6px 12px rgba(0,0,0,0.4), 0 0 20px rgba(46,204,113,0.4)' : '0 4px 8px rgba(0,0,0,0.3)',
                                     touchAction: 'none',
+                                    filter: canAfford ? 'brightness(1.1)' : 'brightness(0.7)',
                                 }}
                             >
                                 <div style={{
                                     position: 'absolute',
-                                    top: '5px',
-                                    left: '5px',
-                                    backgroundColor: 'rgba(0,0,0,0.8)',
-                                    color: canAfford ? '#d35400' : '#95a5a6',
+                                    top: '6px',
+                                    left: '6px',
+                                    background: canAfford ? 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)' : 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                                    color: '#fff',
                                     fontWeight: 'bold',
-                                    padding: '3px 7px',
-                                    borderRadius: '5px',
-                                    fontSize: '14px',
+                                    padding: '4px 8px',
+                                    borderRadius: '6px',
+                                    fontSize: '15px',
+                                    boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
+                                    border: '1px solid rgba(255,255,255,0.2)',
                                 }}>
                                     {cardStats.cost}
                                 </div>

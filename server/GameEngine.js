@@ -240,6 +240,20 @@ class GameEngine {
                         playerState.mana = Math.min(GAME_CONFIG.MAX_MANA, playerState.mana + unit.manaProduction);
                     }
                 }
+
+                // Spawn units (Goblin Hut, etc.)
+                if (unit.spawnUnit && unit.spawnInterval) {
+                    unit.spawnTimer = (unit.spawnTimer || 0) + dt;
+                    if (unit.spawnTimer >= unit.spawnInterval) {
+                        unit.spawnTimer = 0;
+                        const spawnCount = unit.spawnCount || 1;
+                        for (let i = 0; i < spawnCount; i++) {
+                            const offsetX = (Math.random() - 0.5) * 1.5;
+                            const offsetY = (Math.random() - 0.5) * 1.5;
+                            this.spawnUnit(playerState, unit.spawnUnit, unit.x + offsetX, unit.y + offsetY);
+                        }
+                    }
+                }
                 return;
             }
 
