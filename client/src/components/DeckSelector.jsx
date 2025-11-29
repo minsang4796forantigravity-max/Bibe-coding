@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { UNITS } from '../game/constants';
+import '../styles/evolution-effects.css';
 
 // 카드 이미지 import
 import knightImg from '../assets/knight_card.png';
@@ -24,13 +25,18 @@ import tornadoImg from '../assets/tornado_card.png';
 import rageImg from '../assets/rage_card.png';
 import healImg from '../assets/heal_card.png';
 import balloonImg from '../assets/balloon_card.png';
+import logImg from '../assets/log_card.png';
+import freezeImg from '../assets/freeze_card.png';
+import electroWizardImg from '../assets/electro_wizard_card.png';
+import goblinBarrelImg from '../assets/goblin_barrel_card.png';
 
 // 모든 사용 가능한 카드 목록
 const ALL_CARDS = [
     'skeletons', 'goblin', 'knight', 'archer', 'bomber', 'kamikaze',
     'cannon', 'sniper', 'fireball', 'giant', 'wizard', 'goblin_hut', 'mana_collector',
     'valkyrie', 'hog_rider', 'witch', 'baby_dragon', 'barbarians',
-    'tornado', 'rage', 'heal', 'balloon'
+    'tornado', 'rage', 'heal', 'balloon',
+    'log', 'freeze', 'electro_wizard', 'goblin_barrel'
 ];
 
 const CARD_IMAGES = {
@@ -56,6 +62,10 @@ const CARD_IMAGES = {
     rage: rageImg,
     heal: healImg,
     balloon: balloonImg,
+    log: logImg,
+    freeze: freezeImg,
+    electro_wizard: electroWizardImg,
+    goblin_barrel: goblinBarrelImg,
 };
 
 export function DeckSelector({ onDeckSelected }) {
@@ -158,6 +168,7 @@ export function DeckSelector({ onDeckSelected }) {
                         <div
                             key={cardId}
                             onClick={() => toggleCard(cardId)}
+                            className={phase === 2 && isSelected ? 'deck-evolution-card' : ''}
                             style={{
                                 position: 'relative',
                                 width: '100%',
@@ -182,6 +193,17 @@ export function DeckSelector({ onDeckSelected }) {
                                     : 'none',
                             }}
                         >
+                            {/* 진화 파티클 효과 (Phase 2에서만) */}
+                            {phase === 2 && isSelected && (
+                                <div className="evolution-particles">
+                                    <div className="particle"></div>
+                                    <div className="particle"></div>
+                                    <div className="particle"></div>
+                                    <div className="particle"></div>
+                                    <div className="particle"></div>
+                                </div>
+                            )}
+
                             <div style={{
                                 position: 'absolute',
                                 top: '5px',
@@ -197,21 +219,23 @@ export function DeckSelector({ onDeckSelected }) {
                             </div>
 
                             {isSelected && (
-                                <div style={{
-                                    position: 'absolute',
-                                    top: '5px',
-                                    right: '5px',
-                                    backgroundColor: phase === 2 ? '#f39c12' : '#f1c40f',
-                                    color: 'black',
-                                    borderRadius: '50%',
-                                    width: '30px',
-                                    height: '30px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontWeight: 'bold',
-                                    fontSize: phase === 2 ? '16px' : '18px',
-                                }}>
+                                <div
+                                    className={phase === 2 ? 'evolution-star' : ''}
+                                    style={{
+                                        position: 'absolute',
+                                        top: '5px',
+                                        right: '5px',
+                                        backgroundColor: phase === 2 ? '#f39c12' : '#f1c40f',
+                                        color: 'black',
+                                        borderRadius: '50%',
+                                        width: '30px',
+                                        height: '30px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontWeight: 'bold',
+                                        fontSize: phase === 2 ? '16px' : '18px',
+                                    }}>
                                     {phase === 2 ? '⭐' : '✓'}
                                 </div>
                             )}

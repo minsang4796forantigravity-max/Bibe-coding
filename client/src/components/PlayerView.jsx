@@ -4,6 +4,7 @@ import knightImg from '../assets/knight_card.png';
 import archerImg from '../assets/archer_card.png';
 import giantImg from '../assets/giant_card.png';
 import towerImg from '../assets/tower_asset.png';
+import '../styles/evolution-effects.css';
 
 const CARD_IMAGES = {
     knight: knightImg,
@@ -247,12 +248,13 @@ export function PlayerView({ playerId, gameState, onDeploy, isRotated }) {
                                 backgroundSize: 'cover',
                                 borderRadius: '50%',
                                 border: unit.isEvolved ? '2px solid #f39c12' : `2px solid ${unit.color}`,
-                                filter: unit.isEvolved ? 'brightness(1.3) saturate(1.5)' : 'none',
-                                boxShadow: unit.isEvolved ? '0 0 10px rgba(243, 156, 18, 0.8)' : 'none',
                                 transition: 'left 0.1s linear, bottom 0.1s linear',
                                 zIndex: 5,
                             }}
                         >
+                            {/* 진화 오라 */}
+                            {unit.isEvolved && <div className="unit-evolution-aura"></div>}
+
                             {/* Health Bar */}
                             <div style={{
                                 position: 'absolute',
@@ -325,6 +327,7 @@ export function PlayerView({ playerId, gameState, onDeploy, isRotated }) {
                             <div
                                 key={index}
                                 onClick={() => canAfford && setSelectedCard(cardId)}
+                                className={isEvolved ? 'evolution-card' : ''}
                                 style={{
                                     width: '55px',
                                     height: '75px',
@@ -342,27 +345,37 @@ export function PlayerView({ playerId, gameState, onDeploy, isRotated }) {
                                     justifyContent: 'flex-end',
                                     cursor: 'pointer',
                                     position: 'relative',
-                                    boxShadow: isEvolved ? '0 0 15px rgba(243, 156, 18, 0.8)' : 'none',
-                                    filter: isEvolved ? 'brightness(1.1) saturate(1.3)' : 'none',
-                                    animation: isEvolved ? 'pulseGlow 2s ease-in-out infinite' : 'none',
                                 }}
                             >
+                                {/* 진화 파티클 효과 */}
+                                {isEvolved && (
+                                    <div className="evolution-particles">
+                                        <div className="particle"></div>
+                                        <div className="particle"></div>
+                                        <div className="particle"></div>
+                                        <div className="particle"></div>
+                                        <div className="particle"></div>
+                                    </div>
+                                )}
+
                                 {/* 진화 표시 */}
                                 {isEvolved && (
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: '-5px',
-                                        right: '-5px',
-                                        backgroundColor: '#f39c12',
-                                        borderRadius: '50%',
-                                        width: '20px',
-                                        height: '20px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '12px',
-                                        zIndex: 1,
-                                    }}>
+                                    <div
+                                        className="evolution-star"
+                                        style={{
+                                            position: 'absolute',
+                                            top: '-5px',
+                                            right: '-5px',
+                                            backgroundColor: '#f39c12',
+                                            borderRadius: '50%',
+                                            width: '20px',
+                                            height: '20px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '12px',
+                                            zIndex: 1,
+                                        }}>
                                         ⭐
                                     </div>
                                 )}

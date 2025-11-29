@@ -4,6 +4,7 @@ class GameEngine {
     constructor(roomId, io) {
         this.roomId = roomId;
         this.io = io;
+        this.logIdCounter = 0; // For unique log IDs
         this.state = {
             p1: {
                 id: null,
@@ -110,6 +111,8 @@ class GameEngine {
     }
 
     update(dt) {
+        const now = Date.now(); // Calculate once per frame
+
         // Regenerate Mana
         if (this.state.p1.mana < GAME_CONFIG.MAX_MANA) {
             this.state.p1.mana = Math.min(GAME_CONFIG.MAX_MANA, this.state.p1.mana + GAME_CONFIG.MANA_REGEN_RATE * dt);
@@ -122,14 +125,14 @@ class GameEngine {
         this.updateSpells(dt);
 
         // Move & Update Units
-        this.updateUnits(this.state.p1, 1, dt);
-        this.updateUnits(this.state.p2, -1, dt);
+        this.updateUnits(this.state.p1, 1, dt, now);
+        this.updateUnits(this.state.p2, -1, dt, now);
 
         // Update Projectiles
-        this.updateProjectiles(dt);
+        this.updateProjectiles(dt, now);
 
         // Combat
-        this.handleCombat(dt);
+        this.handleCombat(dt, now);
 
         // Check Win
         if (this.state.p1.hp <= 0) {
@@ -175,37 +178,51 @@ class GameEngine {
                         u.hp = Math.min(u.maxHp, u.hp + spell.healPerSecond * dt);
                     }
                 });
+            } else if (spell.id === 'freeze') {
+                // Freeze logic
+                const enemyId = spell.ownerId === 'p1' ? 'p2' : 'p1';
+                const enemies = this.state[enemyId].units;
+
+                enemies.forEach(u => {
+                    if (Math.hypot(u.x - spell.x, u.y - spell.y) <= spell.radius) {
+                        u.frozenUntil = Date.now() + 100; // Keep frozen while spell is active
+                    }
+                });
+
+                // Freeze Tower
+                const towerY = enemyId === 'p1' ? 0 : GAME_CONFIG.FIELD_HEIGHT;
+                if (Math.hypot(5 - spell.x, towerY - spell.y) <= spell.radius) {
+                    this.state[enemyId].frozenUntil = Date.now() + 100;
+                }
             }
         });
         this.state.activeSpells = this.state.activeSpells.filter(s => s.duration > 0);
     }
 
-    updateUnits(playerState, direction, dt) {
+    updateUnits(playerState, direction, dt, now) {
         playerState.units.forEach(unit => {
+            // Check if frozen or stunned
+            const isFrozen = unit.frozenUntil && unit.frozenUntil > now;
+            const isStunned = unit.stunnedUntil && unit.stunnedUntil > now;
+
+            if (isFrozen || isStunned) {
+                // Can't move or attack when frozen/stunned
+                return;
+            }
+
             // Apply Rage
             let currentSpeed = unit.speed;
             let currentAttackSpeed = unit.attackSpeed;
 
             const rageSpell = this.state.activeSpells.find(s =>
-                s.id === 'rage' && s.ownerId === playerState.id &&
+                s.id === 'rage' &&
+                s.ownerId === playerState.id &&
                 Math.hypot(unit.x - s.x, unit.y - s.y) <= s.radius
             );
 
             if (rageSpell) {
-                currentSpeed *= rageSpell.speedBuff;
-                currentAttackSpeed /= rageSpell.attackSpeedBuff;
-            }
-
-            // Spawner Logic
-            if (unit.spawnUnit) {
-                unit.spawnTimer = (unit.spawnTimer || 0) + dt;
-                if (unit.spawnTimer >= unit.spawnInterval) {
-                    unit.spawnTimer = 0;
-                    const count = unit.spawnCount || 1;
-                    for (let i = 0; i < count; i++) {
-                        this.spawnUnit(playerState, unit.spawnUnit, unit.x, unit.y);
-                    }
-                }
+                currentSpeed *= 1.35;
+                currentAttackSpeed /= 1.35;
             }
 
             if (unit.type === 'building') {
@@ -246,47 +263,110 @@ class GameEngine {
         });
     }
 
-    updateProjectiles(dt) {
+    updateProjectiles(dt, now) {
         this.state.projectiles.forEach(p => {
-            let target = null;
-            if (p.targetId === 'tower_p1') {
-                target = { x: 5, y: 0, type: 'tower' };
-            } else if (p.targetId === 'tower_p2') {
-                target = { x: 5, y: GAME_CONFIG.FIELD_HEIGHT, type: 'tower' };
-            } else {
-                // Find unit
-                const p1Unit = this.state.p1.units.find(u => u.id === p.targetId);
-                const p2Unit = this.state.p2.units.find(u => u.id === p.targetId);
-                target = p1Unit || p2Unit;
-            }
+            if (p.type === 'log') {
+                // Log rolling logic
+                const moveDistance = p.speed * dt;
+                p.distanceRemaining -= moveDistance;
 
-            let tx, ty;
-            if (target) {
-                tx = target.x;
-                ty = target.y;
-            } else {
-                tx = p.targetX;
-                ty = p.targetY;
-            }
+                // Move log forward
+                p.y += p.direction * moveDistance;
 
-            const dx = tx - p.x;
-            const dy = ty - p.y;
-            const dist = Math.hypot(dx, dy);
+                // Check for hits on ground units
+                const enemyId = p.ownerId === 'p1' ? 'p2' : 'p1';
+                this.state[enemyId].units.forEach(u => {
+                    if (u.type !== 'ground' && u.type !== 'both') return; // Only hits ground units
 
-            if (dist < 0.5) {
-                p.hit = true;
-                if (target) {
-                    this.dealDamage(p.damage, target, p.targetPlayerId);
+                    // Log ID check for memory leak fix
+                    if (u.hitByLogIds && u.hitByLogIds.has(p.logId)) return;
+
+                    const distX = Math.abs(u.x - p.x);
+                    const distY = Math.abs(u.y - p.y);
+
+                    if (distX <= p.width / 2 && distY <= p.width / 2) {
+                        // Hit!
+                        u.hp -= p.damage;
+
+                        if (!u.hitByLogIds) u.hitByLogIds = new Set();
+                        u.hitByLogIds.add(p.logId);
+
+                        // Knockback
+                        u.y += p.direction * p.knockback;
+                        u.y = Math.max(0, Math.min(GAME_CONFIG.FIELD_HEIGHT, u.y));
+                    }
+                });
+
+                // Mark as hit if distance done
+                if (p.distanceRemaining <= 0 || p.y < 0 || p.y > GAME_CONFIG.FIELD_HEIGHT) {
+                    p.hit = true;
+                }
+            } else if (p.type === 'goblin_barrel') {
+                // Goblin Barrel flying to target
+                const dx = p.targetX - p.x;
+                const dy = p.targetY - p.y;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist < 0.5) {
+                    // Arrived! Spawn goblins
+                    p.hit = true;
+                    const playerState = this.state[p.ownerId];
+                    for (let i = 0; i < p.spawnCount; i++) {
+                        const offsetX = (Math.random() - 0.5) * 1.5;
+                        const offsetY = (Math.random() - 0.5) * 1.5;
+                        this.spawnUnit(playerState, p.spawnUnit, p.targetX + offsetX, p.targetY + offsetY);
+                    }
+                } else {
+                    p.x += (dx / dist) * p.speed * dt;
+                    p.y += (dy / dist) * p.speed * dt;
                 }
             } else {
-                p.x += (dx / dist) * p.speed * dt;
-                p.y += (dy / dist) * p.speed * dt;
+                // Normal projectile logic
+                let target = null;
+                if (p.targetId === 'tower_p1') {
+                    target = { x: 5, y: 0, type: 'tower' };
+                } else if (p.targetId === 'tower_p2') {
+                    target = { x: 5, y: GAME_CONFIG.FIELD_HEIGHT, type: 'tower' };
+                } else {
+                    // Find unit
+                    const p1Unit = this.state.p1.units.find(u => u.id === p.targetId);
+                    const p2Unit = this.state.p2.units.find(u => u.id === p.targetId);
+                    target = p1Unit || p2Unit;
+                }
+
+                let tx, ty;
+                if (target) {
+                    tx = target.x;
+                    ty = target.y;
+                } else {
+                    tx = p.targetX;
+                    ty = p.targetY;
+                }
+
+                const dx = tx - p.x;
+                const dy = ty - p.y;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist < 0.5) {
+                    p.hit = true;
+                    if (target) {
+                        this.dealDamage(p.damage, target, p.targetPlayerId);
+
+                        // Apply stun if projectile has stunDuration (Electro Wizard)
+                        if (p.stunDuration && target.type !== 'tower') {
+                            target.stunnedUntil = now + p.stunDuration * 1000;
+                        }
+                    }
+                } else {
+                    p.x += (dx / dist) * p.speed * dt;
+                    p.y += (dy / dist) * p.speed * dt;
+                }
             }
         });
         this.state.projectiles = this.state.projectiles.filter(p => !p.hit);
     }
 
-    handleCombat(dt) {
+    handleCombat(dt, now) {
         const p1Units = this.state.p1.units;
         const p2Units = this.state.p2.units;
 
@@ -326,6 +406,9 @@ class GameEngine {
 
         // P1 Units
         p1Units.forEach(u1 => {
+            // Check frozen/stunned
+            if ((u1.frozenUntil && u1.frozenUntil > now) || (u1.stunnedUntil && u1.stunnedUntil > now)) return;
+
             u1.target = findTarget(u1, p2Units, GAME_CONFIG.FIELD_HEIGHT, 'tower_p2');
             if (u1.target) {
                 u1.attackTimer = (u1.attackTimer || 0) + dt;
@@ -339,6 +422,9 @@ class GameEngine {
 
         // P2 Units
         p2Units.forEach(u2 => {
+            // Check frozen/stunned
+            if ((u2.frozenUntil && u2.frozenUntil > now) || (u2.stunnedUntil && u2.stunnedUntil > now)) return;
+
             u2.target = findTarget(u2, p1Units, 0, 'tower_p1');
             if (u2.target) {
                 u2.attackTimer = (u2.attackTimer || 0) + dt;
@@ -383,7 +469,8 @@ class GameEngine {
                 speed: attacker.projectileSpeed,
                 type: attacker.projectile,
                 targetPlayerId: targetPlayerId,
-                ownerId: attacker.ownerId
+                ownerId: attacker.ownerId,
+                stunDuration: attacker.stunDuration || 0, // Electro Wizard stun
             });
         } else if (attacker.selfDestruct) {
             attacker.hp = 0;
@@ -411,6 +498,9 @@ class GameEngine {
     }
 
     towerAttack(ownerState, enemyUnits, towerX, towerY, dt, towerId) {
+        // Check if tower is frozen
+        if (ownerState.frozenUntil && ownerState.frozenUntil > Date.now()) return;
+
         const towerStats = UNITS.TOWER;
         let target = null;
         let minDist = Infinity;
@@ -484,7 +574,37 @@ class GameEngine {
                 const enemyId = playerId === 'p1' ? 'p2' : 'p1';
                 const enemyUnits = this.state[enemyId].units;
                 this.dealSplashDamage(x, y, unitStats.radius, unitStats.damage, enemyId, enemyUnits, false);
-            } else if (['tornado', 'rage', 'heal'].includes(cardId)) {
+            } else if (cardId === 'log') {
+                // Log Spell Logic
+                const direction = playerId === 'p1' ? 1 : -1;
+                this.state.projectiles.push({
+                    x: x,
+                    y: y,
+                    type: 'log',
+                    ownerId: playerId,
+                    speed: unitStats.speed,
+                    damage: unitStats.damage,
+                    width: unitStats.width,
+                    range: unitStats.range,
+                    knockback: unitStats.knockback,
+                    direction: direction,
+                    distanceRemaining: unitStats.range,
+                    logId: this.logIdCounter++, // Unique ID for this log instance
+                });
+            } else if (cardId === 'goblin_barrel') {
+                // Goblin Barrel Logic
+                this.state.projectiles.push({
+                    x: playerId === 'p1' ? 5 : 5, // Start from King Tower (approx)
+                    y: playerId === 'p1' ? 0 : GAME_CONFIG.FIELD_HEIGHT,
+                    targetX: x,
+                    targetY: y,
+                    type: 'goblin_barrel',
+                    ownerId: playerId,
+                    speed: unitStats.speed,
+                    spawnUnit: unitStats.spawnUnit,
+                    spawnCount: unitStats.spawnCount,
+                });
+            } else if (['tornado', 'rage', 'heal', 'freeze'].includes(cardId)) {
                 this.state.activeSpells.push({
                     ...unitStats,
                     x: x,
