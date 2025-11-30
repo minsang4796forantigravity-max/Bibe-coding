@@ -1,3 +1,4 @@
+// server/GameEngine.js
 const { UNITS, EVOLVED_STATS, GAME_CONFIG } = require('./constants');
 
 class GameEngine {
@@ -52,7 +53,7 @@ class GameEngine {
         this.botPlayerId = options.botPlayerId || null; // 'p1' or 'p2'
         this.botDifficulty = options.botDifficulty || 'medium';
 
-        // 생성자에서는 절대 update(dt)를 호출하지 않는다.
+        // 생성자에서는 update(dt)를 절대 호출하지 않는다.
         // dt는 외부 루프(예: setInterval)에서 계산해서 넘겨줘야 함.
     }
 
@@ -79,6 +80,51 @@ class GameEngine {
             clearInterval(this.interval);
             this.interval = null;
         }
+    }
+
+    /**
+     * 플레이어를 p1 또는 p2에 등록하고, 덱/손패/nextCard를 초기화한다.
+     * @param {string} socketId - 이 플레이어의 socket.id
+     * @param {string[]} deck   - 클라이언트에서 선택한 카드 ID 배열 (예: ['knight','archer',...])
+     * @returns {'p1' | 'p2' | null} - 이 플레이어에게 배정된 자리 (p1 또는 p2). 꽉 차 있으면 null.
+     */
+    addPlayer(socketId, deck = []) {
+        let playerKey = null;
+
+        // p1 자리가 비어 있으면 p1부터 채운다
+        if (!this.state.p1.id) {
+            playerKey = 'p1';
+        } else if (!this.state.p2.id) {
+            playerKey = 'p2';
+        } else {
+            // 이미 p1, p2 다 찼으면 더 이상 받을 수 없음
+            return null;
+        }
+
+        const playerState = this.state[playerKey];
+
+        // 소켓 ID 저장
+        playerState.id = socketId;
+
+        // 덱 세팅 (없으면 기본값 유지)
+        if (Array.isArray(deck) && deck.length > 0) {
+            playerState.deck = deck.slice(); // 복사
+        }
+
+        // 손패 & nextCard 초기화
+        const uniqueDeck = playerState.deck.slice();
+        const handSize = Math.min(4, uniqueDeck.length);
+
+        playerState.hand = uniqueDeck.slice(0, handSize);
+
+        if (uniqueDeck.length > 0) {
+            const randIndex = Math.floor(Math.random() * uniqueDeck.length);
+            playerState.nextCard = uniqueDeck[randIndex];
+        } else {
+            playerState.nextCard = null;
+        }
+
+        return playerKey; // 'p1' 또는 'p2'
     }
 
     /**
