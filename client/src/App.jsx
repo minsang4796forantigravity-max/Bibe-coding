@@ -86,23 +86,27 @@ function App() {
 
   const handleDeckSelected = (deck) => {
     setSelectedDeck(deck);
+    setStatus('waiting'); // Show waiting screen immediately
+
+    const sendDeckSelection = () => {
+      if (isSinglePlayer) {
+        console.log("start_single_player emit with deck:", deck, "difficulty:", difficulty);
+        socket.emit("start_single_player", { deck, difficulty });
+      } else {
+        const id = String(roomId).trim();
+        console.log("join_game emit:", id, "with deck:", deck);
+        socket.emit("join_game", id, deck);
+      }
+    };
 
     if (!socket.connected) {
+      // Wait for connection before sending
       socket.connect();
-    }
-
-    if (isSinglePlayer) {
-      console.log("start_single_player emit with deck:", deck, "difficulty:", difficulty);
-      socket.emit("start_single_player", { deck, difficulty });
+      socket.once('connect', () => {
+        sendDeckSelection();
+      });
     } else {
-      const id = String(roomId).trim();
-      console.log("join_game emit:", id, "with deck:", deck);
-      socket.emit("join_game", id, deck);
-    }
-
-    // For multiplayer, we might want to show a waiting screen, but for now we rely on game_start event
-    if (!isSinglePlayer) {
-      setStatus('waiting');
+      sendDeckSelection();
     }
   };
 
