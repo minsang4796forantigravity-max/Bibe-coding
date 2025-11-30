@@ -47,8 +47,10 @@ io.on('connection', (socket) => {
     });
 
     socket.on('start_single_player', ({ deck, difficulty }) => {
+        console.log('[DEBUG] start_single_player received:', { deckLength: deck?.length, difficulty });
         const roomId = `single_${socket.id}`;
-        // Clean up existing game if any?
+
+        // Clean up existing game if any
         if (games[roomId]) {
             games[roomId].stop();
             delete games[roomId];
@@ -59,28 +61,33 @@ io.on('connection', (socket) => {
 
         // Add Human
         const playerRole = game.addPlayer(socket.id, deck || []);
+        console.log('[DEBUG] Player role:', playerRole);
 
         // Add Bot
         const bot = new BotAI(difficulty || 'medium');
-        const botRole = game.addPlayer('bot', bot.getDeck());
+        const botDeck = bot.getDeck();
+        console.log('[DEBUG] Bot deck length:', botDeck?.length);
+        const botRole = game.addPlayer('bot', botDeck);
+        console.log('[DEBUG] Bot role:', botRole);
         game.setBot(botRole, bot);
 
         if (playerRole && botRole) {
             socket.join(roomId);
+            const gameState = game.getSerializableState();
             socket.emit('game_start', {
-                state: game.getSerializableState(),
+                state: gameState,
                 player: playerRole
             });
-            console.log(`Single player game started for ${socket.id} in room ${roomId} with difficulty ${difficulty}`);
+            console.log(`✅ Single player game started for ${socket.id} in room ${roomId} with difficulty ${difficulty}`);
             game.start();
         } else {
+            console.log('[ERROR] Failed to create game. playerRole:', playerRole, 'botRole:', botRole);
             socket.emit('error', 'Failed to start single player game');
         }
     });
 
     socket.on('deploy_card', ({ cardId, x, y }) => {
         // Find which game this socket is in
-        // Inefficient search but okay for prototype
         for (const roomId in games) {
             const game = games[roomId];
             if (game.state.p1.id === socket.id) {
