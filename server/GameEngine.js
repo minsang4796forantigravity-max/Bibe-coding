@@ -1,10 +1,21 @@
 const { UNITS, EVOLVED_STATS, GAME_CONFIG } = require('./constants');
 
 class GameEngine {
-    constructor(roomId, io) {
+    /**
+     * @param {string} roomId - 소켓 룸 ID
+     * @param {Server} io - socket.io 서버 인스턴스
+     * @param {object} options - 봇, 난이도 등 선택적 옵션
+     *   options = {
+     *     bot: 봇 인스턴스(선택),
+     *     botPlayerId: 'p1' 또는 'p2'(선택),
+     *     botDifficulty: 'easy' | 'medium' | 'hard' | 'impossible'
+     *   }
+     */
+    constructor(roomId, io, options = {}) {
         this.roomId = roomId;
         this.io = io;
         this.logIdCounter = 0; // For unique log IDs
+
         this.state = {
             p1: {
                 id: null,
@@ -31,26 +42,57 @@ class GameEngine {
             gameOver: false,
             winner: null,
         };
+
+        // 루프 관련
         this.interval = null;
         this.lastTime = Date.now();
-        this.bot = null;
-        this.botPlayerId = null;
-        this.update(dt);
 
-        // Bot Update
-        if (this.bot && this.botPlayerId && !this.state.gameOver) {
-            this.bot.update(dt, this.state, this.botPlayerId, (cardId, x, y) => {
-                this.deployCard(this.botPlayerId, cardId, x, y);
-            });
-        }
+        // 봇 관련 설정
+        this.bot = options.bot || null;
+        this.botPlayerId = options.botPlayerId || null; // 'p1' or 'p2'
+        this.botDifficulty = options.botDifficulty || 'medium';
 
-        this.io.to(this.roomId).emit('game_update', this.getSerializableState());
+        // 생성자에서는 절대 update(dt)를 호출하지 않는다.
+        // dt는 외부 루프(예: setInterval)에서 계산해서 넘겨줘야 함.
     }
 
-    update(dt) {
-        const now = Date.now(); // Calculate once per frame
+    /**
+     * 서버 내부에서 직접 틱 루프를 돌리고 싶을 때 사용할 수 있는 헬퍼
+     * (index.js에서 이미 setInterval을 돌리고 있다면 이 함수는 사용하지 않아도 됨)
+     */
+    start(tickRate) {
+        const RATE = tickRate || GAME_CONFIG.SERVER_TICK_RATE || 60; // 초당 틱 수
+        if (this.interval) clearInterval(this.interval);
 
-        // Regenerate Mana
+        this.lastTime = Date.now();
+        this.interval = setInterval(() => {
+            const now = Date.now();
+            const dt = (now - this.lastTime) / 1000; // seconds
+            this.lastTime = now;
+
+            this.update(dt);
+        }, 1000 / RATE);
+    }
+
+    stop() {
+        if (this.interval) {
+            clearInterval(this.interval);
+            this.interval = null;
+        }
+    }
+
+    /**
+     * 외부에서 주기적으로 호출해줄 메인 틱 함수
+     * @param {number} dt - 지난 틱에서 경과한 시간 (초)
+     */
+    update(dt) {
+        if (this.state.gameOver) return;
+
+        const now = Date.now(); // 한 프레임에서 한 번만 계산
+
+        // =========================
+        // 1. 마나 회복 (봇 난이도 적용)
+        // =========================
         let botMultiplier = 1.0;
         switch (this.botDifficulty) {
             case 'easy': botMultiplier = 0.8; break;
@@ -70,20 +112,30 @@ class GameEngine {
             this.state.p2.mana = Math.min(GAME_CONFIG.MAX_MANA, this.state.p2.mana + p2Regen);
         }
 
-        // Update Spells
+        // =========================
+        // 2. 주문 업데이트
+        // =========================
         this.updateSpells(dt);
 
-        // Move & Update Units
-        this.updateUnits(this.state.p1, 1, dt, now);
-        this.updateUnits(this.state.p2, -1, dt, now);
+        // =========================
+        // 3. 유닛 이동/업데이트
+        // =========================
+        this.updateUnits(this.state.p1, 1, dt, now);   // p1: 위쪽으로
+        this.updateUnits(this.state.p2, -1, dt, now);  // p2: 아래쪽으로
 
-        // Update Projectiles
+        // =========================
+        // 4. 투사체 업데이트
+        // =========================
         this.updateProjectiles(dt, now);
 
-        // Combat
+        // =========================
+        // 5. 전투 처리
+        // =========================
         this.handleCombat(dt, now);
 
-        // Check Win
+        // =========================
+        // 6. 승패 체크
+        // =========================
         if (this.state.p1.hp <= 0) {
             this.state.gameOver = true;
             this.state.winner = 'Player 2';
@@ -95,6 +147,33 @@ class GameEngine {
             this.io.to(this.roomId).emit('game_over', { winner: 'Player 1' });
             this.stop();
         }
+
+        // =========================
+        // 7. 봇 동작
+        // =========================
+        if (this.bot && this.botPlayerId && !this.state.gameOver) {
+            this.bot.update(dt, this.state, this.botPlayerId, (cardId, x, y) => {
+                this.deployCard(this.botPlayerId, cardId, x, y);
+            });
+        }
+
+        // =========================
+        // 8. 상태 전송
+        // =========================
+        this.io.to(this.roomId).emit('game_update', this.getSerializableState());
+    }
+
+    /**
+     * socket으로 보내기 좋은 직렬화 상태
+     * (Set 같은 건 배열로 바꿔줌)
+     */
+    getSerializableState() {
+        return JSON.parse(JSON.stringify(this.state, (key, value) => {
+            if (value instanceof Set) {
+                return Array.from(value);
+            }
+            return value;
+        }));
     }
 
     updateSpells(dt) {
@@ -496,9 +575,6 @@ class GameEngine {
             ownerState.towerAttackTimer = (ownerState.towerAttackTimer || 0) + dt;
             if (ownerState.towerAttackTimer >= towerStats.attackSpeed) {
                 ownerState.towerAttackTimer = 0;
-                // Tower projectile? For now instant, or add projectile to tower too?
-                // User asked for "shooting guys". Tower shoots too.
-                // Let's add projectile to tower.
                 this.state.projectiles.push({
                     x: towerX,
                     y: towerY,
@@ -532,12 +608,11 @@ class GameEngine {
         // 진화 카드인지 확인하고 진화 스탯 적용
         const isEvolved = playerState.evolutions.includes(cardId);
         if (isEvolved && EVOLVED_STATS[cardId.toUpperCase()]) {
-            // 기본 스탯과 진화 스탯 병합
             unitStats = {
                 ...unitStats,
                 ...EVOLVED_STATS[cardId.toUpperCase()],
                 id: unitStats.id, // ID는 유지
-                name: unitStats.name + ' ⭐', // 진화 표시
+                name: unitStats.name + ' ⭐',
             };
         }
 
@@ -550,9 +625,8 @@ class GameEngine {
 
         if (unitStats.type === 'spell') {
             if (cardId === 'fireball') {
-                // Fireball Projectile Logic
                 this.state.projectiles.push({
-                    x: playerId === 'p1' ? 5 : 5, // Start from King Tower
+                    x: playerId === 'p1' ? 5 : 5,
                     y: playerId === 'p1' ? 0 : GAME_CONFIG.FIELD_HEIGHT,
                     targetX: x,
                     targetY: y,
@@ -563,7 +637,6 @@ class GameEngine {
                     radius: unitStats.radius,
                 });
             } else if (cardId === 'log') {
-                // Log Spell Logic
                 const direction = playerId === 'p1' ? 1 : -1;
                 this.state.projectiles.push({
                     x: x,
@@ -577,12 +650,11 @@ class GameEngine {
                     knockback: unitStats.knockback,
                     direction: direction,
                     distanceRemaining: unitStats.range,
-                    logId: this.logIdCounter++, // Unique ID for this log instance
+                    logId: this.logIdCounter++,
                 });
             } else if (cardId === 'goblin_barrel') {
-                // Goblin Barrel Logic
                 this.state.projectiles.push({
-                    x: playerId === 'p1' ? 5 : 5, // Start from King Tower (approx)
+                    x: playerId === 'p1' ? 5 : 5,
                     y: playerId === 'p1' ? 0 : GAME_CONFIG.FIELD_HEIGHT,
                     targetX: x,
                     targetY: y,
@@ -617,7 +689,7 @@ class GameEngine {
                     maxHp: unitStats.hp,
                     attackTimer: 0,
                     ownerId: playerId,
-                    isEvolved: isEvolved, // 진화 여부 추가
+                    isEvolved: isEvolved,
                 });
             }
         }
