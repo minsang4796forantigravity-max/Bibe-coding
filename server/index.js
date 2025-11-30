@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const GameEngine = require('./GameEngine');
+const BotAI = require('./BotAI');
 
 const app = express();
 app.use(cors());
@@ -42,6 +43,38 @@ io.on('connection', (socket) => {
             }
         } else {
             socket.emit('error', 'Room is full');
+        }
+    });
+
+    socket.on('start_single_player', (selectedDeck) => {
+        const roomId = `single_${socket.id}`;
+        // Clean up existing game if any?
+        if (games[roomId]) {
+            games[roomId].stop();
+            delete games[roomId];
+        }
+
+        const game = new GameEngine(roomId, io);
+        games[roomId] = game;
+
+        // Add Human
+        const playerRole = game.addPlayer(socket.id, selectedDeck || []);
+
+        // Add Bot
+        const bot = new BotAI();
+        const botRole = game.addPlayer('bot', bot.getDeck());
+        game.setBot(botRole, bot);
+
+        if (playerRole && botRole) {
+            socket.join(roomId);
+            socket.emit('game_start', {
+                state: game.getSerializableState(),
+                player: playerRole
+            });
+            console.log(`Single player game started for ${socket.id} in room ${roomId}`);
+            game.start();
+        } else {
+            socket.emit('error', 'Failed to start single player game');
         }
     });
 

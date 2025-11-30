@@ -26,6 +26,7 @@ function App() {
   const [roomId, setRoomId] = useState('');
   const [selectedDeck, setSelectedDeck] = useState(null);
   const [status, setStatus] = useState('lobby'); // lobby, deck_select, waiting, playing
+  const [isSinglePlayer, setIsSinglePlayer] = useState(false);
 
   useEffect(() => {
 
@@ -73,21 +74,32 @@ function App() {
       alert('방 번호를 입력해주세요!');
       return;
     }
+    setIsSinglePlayer(false);
+    setStatus('deck_select');
+  };
+
+  const handleSinglePlayerClick = () => {
+    setIsSinglePlayer(true);
     setStatus('deck_select');
   };
 
   const handleDeckSelected = (deck) => {
     setSelectedDeck(deck);
-    const id = String(roomId).trim();
-
-    console.log("join_game emit:", id, "with deck:", deck);
 
     if (!socket.connected) {
       socket.connect();
     }
 
-    socket.emit("join_game", id, deck); // 덱 정보 전송
-    setStatus("waiting");
+    if (isSinglePlayer) {
+      console.log("start_single_player emit with deck:", deck);
+      socket.emit("start_single_player", deck);
+      // No waiting state needed really, but game_start will come quickly
+    } else {
+      const id = String(roomId).trim();
+      console.log("join_game emit:", id, "with deck:", deck);
+      socket.emit("join_game", id, deck);
+      setStatus("waiting");
+    }
   };
 
   const handleDeploy = (cardId, x, y) => {
@@ -132,7 +144,25 @@ function App() {
               fontWeight: 'bold',
             }}
           >
-            덱 선택하기
+            멀티플레이 참가
+          </button>
+
+          <div style={{ margin: '10px 0', borderTop: '1px solid #ccc' }}></div>
+
+          <button
+            onClick={handleSinglePlayerClick}
+            style={{
+              padding: '10px',
+              fontSize: '16px',
+              cursor: 'pointer',
+              backgroundColor: '#2ecc71',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              fontWeight: 'bold',
+            }}
+          >
+            싱글 플레이 (AI 대전)
           </button>
         </div>
       )}

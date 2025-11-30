@@ -33,6 +33,13 @@ class GameEngine {
         };
         this.interval = null;
         this.lastTime = Date.now();
+        this.bot = null;
+        this.botPlayerId = null;
+    }
+
+    setBot(playerId, bot) {
+        this.bot = bot;
+        this.botPlayerId = playerId;
     }
 
     addPlayer(socketId, selectedDeck) {
@@ -107,6 +114,14 @@ class GameEngine {
         this.lastTime = now;
 
         this.update(dt);
+
+        // Bot Update
+        if (this.bot && this.botPlayerId && !this.state.gameOver) {
+            this.bot.update(dt, this.state, this.botPlayerId, (cardId, x, y) => {
+                this.deployCard(this.botPlayerId, cardId, x, y);
+            });
+        }
+
         this.io.to(this.roomId).emit('game_update', this.getSerializableState());
     }
 
