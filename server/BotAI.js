@@ -163,7 +163,7 @@ class BotAI {
         if (hasTankOnField) {
             // Support
             if (myState.mana >= 4) {
-                const supportCard = this.pickCard(myState.hand, ['witch', 'wizard', 'baby_dragon', 'bomber', 'musketeer', 'archer']);
+                const supportCard = this.pickCard(myState.hand, ['witch', 'wizard', 'baby_dragon', 'bomber', 'archer']);
                 if (supportCard) {
                     const tank = myUnits.find(u => tanks.includes(u.cardId));
                     if (tank) {
@@ -197,7 +197,7 @@ class BotAI {
     findCounterCard(hand, type) {
         const counters = {
             'splash': ['valkyrie', 'wizard', 'witch', 'baby_dragon', 'bomber', 'log', 'fireball'],
-            'anti_air': ['wizard', 'witch', 'baby_dragon', 'archer', 'musketeer'],
+            'anti_air': ['wizard', 'witch', 'baby_dragon', 'archer'],
             'tank_killer': ['skeletons', 'barbarians', 'minion_horde', 'inferno_tower', 'cannon'],
             'dps': ['knight', 'valkyrie', 'baby_dragon', 'skeletons', 'goblin', 'archer']
         };
