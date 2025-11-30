@@ -1,0 +1,71 @@
+.profile-container {
+    background-color: rgba(0, 0, 0, 0.9);
+    padding: 2rem;
+    border-radius: 10px;
+    color: white;
+    max-width: 600px;
+    margin: 50px auto;
+    border: 1px solid #444;
+}
+
+.back-btn {
+    background-color: #555;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 1rem;
+}
+
+.stats-summary {
+    background-color: #222;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.match-history h3 {
+    border-bottom: 1px solid #444;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.match-history ul {
+    list-style: none;
+    padding: 0;
+}
+
+.match-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+    background-color: #222;
+}
+
+.match-item.win {
+    border-left: 5px solid #2ecc71;
+}
+
+.match-item.lose {
+    border-left: 5px solid #e74c3c;
+}
+
+.match-item .result {
+    font-weight: bold;
+}
+
+.match-item.win .result {
+    color: #2ecc71;
+}
+
+.match-item.lose .result {
+    color: #e74c3c;
+}
+
+.match-item .date {
+    color: #888;
+    font-size: 0.9rem;
+}

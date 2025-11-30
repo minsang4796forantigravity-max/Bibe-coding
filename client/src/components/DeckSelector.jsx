@@ -79,12 +79,30 @@ export function DeckSelector({ onDeckSelected }) {
         return costA - costB;
     });
 
-    // Group cards by cost
-    const cardsByCost = {};
+    // Group cards by Type
+    const cardsByType = {
+        'Melee': [],
+        'Ranged': [],
+        'Air': [],
+        'Building': [],
+        'Spell': []
+    };
+
     sortedCards.forEach(card => {
-        const cost = UNITS[card.toUpperCase()]?.cost || 0;
-        if (!cardsByCost[cost]) cardsByCost[cost] = [];
-        cardsByCost[cost].push(card);
+        const stats = UNITS[card.toUpperCase()];
+        if (!stats) return;
+
+        if (stats.type === 'spell') {
+            cardsByType['Spell'].push(card);
+        } else if (stats.type === 'building') {
+            cardsByType['Building'].push(card);
+        } else if (stats.type === 'flying') {
+            cardsByType['Air'].push(card);
+        } else if (stats.range >= 2) {
+            cardsByType['Ranged'].push(card);
+        } else {
+            cardsByType['Melee'].push(card);
+        }
     });
 
     const handleDragStart = (e, cardId) => {
@@ -134,37 +152,39 @@ export function DeckSelector({ onDeckSelected }) {
 
     return (
         <div style={{
-            width: '100vw',
+            width: '100%',
+            maxWidth: '1000px', // Limit max width
+            margin: '0 auto',   // Center horizontally
             height: '100vh',
             backgroundColor: '#1a1a1a',
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'auto',
+            overflow: 'hidden', // Prevent double scrollbars
         }}>
             {/* Header */}
             <div style={{
-                padding: '20px',
+                padding: '10px', // Reduced padding
                 textAlign: 'center',
                 borderBottom: '2px solid #333',
+                flexShrink: 0,
             }}>
-                <h1 style={{ color: 'white', margin: '0 0 10px 0' }}>덱 구성</h1>
-                <p style={{ color: '#aaa', margin: 0 }}>
-                    일반 카드: {regularFilled}/6 | 진화 카드: {evolutionFilled}/2
+                <h2 style={{ color: 'white', margin: '0 0 5px 0', fontSize: '1.2rem' }}>덱 구성</h2>
+                <p style={{ color: '#aaa', margin: 0, fontSize: '0.9rem' }}>
+                    일반: {regularFilled}/6 | 진화: {evolutionFilled}/2
                 </p>
             </div>
 
             {/* Deck Slots */}
             <div style={{
-                padding: '20px',
+                padding: '10px', // Reduced padding
                 backgroundColor: '#222',
+                flexShrink: 0,
             }}>
-                <h3 style={{ color: 'white', marginTop: 0 }}>선택한 카드</h3>
-
                 {/* Regular Slots */}
                 <div style={{
                     display: 'flex',
-                    gap: '10px',
-                    marginBottom: '20px',
+                    gap: '8px', // Reduced gap
+                    marginBottom: '10px',
                     flexWrap: 'wrap',
                     justifyContent: 'center',
                 }}>
@@ -175,10 +195,10 @@ export function DeckSelector({ onDeckSelected }) {
                             onDrop={(e) => handleDropToSlot(e, index)}
                             onClick={() => handleClickSlot(index)}
                             style={{
-                                width: '80px',
-                                height: '100px',
-                                border: '3px dashed #555',
-                                borderRadius: '8px',
+                                width: '60px', // Reduced size
+                                height: '75px',
+                                border: '2px dashed #555',
+                                borderRadius: '6px',
                                 backgroundColor: cardId ? '#333' : '#1a1a1a',
                                 backgroundImage: cardId ? `url(${CARD_IMAGES[cardId]})` : 'none',
                                 backgroundSize: 'cover',
@@ -188,7 +208,7 @@ export function DeckSelector({ onDeckSelected }) {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 color: '#666',
-                                fontSize: '12px',
+                                fontSize: '10px',
                                 position: 'relative',
                                 transition: 'all 0.2s',
                             }}
@@ -197,13 +217,13 @@ export function DeckSelector({ onDeckSelected }) {
                             {cardId && (
                                 <div style={{
                                     position: 'absolute',
-                                    top: '3px',
-                                    left: '3px',
+                                    top: '2px',
+                                    left: '2px',
                                     backgroundColor: 'rgba(0,0,0,0.8)',
                                     color: '#d35400',
-                                    padding: '2px 6px',
-                                    borderRadius: '4px',
-                                    fontSize: '11px',
+                                    padding: '1px 4px',
+                                    borderRadius: '3px',
+                                    fontSize: '9px',
                                     fontWeight: 'bold',
                                 }}>
                                     {UNITS[cardId.toUpperCase()]?.cost}
@@ -214,12 +234,13 @@ export function DeckSelector({ onDeckSelected }) {
                 </div>
 
                 {/* Evolution Slots */}
-                <h3 style={{ color: '#f39c12', margin: '0 0 10px 0' }}>⭐ 진화 카드</h3>
                 <div style={{
                     display: 'flex',
-                    gap: '10px',
+                    gap: '8px',
                     justifyContent: 'center',
+                    alignItems: 'center',
                 }}>
+                    <span style={{ color: '#f39c12', fontSize: '0.9rem', marginRight: '10px', fontWeight: 'bold' }}>⭐ 진화</span>
                     {deckSlots.slice(6, 8).map((cardId, index) => (
                         <div
                             key={index + 6}
@@ -228,10 +249,10 @@ export function DeckSelector({ onDeckSelected }) {
                             onClick={() => handleClickSlot(index + 6)}
                             className={cardId ? 'deck-evolution-card' : ''}
                             style={{
-                                width: '80px',
-                                height: '100px',
-                                border: '3px dashed #f39c12',
-                                borderRadius: '8px',
+                                width: '60px', // Reduced size
+                                height: '75px',
+                                border: '2px dashed #f39c12',
+                                borderRadius: '6px',
                                 backgroundColor: cardId ? '#333' : '#1a1a1a',
                                 backgroundImage: cardId ? `url(${CARD_IMAGES[cardId]})` : 'none',
                                 backgroundSize: 'cover',
@@ -241,27 +262,27 @@ export function DeckSelector({ onDeckSelected }) {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 color: '#666',
-                                fontSize: '12px',
+                                fontSize: '10px',
                                 position: 'relative',
-                                boxShadow: cardId ? '0 0 20px #f39c12' : 'none',
+                                boxShadow: cardId ? '0 0 10px #f39c12' : 'none',
                             }}
                         >
                             {!cardId && `E${index + 1}`}
                             {cardId && (
                                 <div style={{
                                     position: 'absolute',
-                                    top: '3px',
-                                    right: '3px',
+                                    top: '2px',
+                                    right: '2px',
                                     backgroundColor: '#f39c12',
                                     color: 'black',
                                     borderRadius: '50%',
-                                    width: '20px',
-                                    height: '20px',
+                                    width: '15px',
+                                    height: '15px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     fontWeight: 'bold',
-                                    fontSize: '12px',
+                                    fontSize: '10px',
                                 }}>
                                     ⭐
                                 </div>
@@ -274,21 +295,21 @@ export function DeckSelector({ onDeckSelected }) {
             {/* Available Cards */}
             <div style={{
                 flex: 1,
-                padding: '20px',
+                padding: '10px', // Reduced padding
                 overflowY: 'auto',
+                backgroundColor: '#111',
             }}>
-                <h3 style={{ color: 'white' }}>사용 가능한 카드</h3>
-                {Object.keys(cardsByCost).map(cost => (
-                    <div key={cost} style={{ marginBottom: '20px' }}>
-                        <h4 style={{ color: '#888', fontSize: '14px', marginBottom: '10px' }}>
-                            {cost} 코스트
+                {Object.keys(cardsByType).map(type => (
+                    <div key={type} style={{ marginBottom: '15px' }}>
+                        <h4 style={{ color: '#888', fontSize: '12px', marginBottom: '5px', borderBottom: '1px solid #333', paddingBottom: '2px' }}>
+                            {type}
                         </h4>
                         <div style={{
                             display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
-                            gap: '10px',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', // Reduced min size
+                            gap: '8px', // Reduced gap
                         }}>
-                            {cardsByCost[cost].map(cardId => {
+                            {cardsByType[type].map(cardId => {
                                 const unitStats = UNITS[cardId.toUpperCase()];
                                 const isInDeck = deckSlots.includes(cardId);
 
@@ -317,6 +338,19 @@ export function DeckSelector({ onDeckSelected }) {
                                             e.currentTarget.style.transform = 'scale(1)';
                                         }}
                                     >
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '3px',
+                                            left: '3px',
+                                            backgroundColor: 'rgba(0,0,0,0.8)',
+                                            color: '#d35400',
+                                            padding: '2px 6px',
+                                            borderRadius: '4px',
+                                            fontSize: '11px',
+                                            fontWeight: 'bold',
+                                        }}>
+                                            {unitStats?.cost}
+                                        </div>
                                         <div style={{
                                             position: 'absolute',
                                             bottom: 0,

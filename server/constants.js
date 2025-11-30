@@ -4,13 +4,13 @@ const UNITS = {
         id: 'skeletons',
         name: 'Skeletons',
         cost: 1,
-        hp: 100,
+        hp: 80,
         damage: 67,
         speed: 2.5,
         range: 1,
         attackSpeed: 1.0,
         type: 'ground',
-        count: 6,
+        count: 4, // 6 -> 4 (밸런스 조절)
     },
 
     // === 2 코스트: 저렴한 유틸리티 ===
@@ -18,36 +18,57 @@ const UNITS = {
         id: 'goblin',
         name: 'Goblin',
         cost: 2,
-        hp: 220,
-        damage: 160,
+        hp: 160,
+        damage: 100,
         speed: 3.0,
         range: 0.5,
-        attackSpeed: 1.0,
+        attackSpeed: 1.1,
         type: 'ground',
-        count: 2, // 2마리 소환
+        count: 3, // 2 -> 3
+    },
+    RAGE: {
+        id: 'rage',
+        name: 'Rage',
+        cost: 2,
+        type: 'spell',
+        radius: 3.0,
+        duration: 6,
+        speedBuff: 1.35,
+        attackSpeedBuff: 1.35,
+    },
+    LOG: {
+        id: 'log',
+        name: 'Log',
+        cost: 2,
+        type: 'spell',
+        damage: 240,
+        knockback: 2.0,
+        width: 2.0,
+        range: 10,
+        speed: 12,
     },
 
-    // === 3 코스트: 기본 전투 유닛 ===
+    // === 3 코스트: 기본 전투 유닛 & 스펠 ===
     KNIGHT: {
         id: 'knight',
         name: 'Knight',
         cost: 3,
-        hp: 1700,
-        damage: 170,
+        hp: 1400,
+        damage: 160,
         speed: 1.2,
         range: 1,
-        attackSpeed: 1.1,
+        attackSpeed: 1.2,
         type: 'ground',
         count: 1,
     },
     ARCHER: {
         id: 'archer',
         name: 'Archer',
-        cost: 4,
-        hp: 220,
-        damage: 89,
+        cost: 3, // 4 -> 3
+        hp: 250,
+        damage: 90,
         speed: 1.4,
-        range: 5.5,
+        range: 5.0,
         attackSpeed: 1.2,
         type: 'ground',
         count: 2,
@@ -56,11 +77,11 @@ const UNITS = {
         id: 'bomber',
         name: 'Bomber',
         cost: 3,
-        hp: 250,
-        damage: 150,
+        hp: 300,
+        damage: 200,
         speed: 1.6,
         range: 4.5,
-        attackSpeed: 1.7,
+        attackSpeed: 1.8,
         type: 'ground',
         splash: 1.5,
         count: 1,
@@ -69,8 +90,8 @@ const UNITS = {
         id: 'kamikaze',
         name: 'Kamikaze',
         cost: 3,
-        hp: 180,
-        damage: 700,
+        hp: 200,
+        damage: 800,
         speed: 3.5,
         range: 0.5,
         attackSpeed: 0,
@@ -79,37 +100,42 @@ const UNITS = {
         splash: 2.5,
         count: 1,
     },
-
-    // === 4 코스트: 특수 유닛 & 스펠 ===
-    // === 4 코스트: 특수 유닛 & 스펠 ===
     CANNON: {
         id: 'cannon',
         name: 'Cannon',
-        cost: 4,
-        hp: 597,
-        damage: 147,
-        speed: 0.7,
-        range: 7,
-        attackSpeed: 0.9,
-        type: 'both',
+        cost: 3, // 4 -> 3
+        hp: 700,
+        damage: 120,
+        speed: 0,
+        range: 5.5,
+        attackSpeed: 0.8,
+        type: 'building',
+        lifetime: 30,
         count: 1,
         projectile: 'cannonball',
-        projectileSpeed: 10,
+        projectileSpeed: 12,
     },
-    SNIPER: {
-        id: 'sniper',
-        name: 'Sniper',
-        cost: 5,
-        hp: 230,
-        damage: 240,
-        speed: 1.0,
-        range: 10,
-        attackSpeed: 3.0,
-        type: 'ground',
-        count: 1,
-        projectile: 'bullet',
-        projectileSpeed: 20,
+    TORNADO: {
+        id: 'tornado',
+        name: 'Tornado',
+        cost: 3,
+        type: 'spell',
+        radius: 3.0,
+        duration: 3,
+        damagePerSecond: 70,
+        pullForce: 3.5,
     },
+    GOBLIN_BARREL: {
+        id: 'goblin_barrel',
+        name: 'Goblin Barrel',
+        cost: 3,
+        type: 'spell',
+        spawnUnit: 'goblin',
+        spawnCount: 3,
+        speed: 15,
+    },
+
+    // === 4 코스트: 특수 유닛 & 스펠 ===
     VALKYRIE: {
         id: 'valkyrie',
         name: 'Valkyrie',
@@ -140,65 +166,39 @@ const UNITS = {
         id: 'baby_dragon',
         name: 'Baby Dragon',
         cost: 4,
-        hp: 850,
-        damage: 110,
+        hp: 1000,
+        damage: 130,
         speed: 1.8,
-        range: 3,
+        range: 3.5,
         attackSpeed: 1.5,
         type: 'flying',
         splash: 1.5,
         count: 1,
         projectile: 'fireball_small',
-        projectileSpeed: 8,
+        projectileSpeed: 10,
+    },
+    SNIPER: {
+        id: 'sniper',
+        name: 'Sniper',
+        cost: 4, // 5 -> 4
+        hp: 350,
+        damage: 300,
+        speed: 1.0,
+        range: 7.0,
+        attackSpeed: 2.5,
+        type: 'ground',
+        count: 1,
+        projectile: 'bullet',
+        projectileSpeed: 25,
     },
     FIREBALL: {
         id: 'fireball',
         name: 'Fireball',
-        cost: 6,
-        damage: 650,
-        type: 'spell',
-        radius: 1.5,
-        speed: 15, // Added speed for projectile
-    },
-    TORNADO: {
-        id: 'tornado',
-        name: 'Tornado',
-        cost: 3,
+        cost: 4, // 6 -> 4
+        damage: 572,
         type: 'spell',
         radius: 2.5,
-        duration: 4,
-        damagePerSecond: 50,
-        pullForce: 5,
-    },
-    RAGE: {
-        id: 'rage',
-        name: 'Rage',
-        cost: 2,
-        type: 'spell',
-        radius: 2.5,
-        duration: 8,
-        speedBuff: 1.6,
-        attackSpeedBuff: 1.6,
-    },
-    HEAL: {
-        id: 'heal',
-        name: 'Heal',
-        cost: 1,
-        type: 'spell',
-        radius: 2.0,
-        duration: 3,
-        healPerSecond: 100,
-    },
-    LOG: {
-        id: 'log',
-        name: 'Log',
-        cost: 2,
-        type: 'spell',
-        damage: 240,
-        knockback: 2.0,
-        width: 1.5,
-        range: 10, // distance -> range
-        speed: 10, // Added speed
+        speed: 15,
     },
     FREEZE: {
         id: 'freeze',
@@ -206,14 +206,14 @@ const UNITS = {
         cost: 4,
         type: 'spell',
         radius: 3.0,
-        duration: 3.0,
+        duration: 4.0,
     },
     ELECTRO_WIZARD: {
         id: 'electro_wizard',
         name: 'Electro Wizard',
         cost: 4,
-        hp: 650,
-        damage: 120,
+        hp: 600,
+        damage: 100, // x2 targets usually
         speed: 1.4,
         range: 5,
         attackSpeed: 1.7,
@@ -222,26 +222,17 @@ const UNITS = {
         stunDuration: 0.5,
         deployStunRadius: 2.0,
         projectile: 'zap',
-        projectileSpeed: 15,
-    },
-    GOBLIN_BARREL: {
-        id: 'goblin_barrel',
-        name: 'Goblin Barrel',
-        cost: 3,
-        type: 'spell',
-        spawnUnit: 'goblin',
-        spawnCount: 3,
-        speed: 15, // Added speed
+        projectileSpeed: 20,
     },
 
     // === 5 코스트: 강력한 유닛 & 건물 ===
     GIANT: {
         id: 'giant',
         name: 'Giant',
-        cost: 6,
-        hp: 3000,
-        damage: 200,
-        speed: 1.0,
+        cost: 5, // 6 -> 5
+        hp: 3300,
+        damage: 210,
+        speed: 0.9,
         range: 1,
         attackSpeed: 1.5,
         type: 'ground',
@@ -252,31 +243,31 @@ const UNITS = {
         id: 'wizard',
         name: 'Wizard',
         cost: 5,
-        hp: 598,
-        damage: 169,
+        hp: 600,
+        damage: 230,
         speed: 1.4,
         range: 5.5,
-        attackSpeed: 1.7,
+        attackSpeed: 1.4,
         type: 'ground',
-        splash: 2,
+        splash: 1.5,
         count: 1,
         projectile: 'fireball_small',
-        projectileSpeed: 9,
+        projectileSpeed: 11,
     },
     WITCH: {
         id: 'witch',
         name: 'Witch',
         cost: 5,
-        hp: 850,
-        damage: 90,
+        hp: 700,
+        damage: 100,
         speed: 1.2,
         range: 5,
         attackSpeed: 0.7,
         type: 'ground',
         splash: 1.0,
         spawnUnit: 'skeletons',
-        spawnInterval: 0,
-        spawnCount: 4,
+        spawnInterval: 7,
+        spawnCount: 3,
         spawnOnDeploy: true,
         count: 1,
         projectile: 'magic_bolt',
@@ -286,27 +277,27 @@ const UNITS = {
         id: 'barbarians',
         name: 'Barbarians',
         cost: 5,
-        hp: 700,
-        damage: 170,
-        speed: 1.6,
+        hp: 550,
+        damage: 150,
+        speed: 1.5,
         range: 1,
         attackSpeed: 1.4,
         type: 'ground',
-        count: 4,
+        count: 5,
     },
     BALLOON: {
         id: 'balloon',
         name: 'Balloon',
         cost: 5,
-        hp: 1396,
-        damage: 600,
+        hp: 1400,
+        damage: 800,
         speed: 1.5,
         range: 0.5,
         attackSpeed: 3.0,
         type: 'flying',
         favoriteTarget: 'building',
-        deathDamage: 350,
-        deathDamageRadius: 3.5,
+        deathDamage: 200,
+        deathDamageRadius: 3.0,
         count: 1,
     },
     GOBLIN_HUT: {
@@ -315,29 +306,40 @@ const UNITS = {
         cost: 5,
         hp: 1200,
         type: 'building',
-        lifetime: 45,
+        lifetime: 50,
         spawnUnit: 'goblin',
-        spawnInterval: 2.5,
+        spawnInterval: 4.5,
     },
 
-    // === 6 코스트: 투자형 건물 ===
+    // === 6 코스트 ===
     MANA_COLLECTOR: {
         id: 'mana_collector',
         name: 'Mana Collector',
-        cost: 8,
-        hp: 3400,
+        cost: 6, // 8 -> 6
+        hp: 1000,
         type: 'building',
-        lifetime: 60,
-        manaProduction: 0.5,
-        productionInterval: 3.5,
+        lifetime: 70,
+        manaProduction: 1,
+        productionInterval: 8.5,
+    },
+
+    // === 1 코스트 스펠 ===
+    HEAL: {
+        id: 'heal',
+        name: 'Heal',
+        cost: 1,
+        type: 'spell',
+        radius: 2.5,
+        duration: 2,
+        healPerSecond: 150,
     },
 
     // === 타워 ===
     TOWER: {
         id: 'tower',
         name: 'King Tower',
-        hp: 4008,
-        damage: 100,
+        hp: 4000,
+        damage: 110,
         range: 7,
         attackSpeed: 0.8,
         type: 'building',
@@ -348,156 +350,154 @@ const UNITS = {
 const EVOLVED_STATS = {
     // === 1 코스트 ===
     SKELETONS: {
-        hp: 120,           // +20 HP (생존력 향상)
-        damage: 80,        // +13 데미지 (+19%)
-        speed: 2.7,        // +0.2 속도
-        count: 8,          // 6 → 8마리 (+33%)
+        hp: 100,
+        damage: 80,
+        count: 6,
     },
 
     // === 2 코스트 ===
     GOBLIN: {
-        hp: 180,           // +30 HP (+20%)
-        damage: 120,       // +20 데미지 (딜러 특성 강화)
-        speed: 2.7,        // +0.2 속도
-        attackSpeed: 1.0,  // -0.1 (더 빠른 공격)
+        hp: 200,
+        damage: 130,
+        count: 4,
+    },
+    RAGE: {
+        radius: 4.0,
+        duration: 8,
+        speedBuff: 1.5,
+        attackSpeedBuff: 1.5,
+    },
+    LOG: {
+        damage: 300,
+        width: 2.5,
+        knockback: 3.0,
     },
 
     // === 3 코스트 ===
     KNIGHT: {
-        hp: 1800,          // +300 HP (탱커 특성 강화, +20%)
-        damage: 185,       // +35 데미지 (+23%)
-        speed: 1.35,       // +0.15 속도
+        hp: 1800,
+        damage: 180,
+        speed: 1.3,
     },
     ARCHER: {
-        hp: 300,           // +48 HP
-        damage: 115,       // +26 데미지
-        range: 6.5,        // +1.0 사거리 (원거리 특성 강화)
-        attackSpeed: 1.0,  // -0.2 (더 빠른 공격)
+        hp: 300,
+        damage: 110,
+        range: 6.0,
     },
     BOMBER: {
-        hp: 250,           // +45 HP
-        damage: 180,       // +47 데미지 (광역 딜 증가)
-        splash: 2.0,       // +0.5 범위
-        speed: 1.8,        // +0.2 속도
+        hp: 350,
+        damage: 250,
+        splash: 2.0,
     },
     KAMIKAZE: {
-        hp: 220,           // +40 HP (+22%)
-        damage: 850,       // +150 데미지 (자폭 특성 강화, +21%)
-        splash: 2.8,       // +0.3 범위
-        speed: 3.8,        // +0.3 속도 (더 빠르게 돌진)
+        hp: 250,
+        damage: 1000,
+        splash: 3.0,
+        speed: 4.0,
+    },
+    CANNON: {
+        hp: 900,
+        damage: 150,
+        attackSpeed: 0.7,
+    },
+    TORNADO: {
+        radius: 4.0,
+        duration: 4,
+        damagePerSecond: 100,
+        pullForce: 4.5,
+    },
+    GOBLIN_BARREL: {
+        spawnCount: 4,
     },
 
     // === 4 코스트 ===
-    CANNON: {
-        hp: 800,           // +203 HP
-        damage: 210,       // +63 데미지
-        range: 7.0,        // +1.0 사거리
-        attackSpeed: 0.75, // -0.15 (더 빠른 공격)
-    },
-    SNIPER: {
-        hp: 350,           // +78 HP
-        damage: 320,       // +80 데미지 (고화력 특성)
-        range: 12,         // +2 사거리 (저격수 특성 강화)
-        attackSpeed: 2.7,  // -0.3
-        projectileSpeed: 25, // +5 투사체 속도
-    },
     VALKYRIE: {
-        hp: 2100,          // +500 HP
-        damage: 290,       // +70 데미지
-        splash: 2.0,       // +0.5 범위 (광역 탱커)
-        speed: 1.7,        // +0.2 속도
+        hp: 2000,
+        damage: 260,
+        splash: 2.0,
+        speed: 1.6,
     },
     HOG_RIDER: {
-        hp: 1650,          // +250 HP (+18%)
-        damage: 315,       // +55 데미지 (+21%)
-        speed: 2.8,        // +0.3 속도 (돌격 특성 강화)
-        attackSpeed: 1.45, // -0.15
+        hp: 1600,
+        damage: 300,
+        speed: 2.7,
     },
     BABY_DRAGON: {
-        hp: 1350,          // +350 HP
-        damage: 175,       // +45 데미지
-        splash: 2.0,       // +0.5 범위
-        speed: 2.1,        // +0.3 속도
-        range: 3.5,        // +0.5 사거리
+        hp: 1300,
+        damage: 160,
+        splash: 2.0,
+        range: 4.0,
     },
-
-    // === 스펠 (진화 시 효과 강화) ===
+    SNIPER: {
+        hp: 450,
+        damage: 400,
+        range: 9.0,
+    },
     FIREBALL: {
-        damage: 780,       // +130 데미지 (+20%)
-        radius: 1.8,       // +0.3 범위
+        damage: 700,
+        radius: 3.0,
     },
-    TORNADO: {
-        radius: 2.5,       // +0.5 범위
-        duration: 4,       // +1초
-        damagePerSecond: 70, // +20 DPS
-        pullForce: 4,      // +1 끌어당김
+    FREEZE: {
+        radius: 4.0,
+        duration: 5.0,
     },
-    RAGE: {
-        radius: 3.0,       // +0.5 범위
-        duration: 8,       // +2초
-        speedBuff: 1.5,    // 1.35 → 1.5
-        attackSpeedBuff: 1.5, // 1.35 → 1.5
-    },
-    HEAL: {
-        radius: 2.5,       // +0.5 범위
-        duration: 4.5,     // +1.5초
-        healPerSecond: 150, // +50 HPS
+    ELECTRO_WIZARD: {
+        hp: 750,
+        damage: 140,
+        stunDuration: 1.0,
     },
 
     // === 5 코스트 ===
     GIANT: {
-        hp: 4000,          // +725 HP (초탱커, +22%)
-        damage: 245,       // +45 데미지 (+23%)
-        speed: 1.15,       // +0.15 속도
-        attackSpeed: 1.35, // -0.15
+        hp: 4200,
+        damage: 250,
     },
     WIZARD: {
-        hp: 740,           // +142 HP (+24%)
-        damage: 210,       // +41 데미지 (+24%)
-        splash: 2.3,       // +0.3 범위 (광역 마법사)
-        range: 6.2,        // +0.7 사거리
-        attackSpeed: 1.55, // -0.15
+        hp: 750,
+        damage: 280,
+        splash: 2.0,
+        range: 6.0,
     },
     WITCH: {
-        hp: 950,           // +250 HP
-        damage: 95,        // +25 데미지
-        spawnInterval: 5.5, // -1.5초 (더 자주 소환)
-        spawnCount: 4,     // 3 → 4마리 스켈레톤
-        range: 6.0,        // +1.0 사거리
+        hp: 850,
+        spawnInterval: 5,
+        spawnCount: 4,
     },
     BARBARIANS: {
-        hp: 700,           // +100 HP (각 바바리안, +17%)
-        damage: 185,       // +35 데미지 (+23%)
-        speed: 1.65,       // +0.15 속도
-        attackSpeed: 1.25, // -0.15
-        count: 5,          // 4 → 5마리 (+25%)
+        hp: 650,
+        damage: 180,
+        count: 6,
     },
     BALLOON: {
-        hp: 1700,          // +304 HP (+22%)
-        damage: 720,       // +120 데미지 (건물 파괴자, +20%)
-        speed: 1.7,        // +0.2 속도
-        deathDamage: 250,  // +50 데미지 (+25%)
-        deathDamageRadius: 3.3, // +0.3 범위
-        attackSpeed: 2.8,  // -0.2
+        hp: 1700,
+        damage: 1000,
+        deathDamage: 400,
     },
     GOBLIN_HUT: {
-        hp: 1400,          // +393 HP
-        lifetime: 55,      // +15초
-        spawnInterval: 5,  // -1초 (더 자주 소환)
+        hp: 1500,
+        lifetime: 60,
+        spawnInterval: 4.0,
     },
 
     // === 6 코스트 ===
     MANA_COLLECTOR: {
-        hp: 4500,          // +1100 HP
-        lifetime: 80,      // +20초
-        manaProduction: 0.7, // +0.2 마나
-        productionInterval: 3.0, // -0.5초 (더 자주 생산)
+        hp: 1400,
+        lifetime: 80,
+        manaProduction: 1,
+        productionInterval: 7.0,
+    },
+
+    // === 1 코스트 ===
+    HEAL: {
+        radius: 3.5,
+        duration: 3,
+        healPerSecond: 200,
     },
 };
 
 const GAME_CONFIG = {
     MANA_REGEN_RATE: 0.5,
-    MAX_MANA: 20,
+    MAX_MANA: 10, // 20 -> 10 (Standard)
     FIELD_WIDTH: 10,
     FIELD_HEIGHT: 18,
     FPS: 30,

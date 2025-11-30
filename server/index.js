@@ -2,43 +2,69 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const mongoose = require('mongoose');
 const GameEngine = require('./GameEngine');
 const BotAI = require('./BotAI');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 app.use(cors());
+app.use(express.json());
+
+// MongoDB Connection
+mongoose.connect('mongodb://localhost:27017/bibe-game')
+    .then(() => console.log('MongoDB Connected'))
+    .catch(err => console.error('MongoDB Connection Error:', err));
+
+// Routes
+app.use('/api/auth', authRoutes);
 
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*", // Allow all for now
+        origin: "*",
         methods: ["GET", "POST"]
     }
 });
 
-const games = {}; // roomId -> GameEngine
+const games = new Map(); // roomId -> GameEngine
 
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
-    socket.on('join_game', (roomId, selectedDeck) => {
-        let game = games[roomId];
-        if (!game) {
-            game = new GameEngine(roomId, io);
-            games[roomId] = game;
+    socket.on('join_game', (data) => {
+        const username = data ? data.username : null;
+        let game = null;
+        let gameId = null;
+
+        // Find waiting game
+        for (const [id, g] of games.entries()) {
+            if (!g.isFull() && !id.startsWith('single_')) {
+                game = g;
+                gameId = id;
+                break;
+            }
         }
 
-        const playerRole = game.addPlayer(socket.id, selectedDeck || []); // 덱 정보 전달
+        if (!game) {
+            gameId = Math.random().toString(36).substring(7);
+            game = new GameEngine(gameId, io);
+            games.set(gameId, game);
+        }
+
+        const playerRole = game.joinGame(socket.id, username);
+
         if (playerRole) {
-            socket.join(roomId);
+            socket.join(gameId);
             socket.emit('game_start', {
                 state: game.getSerializableState(),
-                player: playerRole
+                player: playerRole,
+                gameId: gameId
             });
-            console.log(`User ${socket.id} joined room ${roomId} as ${playerRole}`);
+            console.log(`User ${socket.id} joined room ${gameId} as ${playerRole}`);
 
-            if (game.state.p1.id && game.state.p2.id) {
-                console.log(`Room ${roomId} full. Starting game.`);
+            if (game.isFull()) {
+                console.log(`Room ${gameId} full. Starting game.`);
                 game.start();
             }
         } else {
@@ -46,29 +72,32 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('start_single_player', ({ deck, difficulty }) => {
-        console.log('[DEBUG] start_single_player received:', { deckLength: deck?.length, difficulty });
+    socket.on('start_single_player', (data) => {
+        const { deck, difficulty, username } = data || {};
+        console.log('[DEBUG] start_single_player received:', { deckLength: deck?.length, difficulty, username });
         const roomId = `single_${socket.id}`;
 
         // Clean up existing game if any
-        if (games[roomId]) {
-            games[roomId].stop();
-            delete games[roomId];
+        if (games.has(roomId)) {
+            games.get(roomId).stop();
+            games.delete(roomId);
         }
 
         const game = new GameEngine(roomId, io);
-        games[roomId] = game;
+        games.set(roomId, game);
 
         // Add Human
-        const playerRole = game.addPlayer(socket.id, deck || []);
+        const playerRole = game.joinGame(socket.id, username);
+        if (deck) {
+            game.setPlayerDeck(playerRole, deck);
+        }
         console.log('[DEBUG] Player role:', playerRole);
 
         // Add Bot
         const bot = new BotAI(difficulty || 'medium');
         const botDeck = bot.getDeck();
-        console.log('[DEBUG] Bot deck length:', botDeck?.length);
-        const botRole = game.addPlayer('bot', botDeck);
-        console.log('[DEBUG] Bot role:', botRole);
+        const botRole = game.joinGame('bot', 'AI'); // Bot joins as 'bot' ID
+        game.setPlayerDeck(botRole, botDeck);
         game.setBot(botRole, bot);
 
         if (playerRole && botRole) {
@@ -76,7 +105,8 @@ io.on('connection', (socket) => {
             const gameState = game.getSerializableState();
             socket.emit('game_start', {
                 state: gameState,
-                player: playerRole
+                player: playerRole,
+                gameId: roomId
             });
             console.log(`✅ Single player game started for ${socket.id} in room ${roomId} with difficulty ${difficulty}`);
             game.start();
@@ -88,8 +118,7 @@ io.on('connection', (socket) => {
 
     socket.on('deploy_card', ({ cardId, x, y }) => {
         // Find which game this socket is in
-        for (const roomId in games) {
-            const game = games[roomId];
+        for (const game of games.values()) {
             if (game.state.p1.id === socket.id) {
                 game.deployCard('p1', cardId, x, y);
                 break;
@@ -102,7 +131,7 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
-        // Handle cleanup if needed (end game, etc.)
+        // Handle cleanup if needed
     });
 });
 

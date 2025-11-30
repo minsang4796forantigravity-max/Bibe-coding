@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { BattleScreen } from './components/BattleScreen';
 import { DeckSelector } from './components/DeckSelector';
+import Login from './components/Login';
+import Signup from './components/Signup';
+import Profile from './components/Profile';
 import { socket } from './socket';
 import './App.css';
 
-// 최상단에 넣기 (import 위는 안됨)
 const ACCESS_PASSWORD = "000";
 
-// 페이지 로드 시 비밀번호 확인
 function checkAccessPassword() {
   const input = prompt("입장 비밀번호를 입력하세요:");
   if (input !== ACCESS_PASSWORD) {
     alert("비밀번호가 틀렸습니다.");
-    window.location.href = "https://www.google.com"; // 돌려보냄
+    window.location.href = "https://www.google.com";
   }
 }
 
-// 한 번만 실행
 checkAccessPassword();
 
 function App() {
@@ -25,12 +25,12 @@ function App() {
   const [playerId, setPlayerId] = useState(null);
   const [roomId, setRoomId] = useState('');
   const [selectedDeck, setSelectedDeck] = useState(null);
-  const [status, setStatus] = useState('lobby'); // lobby, deck_select, waiting, playing
+  const [status, setStatus] = useState('login'); // login, signup, lobby, deck_select, waiting, playing, profile
   const [isSinglePlayer, setIsSinglePlayer] = useState(false);
   const [difficulty, setDifficulty] = useState('medium');
+  const [user, setUser] = useState(null); // Logged in user info
 
   useEffect(() => {
-
     function onConnect() {
       setIsConnected(true);
     }
@@ -70,6 +70,16 @@ function App() {
     };
   }, []);
 
+  const handleLogin = (loggedInUser) => {
+    setUser(loggedInUser);
+    setStatus('lobby');
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setStatus('login');
+  };
+
   const handleJoinClick = () => {
     if (!roomId.trim()) {
       alert('방 번호를 입력해주세요!');
@@ -86,21 +96,28 @@ function App() {
 
   const handleDeckSelected = (deck) => {
     setSelectedDeck(deck);
-    setStatus('waiting'); // Show waiting screen immediately
+    setStatus('waiting');
 
     const sendDeckSelection = () => {
       if (isSinglePlayer) {
         console.log("start_single_player emit with deck:", deck, "difficulty:", difficulty);
-        socket.emit("start_single_player", { deck, difficulty });
+        socket.emit("start_single_player", {
+          deck,
+          difficulty,
+          username: user ? user.username : 'Guest'
+        });
       } else {
         const id = String(roomId).trim();
         console.log("join_game emit:", id, "with deck:", deck);
-        socket.emit("join_game", id, deck);
+        socket.emit("join_game", {
+          roomId: id,
+          deck,
+          username: user ? user.username : 'Guest'
+        });
       }
     };
 
     if (!socket.connected) {
-      // Wait for connection before sending
       socket.connect();
       socket.once('connect', () => {
         sendDeckSelection();
@@ -109,6 +126,18 @@ function App() {
       sendDeckSelection();
     }
   };
+
+  if (status === 'login') {
+    return <Login onLogin={handleLogin} onNavigate={() => setStatus('signup')} />;
+  }
+
+  if (status === 'signup') {
+    return <Signup onNavigate={() => setStatus('login')} />;
+  }
+
+  if (status === 'profile') {
+    return <Profile username={user.username} onBack={() => setStatus('lobby')} />;
+  }
 
   if (status === 'playing' && gameState) {
     return (
@@ -136,6 +165,13 @@ function App() {
     <div className="App">
       <div className="status-bar">
         Status: {isConnected ? 'Connected' : 'Disconnected'}
+        {user && (
+          <div className="user-info">
+            <span>환영합니다, {user.username}님!</span>
+            <button onClick={() => setStatus('profile')}>내 전적</button>
+            <button onClick={handleLogout}>로그아웃</button>
+          </div>
+        )}
       </div>
 
       {status === 'lobby' && (
