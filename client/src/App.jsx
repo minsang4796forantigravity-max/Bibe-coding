@@ -5,19 +5,19 @@ import { socket } from './socket';
 import './App.css';
 
 // 최상단에 넣기 (import 위는 안됨)
-// const ACCESS_PASSWORD = "000";
+const ACCESS_PASSWORD = "000";
 
-// // 페이지 로드 시 비밀번호 확인
-// function checkAccessPassword() {
-//   const input = prompt("입장 비밀번호를 입력하세요:");
-//   if (input !== ACCESS_PASSWORD) {
-//     alert("비밀번호가 틀렸습니다.");
-//     window.location.href = "https://www.google.com"; // 돌려보냄
-//   }
-// }
+// 페이지 로드 시 비밀번호 확인
+function checkAccessPassword() {
+  const input = prompt("입장 비밀번호를 입력하세요:");
+  if (input !== ACCESS_PASSWORD) {
+    alert("비밀번호가 틀렸습니다.");
+    window.location.href = "https://www.google.com"; // 돌려보냄
+  }
+}
 
-// // 한 번만 실행
-// checkAccessPassword();
+// 한 번만 실행
+checkAccessPassword();
 
 function App() {
   const [isConnected, setIsConnected] = useState(socket.connected);
