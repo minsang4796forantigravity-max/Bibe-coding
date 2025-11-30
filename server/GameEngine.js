@@ -35,11 +35,13 @@ class GameEngine {
         this.lastTime = Date.now();
         this.bot = null;
         this.botPlayerId = null;
+        this.botDifficulty = 'medium';
     }
 
     setBot(playerId, bot) {
         this.bot = bot;
         this.botPlayerId = playerId;
+        this.botDifficulty = bot.difficulty;
     }
 
     addPlayer(socketId, selectedDeck) {
@@ -129,9 +131,17 @@ class GameEngine {
         const now = Date.now(); // Calculate once per frame
 
         // Regenerate Mana
-        // Regenerate Mana
-        const p1Regen = (this.botPlayerId === 'p1' ? 1.2 : 1.0) * GAME_CONFIG.MANA_REGEN_RATE * dt;
-        const p2Regen = (this.botPlayerId === 'p2' ? 1.2 : 1.0) * GAME_CONFIG.MANA_REGEN_RATE * dt;
+        let botMultiplier = 1.0;
+        switch (this.botDifficulty) {
+            case 'easy': botMultiplier = 0.8; break;
+            case 'medium': botMultiplier = 1.0; break;
+            case 'hard': botMultiplier = 1.2; break;
+            case 'impossible': botMultiplier = 2.0; break;
+            default: botMultiplier = 1.0;
+        }
+
+        const p1Regen = (this.botPlayerId === 'p1' ? botMultiplier : 1.0) * GAME_CONFIG.MANA_REGEN_RATE * dt;
+        const p2Regen = (this.botPlayerId === 'p2' ? botMultiplier : 1.0) * GAME_CONFIG.MANA_REGEN_RATE * dt;
 
         if (this.state.p1.mana < GAME_CONFIG.MAX_MANA) {
             this.state.p1.mana = Math.min(GAME_CONFIG.MAX_MANA, this.state.p1.mana + p1Regen);

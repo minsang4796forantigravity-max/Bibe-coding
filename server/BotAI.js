@@ -1,29 +1,58 @@
 const { UNITS, GAME_CONFIG } = require('./constants');
 
-class BotAI {
-    constructor() {
-        // Balanced Deck: Tank, Splash, Air Counter, Spells, Cycle
-        this.deck = [
-            'giant',        // Tank
-            'witch',        // Support/Splash/Spawner
-            'fireball',     // Big Spell
-            'log',          // Small Spell
-            'wizard',       // Splash/Air Counter
-            'skeletons',    // Cycle/Distraction
-            'valkyrie',     // Ground Splash/Mini Tank
-            'baby_dragon'   // Air Splash/Tank
-        ];
+const DECKS = {
+    BEATDOWN: {
+        cards: ['giant', 'witch', 'fireball', 'log', 'skeletons', 'baby_dragon', 'wizard', 'valkyrie', 'wizard'],
+        evolutions: ['valkyrie', 'wizard']
+    },
+    HOG_CYCLE: {
+        cards: ['hog_rider', 'cannon', 'skeletons', 'goblin', 'fireball', 'log', 'archer', 'knight', 'archer'],
+        evolutions: ['knight', 'archer']
+    },
+    AIR_ASSAULT: {
+        cards: ['balloon', 'baby_dragon', 'wizard', 'fireball', 'tornado', 'skeletons', 'knight', 'archer', 'archer'],
+        evolutions: ['archer', 'wizard']
+    },
+    SPAWNER: {
+        cards: ['goblin_hut', 'barbarians', 'bomber', 'fireball', 'log', 'archer', 'knight', 'witch', 'archer'],
+        evolutions: ['archer', 'knight']
+    }
+};
 
-        this.evolutions = ['valkyrie', 'wizard'];
+class BotAI {
+    constructor(difficulty = 'medium') {
+        this.difficulty = difficulty;
+
+        // Select a random deck
+        const deckKeys = Object.keys(DECKS);
+        const randomKey = deckKeys[Math.floor(Math.random() * deckKeys.length)];
+        this.selectedDeck = DECKS[randomKey];
+
+        console.log(`Bot initialized with difficulty: ${difficulty}, Deck: ${randomKey}`);
 
         this.decisionTimer = 0;
-        this.decisionInterval = 0.8; // Faster decision making (0.8s)
 
-        this.state = 'DEFEND'; // DEFEND, PREPARE_PUSH, ATTACK
+        // Difficulty settings
+        switch (difficulty) {
+            case 'easy':
+                this.decisionInterval = 2.0;
+                break;
+            case 'medium':
+                this.decisionInterval = 1.2;
+                break;
+            case 'hard':
+                this.decisionInterval = 0.8;
+                break;
+            case 'impossible':
+                this.decisionInterval = 0.5;
+                break;
+            default:
+                this.decisionInterval = 1.2;
+        }
     }
 
     getDeck() {
-        return ['giant', 'witch', 'fireball', 'log', 'skeletons', 'baby_dragon', 'wizard', 'valkyrie', 'wizard'];
+        return this.selectedDeck.cards;
     }
 
     update(dt, gameState, myPlayerId, deployCallback) {
@@ -34,6 +63,9 @@ class BotAI {
         const myState = gameState[myPlayerId];
         const enemyId = myPlayerId === 'p1' ? 'p2' : 'p1';
         const enemyState = gameState[enemyId];
+
+        // Easy mode: Random mistakes or slower reaction (already handled by decisionInterval)
+        // Hard/Impossible: Optimal play
 
         // 1. Analyze Threats
         const threats = this.analyzeThreats(enemyState.units, myPlayerId);
@@ -49,9 +81,6 @@ class BotAI {
     }
 
     analyzeThreats(enemyUnits, myPlayerId) {
-        const mySideYStart = myPlayerId === 'p1' ? 0 : GAME_CONFIG.FIELD_HEIGHT / 2;
-        const mySideYEnd = myPlayerId === 'p1' ? GAME_CONFIG.FIELD_HEIGHT / 2 : GAME_CONFIG.FIELD_HEIGHT;
-
         // Check entire half of the field
         return enemyUnits.filter(u => {
             if (myPlayerId === 'p1') {
@@ -68,61 +97,55 @@ class BotAI {
     }
 
     handleDefense(myState, threats, myPlayerId, deployCallback) {
-        if (myState.mana < 1) return; // Need at least 1 mana
+        if (myState.mana < 1) return;
 
-        const threat = threats[0]; // Deal with most dangerous threat
+        const threat = threats[0];
         const threatStats = UNITS[threat.cardId.toUpperCase()] || threat;
         const towerY = myPlayerId === 'p1' ? 0 : GAME_CONFIG.FIELD_HEIGHT;
         const distToTower = Math.abs(threat.y - towerY);
 
         // Emergency: Threat is hitting tower or very close
         if (distToTower < 4) {
-            // Drop ANYTHING to block/distract
             const cheapCard = this.pickCard(myState.hand, ['skeletons', 'knight', 'valkyrie', 'goblin', 'log']);
             const anyCard = cheapCard || myState.hand[0];
 
             if (anyCard) {
-                // Place directly on top/in front to block
                 const deployY = threat.y + (myPlayerId === 'p1' ? 1 : -1);
                 deployCallback(anyCard, threat.x, this.clampY(deployY));
                 return;
             }
         }
 
-        // Determine counter type needed
         let counterType = 'dps';
         if (threatStats.count > 1 || threatStats.id === 'skeleton_army') counterType = 'splash';
         if (threatStats.type === 'flying') counterType = 'anti_air';
         if (threatStats.hp > 1000) counterType = 'tank_killer';
 
-        // Find best card in hand
         const card = this.findCounterCard(myState.hand, counterType);
 
         if (card) {
-            // Strategic Placement
             const centerX = GAME_CONFIG.FIELD_WIDTH / 2;
-
-            // Kiting Logic:
-            // If threat is ground and not building-targeter (or is building targeter but we have a building), pull to center.
-            // If threat is ranged, drop unit on top of it (surround).
-
             let deployX, deployY;
             const unitStats = UNITS[card.toUpperCase()];
 
             if (unitStats.type === 'spell') {
-                // Aim at threat
                 deployCallback(card, threat.x, threat.y);
                 return;
             }
 
-            if (threatStats.range > 2) {
-                // Ranged threat (Musketeer, Wizard) -> Drop ON TOP
+            // Easy mode: Less optimal placement
+            if (this.difficulty === 'easy') {
                 deployX = threat.x;
-                deployY = threat.y;
+                deployY = threat.y + (myPlayerId === 'p1' ? 2 : -2);
             } else {
-                // Melee threat -> Kite to center
-                deployX = centerX + (Math.random() - 0.5);
-                deployY = myPlayerId === 'p1' ? 4 : GAME_CONFIG.FIELD_HEIGHT - 4; // Kill zone
+                // Optimal Kiting
+                if (threatStats.range > 2) {
+                    deployX = threat.x;
+                    deployY = threat.y;
+                } else {
+                    deployX = centerX + (Math.random() - 0.5);
+                    deployY = myPlayerId === 'p1' ? 4 : GAME_CONFIG.FIELD_HEIGHT - 4;
+                }
             }
 
             deployCallback(card, this.clampX(deployX), this.clampY(deployY));
@@ -130,40 +153,39 @@ class BotAI {
     }
 
     handleOffense(myState, myPlayerId, deployCallback) {
-        // Strategy: Build a push
-        // 1. Wait for full mana (9+)
-        // 2. Drop Tank (Giant) at the back
-        // 3. Support with Witch/Wizard
+        // Strategy depends on deck archetype ideally, but generic push logic works for now
 
         const myUnits = myState.units || [];
-        const hasTank = myUnits.some(u => ['giant', 'golem', 'pekka'].includes(u.cardId));
+        // Check for tanks in current deck
+        const tanks = ['giant', 'golem', 'pekka', 'hog_rider', 'balloon', 'goblin_hut'];
+        const hasTankOnField = myUnits.some(u => tanks.includes(u.cardId));
 
-        if (hasTank) {
-            // Support the tank!
+        if (hasTankOnField) {
+            // Support
             if (myState.mana >= 4) {
-                const supportCard = this.pickCard(myState.hand, ['witch', 'wizard', 'baby_dragon', 'bomber', 'musketeer']);
+                const supportCard = this.pickCard(myState.hand, ['witch', 'wizard', 'baby_dragon', 'bomber', 'musketeer', 'archer']);
                 if (supportCard) {
-                    // Place behind the tank
-                    const tank = myUnits.find(u => ['giant', 'golem', 'pekka'].includes(u.cardId));
+                    const tank = myUnits.find(u => tanks.includes(u.cardId));
                     if (tank) {
                         const deployX = tank.x + (Math.random() - 0.5);
-                        const deployY = tank.y + (myPlayerId === 'p1' ? -2 : 2); // Behind
+                        const deployY = tank.y + (myPlayerId === 'p1' ? -2 : 2);
                         deployCallback(supportCard, this.clampX(deployX), this.clampY(deployY));
                     }
                 }
             }
         } else {
-            // Start a push if mana is high
-            if (myState.mana >= 9) {
-                const tankCard = this.pickCard(myState.hand, ['giant']);
+            // Start push
+            const pushMana = this.difficulty === 'easy' ? 7 : 9; // Easy mode attacks sooner/weaker
+
+            if (myState.mana >= pushMana) {
+                const tankCard = this.pickCard(myState.hand, tanks);
                 if (tankCard) {
-                    // Place at the back
-                    const deployX = GAME_CONFIG.FIELD_WIDTH / 2 + (Math.random() * 4 - 2); // Random side
+                    const deployX = GAME_CONFIG.FIELD_WIDTH / 2 + (Math.random() * 4 - 2);
                     const deployY = myPlayerId === 'p1' ? 0.5 : GAME_CONFIG.FIELD_HEIGHT - 0.5;
                     deployCallback(tankCard, this.clampX(deployX), this.clampY(deployY));
                 } else {
-                    // Cycle cheap card if no tank
-                    const cycleCard = this.pickCard(myState.hand, ['skeletons', 'log', 'ice_spirit']);
+                    // Cycle
+                    const cycleCard = this.pickCard(myState.hand, ['skeletons', 'log', 'ice_spirit', 'goblin']);
                     if (cycleCard && myState.mana === 10) {
                         deployCallback(cycleCard, GAME_CONFIG.FIELD_WIDTH / 2, myPlayerId === 'p1' ? 2 : GAME_CONFIG.FIELD_HEIGHT - 2);
                     }
@@ -176,17 +198,15 @@ class BotAI {
         const counters = {
             'splash': ['valkyrie', 'wizard', 'witch', 'baby_dragon', 'bomber', 'log', 'fireball'],
             'anti_air': ['wizard', 'witch', 'baby_dragon', 'archer', 'musketeer'],
-            'tank_killer': ['skeletons', 'barbarians', 'minion_horde', 'inferno_tower'], // Skeletons distract
-            'dps': ['knight', 'valkyrie', 'baby_dragon', 'skeletons']
+            'tank_killer': ['skeletons', 'barbarians', 'minion_horde', 'inferno_tower', 'cannon'],
+            'dps': ['knight', 'valkyrie', 'baby_dragon', 'skeletons', 'goblin', 'archer']
         };
 
         const preferred = counters[type] || [];
-        // Also consider general good cards
         const candidates = hand.filter(c => preferred.includes(c));
 
         if (candidates.length > 0) return candidates[0];
 
-        // Fallback: pick any unit that isn't a spell (unless spell is needed)
         const anyUnit = hand.find(c => {
             const stats = UNITS[c.toUpperCase()];
             return stats && stats.type !== 'spell';

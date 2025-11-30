@@ -46,7 +46,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('start_single_player', (selectedDeck) => {
+    socket.on('start_single_player', ({ deck, difficulty }) => {
         const roomId = `single_${socket.id}`;
         // Clean up existing game if any?
         if (games[roomId]) {
@@ -58,10 +58,10 @@ io.on('connection', (socket) => {
         games[roomId] = game;
 
         // Add Human
-        const playerRole = game.addPlayer(socket.id, selectedDeck || []);
+        const playerRole = game.addPlayer(socket.id, deck || []);
 
         // Add Bot
-        const bot = new BotAI();
+        const bot = new BotAI(difficulty || 'medium');
         const botRole = game.addPlayer('bot', bot.getDeck());
         game.setBot(botRole, bot);
 
@@ -71,7 +71,7 @@ io.on('connection', (socket) => {
                 state: game.getSerializableState(),
                 player: playerRole
             });
-            console.log(`Single player game started for ${socket.id} in room ${roomId}`);
+            console.log(`Single player game started for ${socket.id} in room ${roomId} with difficulty ${difficulty}`);
             game.start();
         } else {
             socket.emit('error', 'Failed to start single player game');
@@ -103,6 +103,3 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
-
-
-// Server restart trigger 3

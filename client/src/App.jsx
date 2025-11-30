@@ -27,6 +27,7 @@ function App() {
   const [selectedDeck, setSelectedDeck] = useState(null);
   const [status, setStatus] = useState('lobby'); // lobby, deck_select, waiting, playing
   const [isSinglePlayer, setIsSinglePlayer] = useState(false);
+  const [difficulty, setDifficulty] = useState('medium');
 
   useEffect(() => {
 
@@ -91,87 +92,117 @@ function App() {
     }
 
     if (isSinglePlayer) {
-      console.log("start_single_player emit with deck:", deck);
-      socket.emit("start_single_player", deck);
-      // No waiting state needed really, but game_start will come quickly
+      console.log("start_single_player emit with deck:", deck, "difficulty:", difficulty);
+      socket.emit("start_single_player", { deck, difficulty });
     } else {
       const id = String(roomId).trim();
       console.log("join_game emit:", id, "with deck:", deck);
       socket.emit("join_game", id, deck);
-      setStatus("waiting");
+    }
+
+    // For multiplayer, we might want to show a waiting screen, but for now we rely on game_start event
+    if (!isSinglePlayer) {
+      setStatus('waiting');
     }
   };
 
-  const handleDeploy = (cardId, x, y) => {
-    socket.emit('deploy_card', { cardId, x, y });
-  };
-
   if (status === 'playing' && gameState) {
-    return <BattleScreen gameState={gameState} playerId={playerId} onDeploy={handleDeploy} />;
+    return (
+      <BattleScreen
+        gameState={gameState}
+        playerId={playerId}
+        socket={socket}
+      />
+    );
   }
 
   if (status === 'deck_select') {
     return <DeckSelector onDeckSelected={handleDeckSelected} />;
   }
 
+  if (status === 'waiting') {
+    return (
+      <div className="lobby">
+        <h1>Waiting for opponent...</h1>
+      </div>
+    );
+  }
+
   return (
-    <div className="App" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '20px' }}>
-      <h1>Battle Cards Online</h1>
-      <div style={{ color: isConnected ? 'green' : 'red' }}>
-        Server: {isConnected ? 'Connected' : 'Disconnected'}
+    <div className="App">
+      <div className="status-bar">
+        Status: {isConnected ? 'Connected' : 'Disconnected'}
       </div>
 
       {status === 'lobby' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <input
-            type="text"
-            placeholder="방 번호 입력 (예: 123)"
-            value={roomId}
-            onChange={e => setRoomId(e.target.value)}
-            style={{ padding: '10px', fontSize: '16px', width: '250px' }}
-          />
-          <button
-            onClick={handleJoinClick}
-            disabled={!roomId.trim()}
-            style={{
-              padding: '10px',
-              fontSize: '16px',
-              cursor: roomId.trim() ? 'pointer' : 'not-allowed',
-              backgroundColor: roomId.trim() ? '#3498db' : '#95a5a6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '5px',
-              fontWeight: 'bold',
-            }}
-          >
-            멀티플레이 참가
-          </button>
+        <div className="lobby">
+          <h1>Clash Royale Web</h1>
+          <div className="join-form">
+            <input
+              type="text"
+              placeholder="방 번호 입력 (예: 123)"
+              value={roomId}
+              onChange={e => setRoomId(e.target.value)}
+              style={{ padding: '10px', fontSize: '16px', width: '250px' }}
+            />
+            <button
+              onClick={handleJoinClick}
+              disabled={!roomId.trim()}
+              style={{
+                padding: '10px',
+                fontSize: '16px',
+                cursor: roomId.trim() ? 'pointer' : 'not-allowed',
+                backgroundColor: roomId.trim() ? '#3498db' : '#95a5a6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '5px',
+                fontWeight: 'bold',
+              }}
+            >
+              멀티플레이 참가
+            </button>
+          </div>
 
-          <div style={{ margin: '10px 0', borderTop: '1px solid #ccc' }}></div>
+          <div className="single-player-section" style={{ marginTop: '30px', borderTop: '1px solid #eee', paddingTop: '20px', width: '100%', maxWidth: '400px' }}>
+            <h2 style={{ color: '#333', marginBottom: '15px' }}>싱글 플레이 (AI 대전)</h2>
 
-          <button
-            onClick={handleSinglePlayerClick}
-            style={{
-              padding: '10px',
-              fontSize: '16px',
-              cursor: 'pointer',
-              backgroundColor: '#2ecc71',
-              color: 'white',
-              border: 'none',
-              borderRadius: '5px',
-              fontWeight: 'bold',
-            }}
-          >
-            싱글 플레이 (AI 대전)
-          </button>
-        </div>
-      )}
+            <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+              <label style={{ fontWeight: 'bold', color: '#555' }}>난이도:</label>
+              <select
+                value={difficulty}
+                onChange={(e) => setDifficulty(e.target.value)}
+                style={{
+                  padding: '8px',
+                  borderRadius: '5px',
+                  border: '1px solid #ccc',
+                  fontSize: '14px'
+                }}
+              >
+                <option value="easy">쉬움 (Easy)</option>
+                <option value="medium">보통 (Medium)</option>
+                <option value="hard">어려움 (Hard)</option>
+                <option value="impossible">불가능 (Impossible)</option>
+              </select>
+            </div>
 
-      {status === 'waiting' && (
-        <div style={{ textAlign: 'center' }}>
-          <h2>상대를 기다리는 중...</h2>
-          <p style={{ fontSize: '18px', color: '#f39c12' }}>방 번호: {roomId}</p>
-          <p style={{ color: '#2ecc71' }}>✓ {selectedDeck?.length || 0}장 선택 완료</p>
+            <button
+              onClick={handleSinglePlayerClick}
+              style={{
+                backgroundColor: '#2ecc71',
+                color: 'white',
+                padding: '12px 24px',
+                fontSize: '16px',
+                border: 'none',
+                borderRadius: '5px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                width: '100%',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+              }}
+            >
+              게임 시작
+            </button>
+          </div>
         </div>
       )}
     </div>
