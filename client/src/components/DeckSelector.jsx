@@ -90,6 +90,7 @@ export function DeckSelector({ onDeckSelected }) {
     const handleDragStart = (e, cardId) => {
         setDraggedCard(cardId);
         e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', cardId); // Required for Firefox
     };
 
     const handleDragOver = (e) => {
