@@ -17,18 +17,12 @@ class BotAI {
         this.evolutions = ['valkyrie', 'wizard'];
 
         this.decisionTimer = 0;
-        this.decisionInterval = 1.0; // Faster decision making (1s)
+        this.decisionInterval = 0.8; // Faster decision making (0.8s)
 
         this.state = 'DEFEND'; // DEFEND, PREPARE_PUSH, ATTACK
     }
 
     getDeck() {
-        // Return 9 cards: 7 regular + 2 evo
-        const regular = ['giant', 'witch', 'fireball', 'log', 'skeletons', 'baby_dragon', 'valkyrie'];
-        const evos = ['wizard', 'valkyrie']; // Duplicates allowed in logic? GameEngine splits by index.
-        // Actually GameEngine expects unique card IDs usually, but let's follow the structure.
-        // If I put 'valkyrie' in regular and 'valkyrie' in evo, it might be confusing.
-        // Let's just ensure we return a valid list.
         return ['giant', 'witch', 'fireball', 'log', 'skeletons', 'baby_dragon', 'wizard', 'valkyrie', 'wizard'];
     }
 
@@ -58,15 +52,12 @@ class BotAI {
         const mySideYStart = myPlayerId === 'p1' ? 0 : GAME_CONFIG.FIELD_HEIGHT / 2;
         const mySideYEnd = myPlayerId === 'p1' ? GAME_CONFIG.FIELD_HEIGHT / 2 : GAME_CONFIG.FIELD_HEIGHT;
 
-        // Define "Threat" as any enemy unit on my side of the field
-        // Or very close to the bridge
-        const bridgeThreshold = 2; // Units within 2 tiles of bridge are incoming threats
-
+        // Check entire half of the field
         return enemyUnits.filter(u => {
             if (myPlayerId === 'p1') {
-                return u.y < (GAME_CONFIG.FIELD_HEIGHT / 2) + bridgeThreshold;
+                return u.y < GAME_CONFIG.FIELD_HEIGHT / 2 + 1; // Include bridge
             } else {
-                return u.y > (GAME_CONFIG.FIELD_HEIGHT / 2) - bridgeThreshold;
+                return u.y > GAME_CONFIG.FIELD_HEIGHT / 2 - 1; // Include bridge
             }
         }).sort((a, b) => {
             // Sort by danger (closer to tower is more dangerous)
@@ -77,10 +68,26 @@ class BotAI {
     }
 
     handleDefense(myState, threats, myPlayerId, deployCallback) {
-        if (myState.mana < 2) return; // Not enough mana to do much
+        if (myState.mana < 1) return; // Need at least 1 mana
 
         const threat = threats[0]; // Deal with most dangerous threat
         const threatStats = UNITS[threat.cardId.toUpperCase()] || threat;
+        const towerY = myPlayerId === 'p1' ? 0 : GAME_CONFIG.FIELD_HEIGHT;
+        const distToTower = Math.abs(threat.y - towerY);
+
+        // Emergency: Threat is hitting tower or very close
+        if (distToTower < 4) {
+            // Drop ANYTHING to block/distract
+            const cheapCard = this.pickCard(myState.hand, ['skeletons', 'knight', 'valkyrie', 'goblin', 'log']);
+            const anyCard = cheapCard || myState.hand[0];
+
+            if (anyCard) {
+                // Place directly on top/in front to block
+                const deployY = threat.y + (myPlayerId === 'p1' ? 1 : -1);
+                deployCallback(anyCard, threat.x, this.clampY(deployY));
+                return;
+            }
+        }
 
         // Determine counter type needed
         let counterType = 'dps';
@@ -93,33 +100,32 @@ class BotAI {
 
         if (card) {
             // Strategic Placement
-            // Pull to center (Kiting)
             const centerX = GAME_CONFIG.FIELD_WIDTH / 2;
-            const towerY = myPlayerId === 'p1' ? 0 : GAME_CONFIG.FIELD_HEIGHT;
 
-            // Calculate pull position (center, slightly towards my tower)
-            let deployX = centerX + (Math.random() - 0.5);
-            let deployY = myPlayerId === 'p1' ? 4 : GAME_CONFIG.FIELD_HEIGHT - 4;
+            // Kiting Logic:
+            // If threat is ground and not building-targeter (or is building targeter but we have a building), pull to center.
+            // If threat is ranged, drop unit on top of it (surround).
 
-            // If threat is very close, place directly on top or slightly behind
-            const distToTower = Math.abs(threat.y - towerY);
-            if (distToTower < 5) {
-                deployX = threat.x;
-                deployY = threat.y + (myPlayerId === 'p1' ? 1 : -1); // Block path
-            } else if (threatStats.target === 'building') {
-                // Pull building targeters to the middle heavily
-                deployX = centerX;
-                deployY = myPlayerId === 'p1' ? 5 : GAME_CONFIG.FIELD_HEIGHT - 5;
-            }
-
-            // Spells logic
+            let deployX, deployY;
             const unitStats = UNITS[card.toUpperCase()];
+
             if (unitStats.type === 'spell') {
                 // Aim at threat
                 deployCallback(card, threat.x, threat.y);
-            } else {
-                deployCallback(card, this.clampX(deployX), this.clampY(deployY));
+                return;
             }
+
+            if (threatStats.range > 2) {
+                // Ranged threat (Musketeer, Wizard) -> Drop ON TOP
+                deployX = threat.x;
+                deployY = threat.y;
+            } else {
+                // Melee threat -> Kite to center
+                deployX = centerX + (Math.random() - 0.5);
+                deployY = myPlayerId === 'p1' ? 4 : GAME_CONFIG.FIELD_HEIGHT - 4; // Kill zone
+            }
+
+            deployCallback(card, this.clampX(deployX), this.clampY(deployY));
         }
     }
 
@@ -129,7 +135,6 @@ class BotAI {
         // 2. Drop Tank (Giant) at the back
         // 3. Support with Witch/Wizard
 
-        // Check if we already have a tank
         const myUnits = myState.units || [];
         const hasTank = myUnits.some(u => ['giant', 'golem', 'pekka'].includes(u.cardId));
 
