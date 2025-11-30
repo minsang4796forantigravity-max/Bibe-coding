@@ -57,7 +57,7 @@ const CARD_IMAGES = {
     goblin_barrel: goblinBarrelImg,
 };
 
-export function BattleScreen({ gameState, playerId, onDeploy }) {
+export function BattleScreen({ gameState, playerId, socket }) {
     const [dragCard, setDragCard] = useState(null);
     const [dragPos, setDragPos] = useState(null); // { x, y } screen coords
     const fieldRef = useRef(null);
@@ -126,7 +126,9 @@ export function BattleScreen({ gameState, playerId, onDeploy }) {
                 const myY = isP1 ? gameY : (GAME_CONFIG.FIELD_HEIGHT - gameY);
 
                 if (isSpell || myY <= GAME_CONFIG.FIELD_HEIGHT * 0.45) {
-                    onDeploy(dragCard, gameX, gameY);
+                    if (socket && socket.connected) {
+                        socket.emit('deploy_card', { cardId: dragCard, x: gameX, y: gameY });
+                    }
                 }
             }
         }
