@@ -193,43 +193,127 @@ class GameEngine {
         this.stop();
     }
 
+    calculateRatingChange(myRating, opponentRating, result, isAI = false, aiDifficulty = 'medium') {
+        // K-factor: how much rating changes per game
+        const K = 32;
+
+        // Expected score based on rating difference
+        const expectedScore = 1 / (1 + Math.pow(10, (opponentRating - myRating) / 400));
+
+        // Actual score (1 for win, 0 for loss)
+        const actualScore = result === 'win' ? 1 : 0;
+
+        // Base rating change
+        let ratingChange = Math.round(K * (actualScore - expectedScore));
+
+        // AI adjustments
+        if (isAI) {
+            const aiMultipliers = {
+                easy: 0.5,
+                medium: 0.75,
+                hard: 1.0,
+                impossible: 1.25
+            };
+            const multiplier = aiMultipliers[aiDifficulty] || 0.75;
+            ratingChange = Math.round(ratingChange * multiplier);
+        }
+
+        return ratingChange;
+    }
+
     async saveMatchHistory(winnerId) {
         try {
             const p1 = this.state.p1;
             const p2 = this.state.p2;
 
+            // For PvP, we need both players' ratings
+            let p1Rating = 1000;
+            let p2Rating = 1000;
+
+            if (p1 && p1.username) {
+                const p1User = await User.findOne({ username: p1.username });
+                if (p1User) p1Rating = p1User.rating || 1000;
+            }
+
+            if (p2 && p2.username) {
+                const p2User = await User.findOne({ username: p2.username });
+                if (p2User) p2Rating = p2User.rating || 1000;
+            }
+
+            // Update Player 1
             if (p1 && p1.username) {
                 const result = winnerId === 'p1' ? 'win' : 'lose';
-                const opponentName = p2 && p2.username ? p2.username : 'AI/Guest';
+                const opponentName = p2 && p2.username ? p2.username : 'AI';
+
+                // Determine AI difficulty
+                let aiDifficulty = null;
+                const isAI = opponentName === 'AI';
+                if (isAI && this.botPlayerId === 'p2') {
+                    aiDifficulty = this.botDifficulty || 'medium';
+                }
+
+                // Calculate rating change
+                const opponentRating = isAI ? 1000 : p2Rating; // AI has base rating of 1000
+                const ratingChange = this.calculateRatingChange(
+                    p1Rating,
+                    opponentRating,
+                    result,
+                    isAI,
+                    aiDifficulty
+                );
 
                 await User.findOneAndUpdate(
                     { username: p1.username },
                     {
+                        $inc: { rating: ratingChange },
                         $push: {
                             matchHistory: {
                                 result,
                                 opponent: opponentName,
+                                aiDifficulty,
                                 date: new Date(),
-                                myDeck: p1.deck
+                                myDeck: p1.deck,
+                                ratingChange
                             }
                         }
                     }
                 );
             }
 
+            // Update Player 2
             if (p2 && p2.username) {
                 const result = winnerId === 'p2' ? 'win' : 'lose';
-                const opponentName = p1 && p1.username ? p1.username : 'AI/Guest';
+                const opponentName = p1 && p1.username ? p1.username : 'AI';
+
+                // Determine AI difficulty
+                let aiDifficulty = null;
+                const isAI = opponentName === 'AI';
+                if (isAI && this.botPlayerId === 'p1') {
+                    aiDifficulty = this.botDifficulty || 'medium';
+                }
+
+                // Calculate rating change
+                const opponentRating = isAI ? 1000 : p1Rating; // AI has base rating of 1000
+                const ratingChange = this.calculateRatingChange(
+                    p2Rating,
+                    opponentRating,
+                    result,
+                    isAI,
+                    aiDifficulty
+                );
 
                 await User.findOneAndUpdate(
                     { username: p2.username },
                     {
+                        $inc: { rating: ratingChange },
                         $push: {
                             matchHistory: {
                                 result,
                                 opponent: opponentName,
+                                aiDifficulty,
                                 date: new Date(),
-                                myDeck: p2.deck
+                                myDeck: p2.deck,
+                                ratingChange
                             }
                         }
                     }

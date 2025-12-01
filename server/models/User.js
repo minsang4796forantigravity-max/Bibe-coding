@@ -17,9 +17,15 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    rating: {
+        type: Number,
+        default: 1000 // Starting rating
+    },
     matchHistory: [{
         result: String, // 'win' or 'lose'
         opponent: String,
+        aiDifficulty: String, // 'easy', 'medium', 'hard', 'impossible' for AI games, null for PvP
+        ratingChange: Number, // Rating gained/lost in this match
         date: {
             type: Date,
             default: Date.now

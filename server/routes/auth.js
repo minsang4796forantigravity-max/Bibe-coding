@@ -72,6 +72,7 @@ router.post('/login', async (req, res) => {
     }
 });
 
+
 // 프로필/전적 조회
 router.get('/profile/:username', async (req, res) => {
     try {
@@ -80,6 +81,51 @@ router.get('/profile/:username', async (req, res) => {
             return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
         }
         res.json(user);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: '서버 오류가 발생했습니다.' });
+    }
+});
+
+// 특정 상대와의 전적 조회
+router.get('/stats/:username/:opponent', async (req, res) => {
+    try {
+        const { username, opponent } = req.params;
+        const user = await User.findOne({ username }).select('matchHistory');
+
+        if (!user) {
+            return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+        }
+
+        // Filter matches against specific opponent
+        const opponentMatches = user.matchHistory.filter(m => m.opponent === opponent);
+
+        if (opponentMatches.length === 0) {
+            return res.json({
+                opponent,
+                totalGames: 0,
+                wins: 0,
+                losses: 0,
+                winRate: 0,
+                lastPlayed: null,
+                matches: []
+            });
+        }
+
+        const wins = opponentMatches.filter(m => m.result === 'win').length;
+        const losses = opponentMatches.filter(m => m.result === 'lose').length;
+        const winRate = ((wins / opponentMatches.length) * 100).toFixed(1);
+        const lastPlayed = opponentMatches[opponentMatches.length - 1].date;
+
+        res.json({
+            opponent,
+            totalGames: opponentMatches.length,
+            wins,
+            losses,
+            winRate: parseFloat(winRate),
+            lastPlayed,
+            matches: opponentMatches.slice(-10).reverse() // Last 10 matches, most recent first
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: '서버 오류가 발생했습니다.' });
