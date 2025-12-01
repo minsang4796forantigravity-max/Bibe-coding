@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_URL } from '../socket';
 import './Login.css'; // Reuse Login CSS
 
 const Signup = ({ onNavigate }) => {
@@ -17,7 +18,7 @@ const Signup = ({ onNavigate }) => {
         }
 
         try {
-            const response = await fetch('http://localhost:3000/api/auth/signup', {
+            const response = await fetch(`${API_URL}/api/auth/signup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password }),

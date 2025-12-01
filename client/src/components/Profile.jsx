@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { API_URL } from '../socket';
 import './Profile.css'; // We'll create this CSS file
 
 const Profile = ({ username, onBack }) => {
@@ -8,7 +9,7 @@ const Profile = ({ username, onBack }) => {
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const response = await fetch(`http://localhost:3000/api/auth/profile/${username}`);
+                const response = await fetch(`${API_URL}/api/auth/profile/${username}`);
                 const data = await response.json();
                 if (response.ok) {
                     setUserData(data);
