@@ -12,11 +12,20 @@ const BotAI = require('./BotAI');
 const authRoutes = require('./routes/auth');
 
 // ======================= MongoDB 연결 =======================
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/bibe-game';
+const MONGO_URI = process.env.MONGO_URI;  // ← 더 이상 localhost로 fallback 하지 않음
+
+if (!MONGO_URI) {
+    console.error("❌ 환경 변수 MONGO_URI가 설정되어 있지 않습니다.");
+    process.exit(1);
+}
 
 mongoose.connect(MONGO_URI)
     .then(() => console.log("✅ MongoDB 연결 성공"))
-    .catch(err => console.error("❌ MongoDB 연결 실패:", err));
+    .catch(err => {
+        console.error("❌ MongoDB 연결 실패:", err);
+        process.exit(1);
+    });
+
 
 // ======================= Express / Socket.io 기본 설정 =======================
 const app = express();
