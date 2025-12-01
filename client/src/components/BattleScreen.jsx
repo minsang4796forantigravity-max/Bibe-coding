@@ -67,6 +67,14 @@ export function BattleScreen({ gameState, playerId, socket }) {
     const opponentState = gameState[opponentId];
     const isP1 = playerId === 'p1';
 
+    // Ensure socket is connected when component mounts
+    useEffect(() => {
+        if (socket && !socket.connected) {
+            console.log('Socket disconnected in BattleScreen, reconnecting...');
+            socket.connect();
+        }
+    }, [socket]);
+
     const getClientCoords = (e) => {
         if (e.touches && e.touches[0]) {
             return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
