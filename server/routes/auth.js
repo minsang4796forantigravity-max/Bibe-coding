@@ -132,4 +132,20 @@ router.get('/stats/:username/:opponent', async (req, res) => {
     }
 });
 
+// 리더보드 조회 (Top 5)
+router.get('/leaderboard', async (req, res) => {
+    try {
+        // rating 내림차순 정렬 후 상위 5명
+        const topUsers = await User.find({})
+            .sort({ rating: -1 })
+            .limit(5)
+            .select('username rating');
+
+        res.json(topUsers);
+    } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+        res.status(500).json({ message: '서버 오류가 발생했습니다.' });
+    }
+});
+
 module.exports = router;
