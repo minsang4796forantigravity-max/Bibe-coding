@@ -21,6 +21,23 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 1000 // Starting rating
     },
+    peakRating: {
+        type: Number,
+        default: 1000 // Highest rating achieved
+    },
+    coins: {
+        type: Number,
+        default: 500 // Starting coins
+    },
+    winStreak: {
+        type: Number,
+        default: 0 // Current win streak
+    },
+    cardLevels: {
+        type: Map,
+        of: Number,
+        default: {} // card_id -> level (1-10)
+    },
     matchHistory: [{
         result: { type: String, enum: ['win', 'lose', 'draw'] },
         opponent: String,
@@ -28,6 +45,7 @@ const userSchema = new mongoose.Schema({
         aiDeck: String, // New field for AI Deck name
         date: { type: Date, default: Date.now },
         ratingChange: Number,
+        coinsEarned: Number, // Coins earned/lost in this match
         myDeck: [String]
     }],
     savedDecks: [{

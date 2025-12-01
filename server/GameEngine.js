@@ -1,4 +1,4 @@
-const { UNITS, EVOLVED_STATS, GAME_CONFIG } = require('./constants');
+const { UNITS, EVOLVED_STATS, GAME_CONFIG, COIN_REWARDS } = require('./constants');
 const User = require('./models/User');
 
 class GameEngine {
@@ -193,13 +193,29 @@ class GameEngine {
         this.stop();
     }
 
-    calculateRatingChange(myRating, opponentRating, result, isAI = false, aiDifficulty = 'medium') {
-        // Dynamic K-factor
+    calculateRatingChange(myRating, opponentRating, result, isAI = false, aiDifficulty = 'medium', gamesPlayed = 0) {
+        // Dynamic K-factor based on games played and rating
+        // Implementation based on Chess.com and League of Legends systems
         let K = 32;
-        if (myRating < 1200) K = 40;
-        else if (myRating > 2000) K = 20;
 
-        // Expected score based on rating difference
+        // Placement games (first 30 games) - higher volatility for faster calibration
+        if (gamesPlayed < 30) {
+            K = 50;
+        }
+        // Rating-based K-factor after placement
+        else if (myRating < 1000) {
+            K = 40; // Help low-rated players climb faster
+        } else if (myRating < 1500) {
+            K = 32; // Standard
+        } else if (myRating < 2000) {
+            K = 28; // Slightly more stable
+        } else if (myRating < 2500) {
+            K = 24; // High-level stability
+        } else {
+            K = 20; // Top-tier stability
+        }
+
+        // Expected score based on rating difference (ELO formula)
         const expectedScore = 1 / (1 + Math.pow(10, (opponentRating - myRating) / 400));
 
         // Actual score (1 for win, 0 for loss)
@@ -208,19 +224,67 @@ class GameEngine {
         // Base rating change
         let ratingChange = Math.round(K * (actualScore - expectedScore));
 
-        // AI adjustments
+        // AI adjustments - AI games are worth less than PvP
         if (isAI) {
             const aiMultipliers = {
-                easy: 0.5,
-                medium: 0.75,
-                hard: 1.0,
-                impossible: 1.25
+                easy: 0.4,      // 40% of normal rating change
+                medium: 0.6,    // 60% of normal rating change
+                hard: 0.85,     // 85% of normal rating change
+                impossible: 1.0 // 100% of normal rating change
             };
-            const multiplier = aiMultipliers[aiDifficulty] || 0.75;
+            const multiplier = aiMultipliers[aiDifficulty] || 0.6;
             ratingChange = Math.round(ratingChange * multiplier);
         }
 
+        // Ensure minimum rating change for wins (prevent 0 point gains)
+        if (result === 'win' && ratingChange < 5) {
+            ratingChange = 5;
+        }
+
+        // Ensure maximum loss doesn't exceed -50 (rating protection)
+        if (result === 'lose' && ratingChange < -50) {
+            ratingChange = -50;
+        }
+
         return ratingChange;
+    }
+
+    calculateCoinReward(result, ratingChange, towerHpPercent, winStreak, isAI = false) {
+        let coins = 0;
+
+        if (result === 'win') {
+            // Base win reward
+            coins = COIN_REWARDS.BASE_WIN;
+
+            // Add rating bonus (more rating gain = more coins)
+            if (ratingChange > 0) {
+                coins += Math.round(ratingChange * COIN_REWARDS.RATING_BONUS_MULTIPLIER);
+            }
+
+            // Perfect win bonus (tower HP > 80%)
+            if (towerHpPercent >= 0.8) {
+                coins += COIN_REWARDS.PERFECT_WIN_BONUS;
+            }
+
+            // Win streak bonuses
+            if (winStreak >= 4) {
+                coins += COIN_REWARDS.WIN_STREAK_4_PLUS;
+            } else if (winStreak === 3) {
+                coins += COIN_REWARDS.WIN_STREAK_3;
+            } else if (winStreak === 2) {
+                coins += COIN_REWARDS.WIN_STREAK_2;
+            }
+
+            // AI games give slightly less coins
+            if (isAI) {
+                coins = Math.round(coins * 0.8);
+            }
+        } else {
+            //Loss
+            coins = COIN_REWARDS.BASE_LOSS;
+        }
+
+        return coins;
     }
 
     async saveMatchHistory(winnerId) {
@@ -256,30 +320,57 @@ class GameEngine {
 
                 // Calculate rating change
                 const opponentRating = isAI ? 1000 : p2Rating; // AI has base rating of 1000
+                const p1User = await User.findOne({ username: p1.username });
+                const gamesPlayed = p1User ? p1User.matchHistory.length : 0;
+
                 const ratingChange = this.calculateRatingChange(
                     p1Rating,
                     opponentRating,
                     result,
                     isAI,
-                    aiDifficulty
+                    aiDifficulty,
+                    gamesPlayed
                 );
+
+                // Calculate coin reward
+                const towerHpPercent = p1.hp / 3000; // Assuming 3000 max HP
+                const currentWinStreak = p1User ? p1User.winStreak : 0;
+                const newWinStreak = result === 'win' ? currentWinStreak + 1 : 0;
+
+                const coinsEarned = this.calculateCoinReward(
+                    result,
+                    ratingChange,
+                    towerHpPercent,
+                    newWinStreak,
+                    isAI
+                );
+
+                const newRating = p1Rating + ratingChange;
+                const updateObj = {
+                    $inc: { rating: ratingChange, coins: coinsEarned },
+                    $set: { winStreak: newWinStreak },
+                    $push: {
+                        matchHistory: {
+                            result,
+                            opponent: opponentName,
+                            aiDifficulty,
+                            aiDeck: isAI && this.bot ? this.bot.selectedDeckName : null,
+                            date: new Date(),
+                            myDeck: p1.deck,
+                            ratingChange,
+                            coinsEarned
+                        }
+                    }
+                };
+
+                // Update peak rating if new rating is higher
+                if (p1User && newRating > (p1User.peakRating || 1000)) {
+                    updateObj.$set.peakRating = newRating;
+                }
 
                 await User.findOneAndUpdate(
                     { username: p1.username },
-                    {
-                        $inc: { rating: ratingChange },
-                        $push: {
-                            matchHistory: {
-                                result,
-                                opponent: opponentName,
-                                aiDifficulty,
-                                aiDeck: isAI && this.bot ? this.bot.selectedDeckName : null,
-                                date: new Date(),
-                                myDeck: p1.deck,
-                                ratingChange
-                            }
-                        }
-                    }
+                    updateObj
                 );
             }
 
@@ -297,30 +388,57 @@ class GameEngine {
 
                 // Calculate rating change
                 const opponentRating = isAI ? 1000 : p1Rating; // AI has base rating of 1000
+                const p2User = await User.findOne({ username: p2.username });
+                const gamesPlayed = p2User ? p2User.matchHistory.length : 0;
+
                 const ratingChange = this.calculateRatingChange(
                     p2Rating,
                     opponentRating,
                     result,
                     isAI,
-                    aiDifficulty
+                    aiDifficulty,
+                    gamesPlayed
                 );
+
+                // Calculate coin reward
+                const towerHpPercent = p2.hp / 3000;
+                const currentWinStreak = p2User ? p2User.winStreak : 0;
+                const newWinStreak = result === 'win' ? currentWinStreak + 1 : 0;
+
+                const coinsEarned = this.calculateCoinReward(
+                    result,
+                    ratingChange,
+                    towerHpPercent,
+                    newWinStreak,
+                    isAI
+                );
+
+                const newRating = p2Rating + ratingChange;
+                const updateObj = {
+                    $inc: { rating: ratingChange, coins: coinsEarned },
+                    $set: { winStreak: newWinStreak },
+                    $push: {
+                        matchHistory: {
+                            result,
+                            opponent: opponentName,
+                            aiDifficulty,
+                            aiDeck: isAI && this.bot ? this.bot.selectedDeckName : null,
+                            date: new Date(),
+                            myDeck: p2.deck,
+                            ratingChange,
+                            coinsEarned
+                        }
+                    }
+                };
+
+                // Update peak rating if new rating is higher
+                if (p2User && newRating > (p2User.peakRating || 1000)) {
+                    updateObj.$set.peakRating = newRating;
+                }
 
                 await User.findOneAndUpdate(
                     { username: p2.username },
-                    {
-                        $inc: { rating: ratingChange },
-                        $push: {
-                            matchHistory: {
-                                result,
-                                opponent: opponentName,
-                                aiDifficulty,
-                                aiDeck: isAI && this.bot ? this.bot.selectedDeckName : null,
-                                date: new Date(),
-                                myDeck: p2.deck,
-                                ratingChange
-                            }
-                        }
-                    }
+                    updateObj
                 );
             }
         } catch (error) {

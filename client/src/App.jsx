@@ -5,6 +5,7 @@ import Login from './components/Login';
 import Signup from './components/Signup';
 import Profile from './components/Profile';
 import Leaderboard from './components/Leaderboard';
+import CardUpgrade from './components/CardUpgrade';
 import { socket } from './socket';
 import './App.css';
 
@@ -26,10 +27,11 @@ function App() {
   const [playerId, setPlayerId] = useState(null);
   const [roomId, setRoomId] = useState('');
   const [selectedDeck, setSelectedDeck] = useState(null);
-  const [status, setStatus] = useState('login'); // login, signup, lobby, deck_select, waiting, playing, profile
+  const [status, setStatus] = useState('login');
+  const [activeTab, setActiveTab] = useState('play'); // play, cards, leaderboard
   const [isSinglePlayer, setIsSinglePlayer] = useState(false);
   const [difficulty, setDifficulty] = useState('medium');
-  const [user, setUser] = useState(null); // Logged in user info
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     function onConnect() {
@@ -52,7 +54,6 @@ function App() {
 
     function onGameOver({ winner }) {
       alert(`${winner} Wins!`);
-      // Return to lobby instead of reloading to keep login state
       setGameState(null);
       setPlayerId(null);
       setStatus('lobby');
@@ -76,7 +77,6 @@ function App() {
     };
   }, []);
 
-  // Auto-login on component mount
   useEffect(() => {
     const savedUser = localStorage.getItem('bibeGameUser');
     if (savedUser) {
@@ -99,7 +99,7 @@ function App() {
   const handleLogout = () => {
     setUser(null);
     setStatus('login');
-    localStorage.removeItem('bibeGameUser'); // Clear saved session
+    localStorage.removeItem('bibeGameUser');
   };
 
   const handleJoinClick = () => {
@@ -122,7 +122,6 @@ function App() {
 
     const sendDeckSelection = () => {
       if (isSinglePlayer) {
-        console.log("start_single_player emit with deck:", deck, "difficulty:", difficulty);
         socket.emit("start_single_player", {
           deck,
           difficulty,
@@ -130,7 +129,6 @@ function App() {
         });
       } else {
         const id = String(roomId).trim();
-        console.log("join_game emit:", id, "with deck:", deck);
         socket.emit("join_game", {
           roomId: id,
           deck,
@@ -149,6 +147,7 @@ function App() {
     }
   };
 
+  // Render different screens
   if (status === 'login') {
     return <Login onLogin={handleLogin} onNavigate={() => setStatus('signup')} />;
   }
@@ -177,100 +176,144 @@ function App() {
 
   if (status === 'waiting') {
     return (
-      <div className="lobby">
-        <h1>Waiting for opponent...</h1>
+      <div className="app-container">
+        <div className="lobby">
+          <h1>⏳ Waiting for opponent...</h1>
+          <div className="loading-spinner"></div>
+        </div>
       </div>
     );
   }
 
+  // Main lobby with tabs
   return (
-    <div className="App">
-      <div className="status-bar">
-        Status: {isConnected ? 'Connected' : 'Disconnected'}
-        {user && (
-          <div className="user-info">
-            <span>환영합니다, {user.username}님!</span>
-            <button onClick={() => setStatus('profile')}>내 전적</button>
-            <button onClick={handleLogout}>로그아웃</button>
-          </div>
-        )}
+    <div className="app-container">
+      {/* Background particles */}
+      <div className="background-particles">
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
       </div>
 
-      {status === 'lobby' && (
-        <div className="lobby">
-          <h1>Clash Royale Web</h1>
-          <div className="join-form">
-            <input
-              type="text"
-              placeholder="방 번호 입력 (예: 123)"
-              value={roomId}
-              onChange={e => setRoomId(e.target.value)}
-              style={{ padding: '10px', fontSize: '16px', width: '250px' }}
-            />
-            <button
-              onClick={handleJoinClick}
-              disabled={!roomId.trim()}
-              style={{
-                padding: '10px',
-                fontSize: '16px',
-                cursor: roomId.trim() ? 'pointer' : 'not-allowed',
-                backgroundColor: roomId.trim() ? '#3498db' : '#95a5a6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                fontWeight: 'bold',
-              }}
-            >
-              멀티플레이 참가
-            </button>
-          </div>
+      {/* Status indicator */}
+      <div className="status-indicator">
+        <div className={`status-dot ${!isConnected ? 'disconnected' : ''}`}></div>
+        {isConnected ? 'Connected' : 'Disconnected'}
+      </div>
 
-          <div className="single-player-section" style={{ marginTop: '30px', borderTop: '1px solid #eee', paddingTop: '20px', width: '100%', maxWidth: '400px' }}>
-            <h2 style={{ color: '#333', marginBottom: '15px' }}>싱글 플레이 (AI 대전)</h2>
+      <div className="lobby">
+        <h1>⚔️ Clash Royale Web</h1>
 
-            <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-              <label style={{ fontWeight: 'bold', color: '#555' }}>난이도:</label>
-              <select
-                value={difficulty}
-                onChange={(e) => setDifficulty(e.target.value)}
-                style={{
-                  padding: '8px',
-                  borderRadius: '5px',
-                  border: '1px solid #ccc',
-                  fontSize: '14px'
-                }}
-              >
-                <option value="easy">쉬움 (Easy)</option>
-                <option value="medium">보통 (Medium)</option>
-                <option value="hard">어려움 (Hard)</option>
-                <option value="impossible">불가능 (Impossible)</option>
-              </select>
+        {/* User info header */}
+        {user && (
+          <div className="user-info-header">
+            <div className="user-info">
+              👋 환영합니다, <strong>{user.username}</strong>님!
             </div>
-
-            <button
-              onClick={handleSinglePlayerClick}
-              style={{
-                backgroundColor: '#2ecc71',
-                color: 'white',
-                padding: '12px 24px',
-                fontSize: '16px',
-                border: 'none',
-                borderRadius: '5px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                width: '100%',
-                boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
-              }}
-            >
-              게임 시작
-            </button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button className="logout-button" onClick={() => setStatus('profile')}>
+                📊 내 전적
+              </button>
+              <button className="logout-button" onClick={handleLogout}>
+                🚪 로그아웃
+              </button>
+            </div>
           </div>
+        )}
 
-          <div style={{ marginTop: '30px', width: '100%', maxWidth: '400px' }}>
-            <Leaderboard currentUsername={user ? user.username : ''} limit={5} compact={true} />
-          </div>
+        {/* Tab Navigation */}
+        <div className="tab-navigation">
+          <button
+            className={`tab-button ${activeTab === 'play' ? 'active' : ''}`}
+            onClick={() => setActiveTab('play')}
+          >
+            🎮 플레이
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'cards' ? 'active' : ''}`}
+            onClick={() => setActiveTab('cards')}
+          >
+            🃏 카드 업그레이드
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'leaderboard' ? 'active' : ''}`}
+            onClick={() => setActiveTab('leaderboard')}
+          >
+            🏆 랭킹
+          </button>
         </div>
-      )}
+
+        {/* Tab Content */}
+        <div className="tab-content">
+          {activeTab === 'play' && (
+            <div>
+              {/* Multiplayer Section */}
+              <div className="section-card">
+                <h3>🌐 멀티플레이어</h3>
+                <div className="join-form">
+                  <input
+                    type="text"
+                    placeholder="방 번호 입력 (예: 123)"
+                    value={roomId}
+                    onChange={e => setRoomId(e.target.value)}
+                  />
+                  <button
+                    onClick={handleJoinClick}
+                    disabled={!roomId.trim()}
+                    className="primary-button"
+                    style={{
+                      backgroundColor: roomId.trim() ? '#3498db' : '#95a5a6',
+                      color: 'white'
+                    }}
+                  >
+                    방 참가하기
+                  </button>
+                </div>
+              </div>
+
+              {/* Single Player Section */}
+              <div className="single-player-section">
+                <h2>🤖 싱글 플레이 (AI 대전)</h2>
+
+                <div className="difficulty-selector">
+                  <label>난이도:</label>
+                  <select
+                    value={difficulty}
+                    onChange={(e) => setDifficulty(e.target.value)}
+                  >
+                    <option value="easy">😊 쉬움 (Easy)</option>
+                    <option value="medium">😐 보통 (Medium)</option>
+                    <option value="hard">😰 어려움 (Hard)</option>
+                    <option value="impossible">💀 불가능 (Impossible)</option>
+                  </select>
+                </div>
+
+                <button
+                  onClick={handleSinglePlayerClick}
+                  className="primary-button"
+                  style={{
+                    backgroundColor: '#2ecc71',
+                    color: 'white',
+                    width: '100%'
+                  }}
+                >
+                  ▶️ 게임 시작
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'cards' && (
+            <CardUpgrade username={user ? user.username : ''} />
+          )}
+
+          {activeTab === 'leaderboard' && (
+            <div>
+              <Leaderboard currentUsername={user ? user.username : ''} limit={10} />
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

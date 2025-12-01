@@ -10,6 +10,7 @@ const mongoose = require('mongoose');
 const GameEngine = require('./GameEngine');
 const BotAI = require('./BotAI');
 const authRoutes = require('./routes/auth');
+const cardsRoutes = require('./routes/cards');
 
 // ======================= MongoDB 연결 =======================
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/bibe-game';
@@ -23,11 +24,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 계정 관련 API 라우트
-// 클라이언트에서 POST /api/auth/signup, /api/auth/login 호출
+// API 라우트
 app.use('/api/auth', authRoutes);
-// 만약 /api/auth로도 쓰고 싶으면 아래 줄 추가해도 됨
-// app.use('/api/auth', authRoutes);
+app.use('/api/cards', cardsRoutes);
 
 const server = http.createServer(app);
 const io = new Server(server, {

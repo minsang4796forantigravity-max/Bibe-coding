@@ -70,9 +70,23 @@ const Profile = ({ username, onBack }) => {
                     <div className="header-content">
                         <h2>{userData.username}님의 전적</h2>
                         <div className="rating-badge">
-                            <span className="rating-label">Rating</span>
+                            <span className="rating-label">Current Rating</span>
                             <span className="rating-value">
                                 {userData.rating || 1000} <TierBadge rating={userData.rating || 1000} />
+                            </span>
+                        </div>
+                        {userData.peakRating && userData.peakRating > (userData.rating || 1000) && (
+                            <div className="rating-badge" style={{ marginTop: '8px', opacity: 0.8 }}>
+                                <span className="rating-label">Peak Rating</span>
+                                <span className="rating-value">
+                                    {userData.peakRating} <TierBadge rating={userData.peakRating} size="small" />
+                                </span>
+                            </div>
+                        )}
+                        <div className="rating-badge" style={{ marginTop: '8px', background: 'linear-gradient(135deg, #f39c12 0%, #f1c40f 100%)' }}>
+                            <span className="rating-label">💰 코인</span>
+                            <span className="rating-value">
+                                {(userData.coins || 500).toLocaleString()}
                             </span>
                         </div>
                     </div>
@@ -90,6 +104,18 @@ const Profile = ({ username, onBack }) => {
                                 <div className="info-row">
                                     <span className="label">총 게임</span>
                                     <span className="value">{userData.matchHistory.length}</span>
+                                </div>
+                                <div className="info-row">
+                                    <span className="label">최고 레이팅</span>
+                                    <span className="value">{userData.peakRating || 1000}</span>
+                                </div>
+                                <div className="info-row">
+                                    <span className="label">💰 보유 코인</span>
+                                    <span className="value">{(userData.coins || 500).toLocaleString()}</span>
+                                </div>
+                                <div className="info-row">
+                                    <span className="label">🔥 현재 연승</span>
+                                    <span className="value">{userData.winStreak || 0}</span>
                                 </div>
                             </div>
 
@@ -137,8 +163,13 @@ const Profile = ({ username, onBack }) => {
                                                 </div>
                                                 <div className="match-meta">
                                                     <span className={`rating-change ${match.ratingChange >= 0 ? 'positive' : 'negative'}`}>
-                                                        {match.ratingChange > 0 ? '+' : ''}{match.ratingChange}
+                                                        {match.ratingChange > 0 ? '+' : ''}{match.ratingChange} MMR
                                                     </span>
+                                                    {match.coinsEarned !== undefined && (
+                                                        <span className={`coins-earned ${match.coinsEarned >= 0 ? 'positive' : 'negative'}`} style={{ marginLeft: '8px' }}>
+                                                            {match.coinsEarned > 0 ? '+' : ''}{match.coinsEarned} 💰
+                                                        </span>
+                                                    )}
                                                     <span className="date">{new Date(match.date).toLocaleDateString()}</span>
                                                 </div>
                                             </li>

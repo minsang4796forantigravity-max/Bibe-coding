@@ -504,12 +504,31 @@ const GAME_CONFIG = {
 };
 
 const RATING_TIERS = [
-    { name: 'Bronze', min: 0, color: '#cd7f32' },
-    { name: 'Silver', min: 1100, color: '#c0c0c0' },
-    { name: 'Gold', min: 1400, color: '#ffd700' },
-    { name: 'Platinum', min: 1700, color: '#e5e4e2' },
-    { name: 'Diamond', min: 2000, color: '#b9f2ff' },
-    { name: 'Master', min: 2300, color: '#ff00ff' }
+    { name: 'Bronze', min: 0, max: 999, color: '#cd7f32' },
+    { name: 'Silver', min: 1000, max: 1299, color: '#c0c0c0' },
+    { name: 'Gold', min: 1300, max: 1599, color: '#ffd700' },
+    { name: 'Platinum', min: 1600, max: 1899, color: '#e5e4e2' },
+    { name: 'Diamond', min: 1900, max: 2199, color: '#b9f2ff' },
+    { name: 'Master', min: 2200, max: 9999, color: '#ff00ff' }
 ];
 
-module.exports = { UNITS, EVOLVED_STATS, GAME_CONFIG, RATING_TIERS };
+const COIN_REWARDS = {
+    BASE_WIN: 50,           // Base coins for winning
+    BASE_LOSS: -20,         // Coins lost on defeat
+    PERFECT_WIN_BONUS: 30,  // Bonus for winning with 80%+ tower HP
+    WIN_STREAK_2: 20,       // 2 win streak bonus
+    WIN_STREAK_3: 40,       // 3 win streak bonus
+    WIN_STREAK_4_PLUS: 60,  // 4+ win streak bonus
+    RATING_BONUS_MULTIPLIER: 0.5, // Additional coins per rating change point
+};
+
+const CARD_LEVEL_CONFIG = {
+    MAX_LEVEL: 10,
+    STAT_INCREASE_PER_LEVEL: 0.08, // 8% increase per level (HP and Damage)
+    getCost: (currentLevel) => {
+        // Level 1->2: 100, 2->3: 200, 3->4: 400, etc.
+        return 100 * Math.pow(2, currentLevel - 1);
+    }
+};
+
+module.exports = { UNITS, EVOLVED_STATS, GAME_CONFIG, RATING_TIERS, COIN_REWARDS, CARD_LEVEL_CONFIG };
