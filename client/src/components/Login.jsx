@@ -21,6 +21,8 @@ const Login = ({ onLogin, onNavigate }) => {
             const data = await response.json();
 
             if (response.ok) {
+                // Save to localStorage for auto-login
+                localStorage.setItem('bibeGameUser', JSON.stringify(data.user));
                 onLogin(data.user);
             } else {
                 setError(data.message || '로그인 실패');

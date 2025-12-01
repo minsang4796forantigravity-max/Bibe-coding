@@ -51,7 +51,12 @@ function App() {
 
     function onGameOver({ winner }) {
       alert(`${winner} Wins!`);
-      window.location.reload();
+      // Return to lobby instead of reloading to keep login state
+      setGameState(null);
+      setPlayerId(null);
+      setStatus('lobby');
+      setSelectedDeck(null);
+      setIsSinglePlayer(false);
     }
 
     socket.on('connect', onConnect);
@@ -70,6 +75,21 @@ function App() {
     };
   }, []);
 
+  // Auto-login on component mount
+  useEffect(() => {
+    const savedUser = localStorage.getItem('bibeGameUser');
+    if (savedUser) {
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+        setStatus('lobby');
+      } catch (e) {
+        console.error('Failed to parse saved user:', e);
+        localStorage.removeItem('bibeGameUser');
+      }
+    }
+  }, []);
+
   const handleLogin = (loggedInUser) => {
     setUser(loggedInUser);
     setStatus('lobby');
@@ -78,6 +98,7 @@ function App() {
   const handleLogout = () => {
     setUser(null);
     setStatus('login');
+    localStorage.removeItem('bibeGameUser'); // Clear saved session
   };
 
   const handleJoinClick = () => {

@@ -27,8 +27,29 @@ const Signup = ({ onNavigate }) => {
             const data = await response.json();
 
             if (response.ok) {
-                alert('회원가입 성공! 로그인해주세요.');
-                onNavigate('login');
+                // Auto-login after successful signup
+                try {
+                    const loginResponse = await fetch(`${API_URL}/api/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password }),
+                    });
+                    const loginData = await loginResponse.json();
+
+                    if (loginResponse.ok) {
+                        // Save to localStorage for auto-login
+                        localStorage.setItem('bibeGameUser', JSON.stringify(loginData.user));
+                        alert('회원가입 성공! 자동 로그인됩니다.');
+                        // Reload page to trigger auto-login
+                        window.location.reload();
+                    } else {
+                        alert('회원가입 성공! 로그인해주세요.');
+                        onNavigate('login');
+                    }
+                } catch (loginErr) {
+                    alert('회원가입 성공! 로그인해주세요.');
+                    onNavigate('login');
+                }
             } else {
                 setError(data.message || '회원가입 실패');
             }
