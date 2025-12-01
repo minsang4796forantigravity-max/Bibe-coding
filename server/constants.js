@@ -497,7 +497,7 @@ const EVOLVED_STATS = {
 
 const GAME_CONFIG = {
     MANA_REGEN_RATE: 0.5,
-    MAX_MANA: 10, // 20 -> 10 (Standard)
+    MAX_MANA: 20, // 20 -> 10 (Standard) -> 20 (User Request)
     FIELD_WIDTH: 10,
     FIELD_HEIGHT: 18,
     FPS: 30,

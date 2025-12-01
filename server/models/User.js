@@ -31,6 +31,11 @@ const userSchema = new mongoose.Schema({
             default: Date.now
         },
         myDeck: [String] // Array of card IDs
+    }],
+    savedDecks: [{
+        name: { type: String, required: true },
+        cards: [String], // Array of card IDs
+        createdAt: { type: Date, default: Date.now }
     }]
 });
 

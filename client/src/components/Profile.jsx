@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { API_URL } from '../socket';
+import Leaderboard from './Leaderboard';
 import './Profile.css';
 
 const Profile = ({ username, onBack }) => {
@@ -98,17 +99,8 @@ const Profile = ({ username, onBack }) => {
                                 </div>
                             </div>
 
-                            <div className="leaderboard card">
-                                <h3>🏆 랭킹 Top 5</h3>
-                                <ul>
-                                    {leaderboard.map((user, index) => (
-                                        <li key={user._id} className={`rank-item ${user.username === username ? 'me' : ''}`}>
-                                            <span className={`rank rank-${index + 1}`}>{index + 1}</span>
-                                            <span className="name">{user.username}</span>
-                                            <span className="score">{user.rating || 1000}</span>
-                                        </li>
-                                    ))}
-                                </ul>
+                            <div className="leaderboard-wrapper">
+                                <Leaderboard currentUsername={username} limit={5} />
                             </div>
 
                             <div className="rating-rules card">

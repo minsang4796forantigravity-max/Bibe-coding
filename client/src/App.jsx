@@ -4,6 +4,7 @@ import { DeckSelector } from './components/DeckSelector';
 import Login from './components/Login';
 import Signup from './components/Signup';
 import Profile from './components/Profile';
+import Leaderboard from './components/Leaderboard';
 import { socket } from './socket';
 import './App.css';
 
@@ -171,7 +172,7 @@ function App() {
   }
 
   if (status === 'deck_select') {
-    return <DeckSelector onDeckSelected={handleDeckSelected} />;
+    return <DeckSelector onDeckSelected={handleDeckSelected} username={user ? user.username : null} />;
   }
 
   if (status === 'waiting') {
@@ -263,6 +264,10 @@ function App() {
             >
               게임 시작
             </button>
+          </div>
+
+          <div style={{ marginTop: '30px', width: '100%', maxWidth: '400px' }}>
+            <Leaderboard currentUsername={user ? user.username : ''} limit={5} compact={true} />
           </div>
         </div>
       )}

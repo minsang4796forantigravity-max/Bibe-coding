@@ -492,13 +492,54 @@ export const EVOLVED_STATS = {
     radius: 3.5,
     duration: 3,
     healPerSecond: 200,
+    deathDamageRadius: 3.0,
+    count: 1,
   },
+  GOBLIN_HUT: {
+    id: 'goblin_hut',
+    name: 'Goblin Hut',
+    cost: 5,
+    hp: 1200,
+    type: 'building',
+    lifetime: 50,
+    spawnUnit: 'goblin',
+    spawnInterval: 4.5,
+  },
+
+  // === 6 코스트 ===
+  MANA_COLLECTOR: {
+    id: 'mana_collector',
+    name: 'Mana Collector',
+    cost: 6, // 8 -> 6
+    hp: 1000,
+    type: 'building',
+    lifetime: 70,
+    manaProduction: 1,
+    productionInterval: 8.5,
+  },
+
+  // === 1 코스트 스펠 ===
+  HEAL: {
+    id: 'heal',
+    name: 'Heal',
+    cost: 1,
+    type: 'spell',
+    radius: 2.5,
+    duration: 2,
+    healPerSecond: 150,
+  },
+
+  // === 타워 ===
+  TOWER: {
+    id: 'tower',
+    name: 'King Tower',
+    hp: 4000,
+    damage: 110,
+    range: 7,
+    attackSpeed: 0.8,
+    type: 'building',
+  }
 };
 
-export const GAME_CONFIG = {
-  MANA_REGEN_RATE: 0.5,
-  MAX_MANA: 10, // 20 -> 10 (Standard)
-  FIELD_WIDTH: 10,
-  FIELD_HEIGHT: 18,
-  FPS: 30,
-};
+// 진화 스탯: 각 유닛마다 개별적으로 조정된 강화 스탯
+

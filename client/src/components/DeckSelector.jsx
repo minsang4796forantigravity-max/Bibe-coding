@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UNITS } from '../game/constants';
+import { API_URL } from '../socket';
 import '../styles/evolution-effects.css';
 
 // 카드 이미지 import
@@ -67,10 +68,103 @@ const CARD_IMAGES = {
     goblin_barrel: goblinBarrelImg,
 };
 
-export function DeckSelector({ onDeckSelected }) {
+export function DeckSelector({ onDeckSelected, username }) {
     // 8 slots: [0-5] regular cards, [6-7] evolution cards
     const [deckSlots, setDeckSlots] = useState(Array(8).fill(null));
     const [draggedCard, setDraggedCard] = useState(null);
+    const [savedDecks, setSavedDecks] = useState([]);
+    const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+    const [newDeckName, setNewDeckName] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Fetch saved decks on mount
+    useEffect(() => {
+        if (username) {
+            fetchSavedDecks();
+        }
+    }, [username]);
+
+    const fetchSavedDecks = async () => {
+        try {
+            const response = await fetch(`${API_URL}/api/auth/decks/${username}`);
+            if (response.ok) {
+                const data = await response.json();
+                setSavedDecks(data);
+            }
+        } catch (error) {
+            console.error('Error fetching saved decks:', error);
+        }
+    };
+
+    const handleSaveDeck = async () => {
+        if (!newDeckName.trim()) {
+            alert('덱 이름을 입력해주세요.');
+            return;
+        }
+
+        // Filter out nulls to get card IDs
+        const cards = deckSlots.filter(c => c !== null);
+        if (cards.length !== 8) {
+            alert('덱을 모두 채워주세요 (일반 6장 + 진화 2장).');
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const response = await fetch(`${API_URL}/api/auth/decks/save`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username,
+                    deckName: newDeckName,
+                    cards
+                })
+            });
+
+            if (response.ok) {
+                const updatedDecks = await response.json();
+                setSavedDecks(updatedDecks);
+                setIsSaveModalOpen(false);
+                setNewDeckName('');
+                alert('덱이 저장되었습니다.');
+            } else {
+                alert('덱 저장에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('Error saving deck:', error);
+            alert('오류가 발생했습니다.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleLoadDeck = (deck) => {
+        if (deck.cards.length !== 8) {
+            alert('유효하지 않은 덱 데이터입니다.');
+            return;
+        }
+        setDeckSlots(deck.cards);
+    };
+
+    const handleDeleteDeck = async (deckId, e) => {
+        e.stopPropagation(); // Prevent loading when clicking delete
+        if (!window.confirm('정말 이 덱을 삭제하시겠습니까?')) return;
+
+        try {
+            const response = await fetch(`${API_URL}/api/auth/decks/${username}/${deckId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                const updatedDecks = await response.json();
+                setSavedDecks(updatedDecks);
+            } else {
+                alert('덱 삭제에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('Error deleting deck:', error);
+        }
+    };
 
     // Sort cards by cost
     const sortedCards = [...ALL_CARDS].sort((a, b) => {
@@ -167,12 +261,171 @@ export function DeckSelector({ onDeckSelected }) {
                 textAlign: 'center',
                 borderBottom: '2px solid #333',
                 flexShrink: 0,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
             }}>
-                <h2 style={{ color: 'white', margin: '0 0 5px 0', fontSize: '1.2rem' }}>덱 구성</h2>
+                <h2 style={{ color: 'white', margin: '0', fontSize: '1.2rem' }}>덱 구성</h2>
+
+                {/* Saved Decks Controls */}
+                {username && (
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <div className="saved-decks-dropdown" style={{ position: 'relative' }}>
+                            <button
+                                className="dropdown-btn"
+                                style={{
+                                    padding: '5px 10px',
+                                    backgroundColor: '#333',
+                                    color: 'white',
+                                    border: '1px solid #555',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer'
+                                }}
+                                onClick={() => document.getElementById('saved-decks-list').classList.toggle('show')}
+                            >
+                                저장된 덱 불러오기 ({savedDecks.length})
+                            </button>
+                            <div id="saved-decks-list" style={{
+                                display: 'none',
+                                position: 'absolute',
+                                top: '100%',
+                                right: 0,
+                                backgroundColor: '#222',
+                                border: '1px solid #444',
+                                borderRadius: '4px',
+                                padding: '5px',
+                                zIndex: 100,
+                                minWidth: '200px',
+                                boxShadow: '0 4px 8px rgba(0,0,0,0.3)'
+                            }}>
+                                {savedDecks.length === 0 ? (
+                                    <div style={{ padding: '10px', color: '#888', fontSize: '0.9rem' }}>저장된 덱이 없습니다.</div>
+                                ) : (
+                                    savedDecks.map(deck => (
+                                        <div key={deck._id} style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            padding: '8px',
+                                            borderBottom: '1px solid #333',
+                                            cursor: 'pointer'
+                                        }}
+                                            onClick={() => {
+                                                handleLoadDeck(deck);
+                                                document.getElementById('saved-decks-list').classList.remove('show');
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#333'}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                            <span style={{ color: 'white', fontSize: '0.9rem' }}>{deck.name}</span>
+                                            <button
+                                                onClick={(e) => handleDeleteDeck(deck._id, e)}
+                                                style={{
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    color: '#e74c3c',
+                                                    cursor: 'pointer',
+                                                    fontSize: '12px'
+                                                }}
+                                            >
+                                                🗑️
+                                            </button>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setIsSaveModalOpen(true)}
+                            disabled={!isComplete}
+                            style={{
+                                padding: '5px 10px',
+                                backgroundColor: isComplete ? '#3498db' : '#555',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: isComplete ? 'pointer' : 'not-allowed'
+                            }}
+                        >
+                            현재 덱 저장
+                        </button>
+                    </div>
+                )}
+
                 <p style={{ color: '#aaa', margin: 0, fontSize: '0.9rem' }}>
                     일반: {regularFilled}/6 | 진화: {evolutionFilled}/2
                 </p>
             </div>
+
+            {/* Save Deck Modal */}
+            {isSaveModalOpen && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0,0,0,0.7)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 1000
+                }}>
+                    <div style={{
+                        backgroundColor: '#222',
+                        padding: '20px',
+                        borderRadius: '8px',
+                        width: '300px',
+                        border: '1px solid #444'
+                    }}>
+                        <h3 style={{ color: 'white', marginTop: 0 }}>덱 저장</h3>
+                        <input
+                            type="text"
+                            placeholder="덱 이름 입력"
+                            value={newDeckName}
+                            onChange={(e) => setNewDeckName(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '8px',
+                                marginBottom: '15px',
+                                backgroundColor: '#333',
+                                border: '1px solid #555',
+                                color: 'white',
+                                borderRadius: '4px'
+                            }}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                            <button
+                                onClick={() => setIsSaveModalOpen(false)}
+                                style={{
+                                    padding: '8px 16px',
+                                    backgroundColor: '#555',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleSaveDeck}
+                                disabled={isLoading}
+                                style={{
+                                    padding: '8px 16px',
+                                    backgroundColor: '#2ecc71',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                {isLoading ? '저장 중...' : '저장'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Deck Slots */}
             <div style={{

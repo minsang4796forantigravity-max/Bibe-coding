@@ -147,10 +147,11 @@ class BotAI {
                 return;
             }
 
-            // Easy mode: Less optimal placement
+            // Easy mode: Less optimal placement (but still defensive)
             if (this.difficulty === 'easy') {
                 deployX = threat.x;
-                deployY = threat.y + (myPlayerId === 'p1' ? 2 : -2);
+                // Place between threat and tower
+                deployY = threat.y + (myPlayerId === 'p1' ? -2 : 2);
             } else {
                 // Optimal Placement
                 if (unitStats.range > 2) {
