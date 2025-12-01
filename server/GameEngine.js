@@ -69,9 +69,9 @@ class GameEngine {
                 this.state[playerId].evolutions = fullDeck.slice(6, 8);
             }
 
-            // Initialize hand (first 4 cards)
-            this.state[playerId].hand = fullDeck.slice(0, 4);
-            this.state[playerId].nextCard = fullDeck[4] || fullDeck[0];
+            // Initialize hand (first 6 cards)
+            this.state[playerId].hand = fullDeck.slice(0, 6);
+            this.state[playerId].nextCard = fullDeck[6] || fullDeck[0];
         }
     }
 
@@ -99,7 +99,32 @@ class GameEngine {
     }
 
     getSerializableState() {
-        return this.state;
+        // Deep clone state and remove circular references
+        const serializeUnits = (units) => {
+            return units.map(unit => {
+                const { target, hitByLogIds, ...cleanUnit } = unit;
+                // Only include target ID if it exists, not the full object
+                if (target) {
+                    cleanUnit.targetId = target.id || null;
+                }
+                return cleanUnit;
+            });
+        };
+
+        return {
+            p1: {
+                ...this.state.p1,
+                units: serializeUnits(this.state.p1.units),
+            },
+            p2: {
+                ...this.state.p2,
+                units: serializeUnits(this.state.p2.units),
+            },
+            projectiles: this.state.projectiles,
+            activeSpells: this.state.activeSpells,
+            gameOver: this.state.gameOver,
+            winner: this.state.winner,
+        };
     }
 
     update(dt) {
@@ -712,18 +737,45 @@ class GameEngine {
 
             playerState.hand[idx] = nextCardToUse;
 
+            // Weighted card selection - cards already in hand are 10x less likely
             let newNextCard;
             const collectorCount = playerState.units.filter(u => u.cardId === 'mana_collector').length;
 
+            let candidateCards = playerState.deck;
+
+            // Filter out mana_collector if limit reached
             if (collectorCount >= 3) {
-                const availableCards = playerState.deck.filter(c => c !== 'mana_collector');
-                if (availableCards.length > 0) {
-                    newNextCard = availableCards[Math.floor(Math.random() * availableCards.length)];
-                } else {
-                    newNextCard = playerState.deck[Math.floor(Math.random() * playerState.deck.length)];
+                candidateCards = playerState.deck.filter(c => c !== 'mana_collector');
+                if (candidateCards.length === 0) {
+                    candidateCards = playerState.deck;
                 }
-            } else {
-                newNextCard = playerState.deck[Math.floor(Math.random() * playerState.deck.length)];
+            }
+
+            // Build weighted array
+            const weights = [];
+            candidateCards.forEach(card => {
+                // Cards in hand get weight 1, others get weight 10
+                const isInHand = playerState.hand.includes(card);
+                const weight = isInHand ? 1 : 10;
+                weights.push({ card, weight });
+            });
+
+            // Calculate total weight
+            const totalWeight = weights.reduce((sum, w) => sum + w.weight, 0);
+
+            // Select random card based on weights
+            let random = Math.random() * totalWeight;
+            for (let i = 0; i < weights.length; i++) {
+                random -= weights[i].weight;
+                if (random <= 0) {
+                    newNextCard = weights[i].card;
+                    break;
+                }
+            }
+
+            // Fallback
+            if (!newNextCard) {
+                newNextCard = candidateCards[Math.floor(Math.random() * candidateCards.length)];
             }
 
             playerState.nextCard = newNextCard;
