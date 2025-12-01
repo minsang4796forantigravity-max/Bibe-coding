@@ -76,6 +76,7 @@ export function DeckSelector({ onDeckSelected, username }) {
     const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
     const [newDeckName, setNewDeckName] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     // Fetch saved decks on mount
     useEffect(() => {
@@ -289,59 +290,60 @@ export function DeckSelector({ onDeckSelected, username }) {
                                     borderRadius: '4px',
                                     cursor: 'pointer'
                                 }}
-                                onClick={() => document.getElementById('saved-decks-list').classList.toggle('show')}
+                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                             >
                                 저장된 덱 불러오기 ({savedDecks.length})
                             </button>
-                            <div id="saved-decks-list" style={{
-                                display: 'none',
-                                position: 'absolute',
-                                top: '100%',
-                                right: 0,
-                                backgroundColor: '#222',
-                                border: '1px solid #444',
-                                borderRadius: '4px',
-                                padding: '5px',
-                                zIndex: 100,
-                                minWidth: '200px',
-                                boxShadow: '0 4px 8px rgba(0,0,0,0.3)'
-                            }}>
-                                {savedDecks.length === 0 ? (
-                                    <div style={{ padding: '10px', color: '#888', fontSize: '0.9rem' }}>저장된 덱이 없습니다.</div>
-                                ) : (
-                                    savedDecks.map(deck => (
-                                        <div key={deck._id} style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            padding: '8px',
-                                            borderBottom: '1px solid #333',
-                                            cursor: 'pointer'
-                                        }}
-                                            onClick={() => {
-                                                handleLoadDeck(deck);
-                                                document.getElementById('saved-decks-list').classList.remove('show');
+                            {isDropdownOpen && (
+                                <div id="saved-decks-list" style={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    right: 0,
+                                    backgroundColor: '#222',
+                                    border: '1px solid #444',
+                                    borderRadius: '4px',
+                                    padding: '5px',
+                                    zIndex: 100,
+                                    minWidth: '200px',
+                                    boxShadow: '0 4px 8px rgba(0,0,0,0.3)'
+                                }}>
+                                    {savedDecks.length === 0 ? (
+                                        <div style={{ padding: '10px', color: '#888', fontSize: '0.9rem' }}>저장된 덱이 없습니다.</div>
+                                    ) : (
+                                        savedDecks.map(deck => (
+                                            <div key={deck._id} style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                padding: '8px',
+                                                borderBottom: '1px solid #333',
+                                                cursor: 'pointer'
                                             }}
-                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#333'}
-                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                                        >
-                                            <span style={{ color: 'white', fontSize: '0.9rem' }}>{deck.name}</span>
-                                            <button
-                                                onClick={(e) => handleDeleteDeck(deck._id, e)}
-                                                style={{
-                                                    background: 'none',
-                                                    border: 'none',
-                                                    color: '#e74c3c',
-                                                    cursor: 'pointer',
-                                                    fontSize: '12px'
+                                                onClick={() => {
+                                                    handleLoadDeck(deck);
+                                                    setIsDropdownOpen(false);
                                                 }}
+                                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#333'}
+                                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                             >
-                                                🗑️
-                                            </button>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
+                                                <span style={{ color: 'white', fontSize: '0.9rem' }}>{deck.name}</span>
+                                                <button
+                                                    onClick={(e) => handleDeleteDeck(deck._id, e)}
+                                                    style={{
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        color: '#e74c3c',
+                                                        cursor: 'pointer',
+                                                        fontSize: '12px'
+                                                    }}
+                                                >
+                                                    🗑️
+                                                </button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            )}
                         </div>
                         <button
                             onClick={() => setIsSaveModalOpen(true)}
