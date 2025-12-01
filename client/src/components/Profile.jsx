@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { API_URL } from '../socket';
 import Leaderboard from './Leaderboard';
+import TierBadge from './TierBadge';
 import './Profile.css';
 
 const Profile = ({ username, onBack }) => {
     const [userData, setUserData] = useState(null);
-    const [leaderboard, setLeaderboard] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedOpponent, setSelectedOpponent] = useState(null);
     const [opponentStats, setOpponentStats] = useState(null);
@@ -13,18 +13,10 @@ const Profile = ({ username, onBack }) => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [profileRes, leaderboardRes] = await Promise.all([
-                    fetch(`${API_URL}/api/auth/profile/${username}`),
-                    fetch(`${API_URL}/api/auth/leaderboard`)
-                ]);
-
-                if (profileRes.ok) {
-                    const data = await profileRes.json();
+                const response = await fetch(`${API_URL}/api/auth/profile/${username}`);
+                if (response.ok) {
+                    const data = await response.json();
                     setUserData(data);
-                }
-                if (leaderboardRes.ok) {
-                    const lbData = await leaderboardRes.json();
-                    setLeaderboard(lbData);
                 }
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -79,7 +71,9 @@ const Profile = ({ username, onBack }) => {
                         <h2>{userData.username}님의 전적</h2>
                         <div className="rating-badge">
                             <span className="rating-label">Rating</span>
-                            <span className="rating-value">{userData.rating || 1000}</span>
+                            <span className="rating-value">
+                                {userData.rating || 1000} <TierBadge rating={userData.rating || 1000} />
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -132,6 +126,12 @@ const Profile = ({ username, onBack }) => {
                                                             onClick={() => handleOpponentClick(match.opponent)}
                                                         >
                                                             {match.opponent}
+                                                            {match.aiDifficulty && (
+                                                                <span className="ai-info">
+                                                                    (AI: {match.aiDifficulty})
+                                                                    {match.aiDeck && <span className="ai-deck-name"> - {match.aiDeck}</span>}
+                                                                </span>
+                                                            )}
                                                         </span>
                                                     </div>
                                                 </div>

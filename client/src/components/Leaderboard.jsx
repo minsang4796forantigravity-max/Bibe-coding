@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { API_URL } from '../socket';
+import TierBadge from './TierBadge';
 import './Leaderboard.css';
 
 const Leaderboard = ({ currentUsername, limit = 5, compact = false }) => {
@@ -37,7 +38,10 @@ const Leaderboard = ({ currentUsername, limit = 5, compact = false }) => {
                         <div className={`rank-badge rank-${index + 1}`}>{index + 1}</div>
                         <div className="user-info">
                             <span className="username">{user.username}</span>
-                            <span className="rating">{user.rating || 1000} MMR</span>
+                            <span className="rating-container">
+                                <span className="rating">{user.rating || 1000} MMR</span>
+                                <TierBadge rating={user.rating || 1000} size="small" showName={false} />
+                            </span>
                         </div>
                     </li>
                 ))}

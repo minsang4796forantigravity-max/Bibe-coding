@@ -194,8 +194,10 @@ class GameEngine {
     }
 
     calculateRatingChange(myRating, opponentRating, result, isAI = false, aiDifficulty = 'medium') {
-        // K-factor: how much rating changes per game
-        const K = 32;
+        // Dynamic K-factor
+        let K = 32;
+        if (myRating < 1200) K = 40;
+        else if (myRating > 2000) K = 20;
 
         // Expected score based on rating difference
         const expectedScore = 1 / (1 + Math.pow(10, (opponentRating - myRating) / 400));
@@ -271,6 +273,7 @@ class GameEngine {
                                 result,
                                 opponent: opponentName,
                                 aiDifficulty,
+                                aiDeck: isAI && this.bot ? this.bot.selectedDeckName : null,
                                 date: new Date(),
                                 myDeck: p1.deck,
                                 ratingChange
@@ -311,6 +314,7 @@ class GameEngine {
                                 result,
                                 opponent: opponentName,
                                 aiDifficulty,
+                                aiDeck: isAI && this.bot ? this.bot.selectedDeckName : null,
                                 date: new Date(),
                                 myDeck: p2.deck,
                                 ratingChange

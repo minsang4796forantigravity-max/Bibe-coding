@@ -503,4 +503,13 @@ const GAME_CONFIG = {
     FPS: 30,
 };
 
-module.exports = { UNITS, EVOLVED_STATS, GAME_CONFIG };
+const RATING_TIERS = [
+    { name: 'Bronze', min: 0, color: '#cd7f32' },
+    { name: 'Silver', min: 1100, color: '#c0c0c0' },
+    { name: 'Gold', min: 1400, color: '#ffd700' },
+    { name: 'Platinum', min: 1700, color: '#e5e4e2' },
+    { name: 'Diamond', min: 2000, color: '#b9f2ff' },
+    { name: 'Master', min: 2300, color: '#ff00ff' }
+];
+
+module.exports = { UNITS, EVOLVED_STATS, GAME_CONFIG, RATING_TIERS };

@@ -27,6 +27,7 @@ class BotAI {
         const deckKeys = Object.keys(DECKS);
         const randomKey = deckKeys[Math.floor(Math.random() * deckKeys.length)];
         this.selectedDeck = DECKS[randomKey];
+        this.selectedDeckName = randomKey; // Expose deck name
 
         console.log(`Bot initialized with difficulty: ${difficulty}, Deck: ${randomKey}`);
 

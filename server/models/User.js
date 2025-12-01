@@ -22,15 +22,13 @@ const userSchema = new mongoose.Schema({
         default: 1000 // Starting rating
     },
     matchHistory: [{
-        result: String, // 'win' or 'lose'
+        result: { type: String, enum: ['win', 'lose', 'draw'] },
         opponent: String,
-        aiDifficulty: String, // 'easy', 'medium', 'hard', 'impossible' for AI games, null for PvP
-        ratingChange: Number, // Rating gained/lost in this match
-        date: {
-            type: Date,
-            default: Date.now
-        },
-        myDeck: [String] // Array of card IDs
+        aiDifficulty: String,
+        aiDeck: String, // New field for AI Deck name
+        date: { type: Date, default: Date.now },
+        ratingChange: Number,
+        myDeck: [String]
     }],
     savedDecks: [{
         name: { type: String, required: true },
