@@ -541,7 +541,49 @@ export function BattleScreen({ gameState, playerId, socket }) {
                 boxShadow: '0 -8px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)',
                 zIndex: 50,
                 borderTop: '2px solid rgba(52,152,219,0.3)',
+                position: 'relative',
             }}>
+                {/* Timer Display */}
+                <div style={{
+                    position: 'absolute',
+                    top: '-40px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    padding: '5px 15px',
+                    borderRadius: '20px',
+                    color: gameState.timeLeft <= 60 ? '#e74c3c' : 'white',
+                    fontWeight: 'bold',
+                    fontSize: '18px',
+                    border: '2px solid rgba(255, 255, 255, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+                }}>
+                    <span>
+                        {Math.floor(gameState.timeLeft / 60)}:{(Math.floor(gameState.timeLeft) % 60).toString().padStart(2, '0')}
+                    </span>
+                    {gameState.isDoubleElixir && (
+                        <span style={{
+                            color: '#f1c40f',
+                            fontSize: '14px',
+                            animation: 'pulse 1s infinite'
+                        }}>
+                            2x Elixir!
+                        </span>
+                    )}
+                    {gameState.isOvertime && (
+                        <span style={{
+                            color: '#e74c3c',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            animation: 'pulse 0.5s infinite'
+                        }}>
+                            OVERTIME
+                        </span>
+                    )}
+                </div>
                 {/* Mana Bar */}
                 <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', gap: '12px' }}>
                     <div style={{

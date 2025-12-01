@@ -33,6 +33,9 @@ class GameEngine {
             activeSpells: [],
             gameOver: false,
             winner: null,
+            timeLeft: 180, // 3 minutes
+            isDoubleElixir: false,
+            isOvertime: false,
         };
         this.interval = null;
         this.lastTime = Date.now();
@@ -139,6 +142,36 @@ class GameEngine {
             });
         }
 
+        // Update Timer
+        this.state.timeLeft -= dt;
+
+        // Double Elixir Check (Last 60s or Overtime)
+        if (this.state.timeLeft <= 60 && !this.state.isDoubleElixir) {
+            this.state.isDoubleElixir = true;
+        }
+
+        // Overtime Check
+        if (this.state.timeLeft <= 0 && !this.state.isOvertime) {
+            if (this.state.p1.hp === this.state.p2.hp) {
+                this.state.isOvertime = true;
+                this.state.timeLeft = 60; // 1 minute overtime
+            } else {
+                this.endGame(this.state.p1.hp > this.state.p2.hp ? 'p1' : 'p2');
+                return;
+            }
+        } else if (this.state.timeLeft <= 0 && this.state.isOvertime) {
+            // Overtime over, draw or tie-breaker (highest HP wins)
+            if (this.state.p1.hp > this.state.p2.hp) {
+                this.endGame('p1');
+            } else if (this.state.p2.hp > this.state.p1.hp) {
+                this.endGame('p2');
+            } else {
+                this.endGame('draw'); // Implement draw logic if needed
+            }
+            return;
+        }
+
+
         // Regenerate Mana
         let botMultiplier = 1.0;
         switch (this.botDifficulty) {
@@ -149,8 +182,13 @@ class GameEngine {
             default: botMultiplier = 1.0;
         }
 
-        const p1Regen = (this.botPlayerId === 'p1' ? botMultiplier : 1.0) * GAME_CONFIG.MANA_REGEN_RATE * dt;
-        const p2Regen = (this.botPlayerId === 'p2' ? botMultiplier : 1.0) * GAME_CONFIG.MANA_REGEN_RATE * dt;
+        let manaRate = GAME_CONFIG.MANA_REGEN_RATE;
+        if (this.state.isDoubleElixir) {
+            manaRate *= 2;
+        }
+
+        const p1Regen = (this.botPlayerId === 'p1' ? botMultiplier : 1.0) * manaRate * dt;
+        const p2Regen = (this.botPlayerId === 'p2' ? botMultiplier : 1.0) * manaRate * dt;
 
         if (this.state.p1.mana < GAME_CONFIG.MAX_MANA) {
             this.state.p1.mana = Math.min(GAME_CONFIG.MAX_MANA, this.state.p1.mana + p1Regen);
