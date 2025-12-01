@@ -88,145 +88,124 @@ const Profile = ({ username, onBack }) => {
                             <span className="rating-value">
                                 {(userData.coins || 500).toLocaleString()}
                             </span>
+                            <div className="info-row">
+                                <span className="label">💰 보유 코인</span>
+                                <span className="value">{(userData.coins || 500).toLocaleString()}</span>
+                            </div>
+                            <div className="info-row">
+                                <span className="label">🔥 현재 연승</span>
+                                <span className="value">{userData.winStreak || 0}</span>
+                            </div>
+                        </div>
+
+                        <div className="leaderboard-wrapper">
+                            <Leaderboard currentUsername={username} limit={5} />
+                        </div>
+
+                        <div className="rating-rules card">
+                            <h3>ℹ️ 레이팅 규칙</h3>
+                            <ul className="rules-list">
+                                <li><span className="rule-label">승리</span> <span className="rule-value win">+30 (기본)</span></li>
+                                <li><span className="rule-label">패배</span> <span className="rule-value lose">-10 (기본)</span></li>
+                                <li><span className="rule-desc">* 상대와의 점수 차이에 따라 변동폭이 달라집니다.</span></li>
+                                <li><span className="rule-desc">* AI 난이도에 따라 추가 보정이 적용됩니다.</span></li>
+                            </ul>
                         </div>
                     </div>
-                </div>
 
-                <div className="scrollable-content">
-                    <div className="content-grid">
-                        <div className="left-panel">
-                            <div className="stats-summary card">
-                                <h3>내 정보</h3>
-                                <div className="info-row">
-                                    <span className="label">가입일</span>
-                                    <span className="value">{new Date(userData.createdAt).toLocaleDateString()}</span>
+                    <div className="right-panel">
+                        <div className="match-history card">
+                            <h3>최근 전적</h3>
+                            {userData.matchHistory.length === 0 ? (
+                                <p className="no-data">전적이 없습니다.</p>
+                            ) : (
+                                <div className="history-list-container">
+                                    <ul className="history-list">
+                                        {userData.matchHistory.slice().reverse().map((match, index) => (
+                                            <li key={index} className={`match-item ${match.result}`}>
+                                                <div className="match-result-indicator">
+                                                    {match.result === 'win' ? 'W' : 'L'}
+                                                </div>
+                                                <div className="match-details">
+                                                    <div className="opponent-row">
+                                                        <span className="vs-label">VS</span>
+                                                        <span
+                                                            className={`opponent-name ${match.opponent !== 'AI' ? 'clickable' : ''}`}
+                                                            onClick={() => handleOpponentClick(match.opponent)}
+                                                        >
+                                                            {match.opponent}
+                                                        </span>
+                                                        {match.aiDifficulty && (
+                                                            <span className="ai-badge">{match.aiDifficulty}</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="match-rewards">
+                                                        <span className={`rating-change ${match.ratingChange >= 0 ? 'positive' : 'negative'}`}>
+                                                            {match.ratingChange > 0 ? '+' : ''}{match.ratingChange} MMR
+                                                        </span>
+                                                        {match.coinsEarned !== undefined && (
+                                                            <span className="coins-earned">
+                                                                +{match.coinsEarned} 💰
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="match-date">
+                                                        {new Date(match.date).toLocaleDateString()}
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </div>
-                                <div className="info-row">
-                                    <span className="label">총 게임</span>
-                                    <span className="value">{userData.matchHistory.length}</span>
-                                </div>
-                                <div className="info-row">
-                                    <span className="label">최고 레이팅</span>
-                                    <span className="value">{userData.peakRating || 1000}</span>
-                                </div>
-                                <div className="info-row">
-                                    <span className="label">💰 보유 코인</span>
-                                    <span className="value">{(userData.coins || 500).toLocaleString()}</span>
-                                </div>
-                                <div className="info-row">
-                                    <span className="label">🔥 현재 연승</span>
-                                    <span className="value">{userData.winStreak || 0}</span>
-                                </div>
-                            </div>
-
-                            <div className="leaderboard-wrapper">
-                                <Leaderboard currentUsername={username} limit={5} />
-                            </div>
-
-                            <div className="rating-rules card">
-                                <h3>ℹ️ 레이팅 규칙</h3>
-                                <ul className="rules-list">
-                                    <li><span className="rule-label">승리</span> <span className="rule-value win">+30 (기본)</span></li>
-                                    <li><span className="rule-label">패배</span> <span className="rule-value lose">-10 (기본)</span></li>
-                                    <li><span className="rule-desc">* 상대와의 점수 차이에 따라 변동폭이 달라집니다.</span></li>
-                                    <li><span className="rule-desc">* AI 난이도에 따라 추가 보정이 적용됩니다.</span></li>
-                                </ul>
-                            </div>
+                            )}
                         </div>
 
-                        <div className="right-panel">
-                            <div className="match-history card">
-                                <h3>최근 전적</h3>
-                                {userData.matchHistory.length === 0 ? (
-                                    <p className="no-data">전적이 없습니다.</p>
-                                ) : (
-                                    <div className="history-list-container">
-                                        <ul className="history-list">
-                                            {userData.matchHistory.slice().reverse().map((match, index) => (
-                                                <li key={index} className={`match-item ${match.result}`}>
-                                                    <div className="match-result-indicator">
-                                                        {match.result === 'win' ? 'W' : 'L'}
-                                                    </div>
-                                                    <div className="match-details">
-                                                        <div className="opponent-row">
-                                                            <span className="vs-label">VS</span>
-                                                            <span
-                                                                className={`opponent-name ${match.opponent !== 'AI' ? 'clickable' : ''}`}
-                                                                onClick={() => handleOpponentClick(match.opponent)}
-                                                            >
-                                                                {match.opponent}
-                                                            </span>
-                                                            {match.aiDifficulty && (
-                                                                <span className="ai-badge">{match.aiDifficulty}</span>
-                                                            )}
-                                                        </div>
-                                                        <div className="match-rewards">
-                                                            <span className={`rating-change ${match.ratingChange >= 0 ? 'positive' : 'negative'}`}>
-                                                                {match.ratingChange > 0 ? '+' : ''}{match.ratingChange} MMR
-                                                            </span>
-                                                            {match.coinsEarned !== undefined && (
-                                                                <span className="coins-earned">
-                                                                    +{match.coinsEarned} 💰
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <div className="match-date">
-                                                            {new Date(match.date).toLocaleDateString()}
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="card-info-section card">
-                                <h3>🃏 카드 정보</h3>
-                                <div className="card-grid">
-                                    {cards.map((card, idx) => (
-                                        <div key={idx} className="card-item">
-                                            <div className="card-header">
-                                                <span className="card-name">{card.name}</span>
-                                                <span className="card-cost">{card.cost}</span>
-                                            </div>
-                                            <p className="card-desc">{card.desc}</p>
+                        <div className="card-info-section card">
+                            <h3>🃏 카드 정보</h3>
+                            <div className="card-grid">
+                                {cards.map((card, idx) => (
+                                    <div key={idx} className="card-item">
+                                        <div className="card-header">
+                                            <span className="card-name">{card.name}</span>
+                                            <span className="card-cost">{card.cost}</span>
                                         </div>
-                                    ))}
-                                </div>
+                                        <p className="card-desc">{card.desc}</p>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
                 </div>
-
-                {selectedOpponent && opponentStats && (
-                    <div className="modal-overlay" onClick={closeStatsModal}>
-                        <div className="modal-content" onClick={e => e.stopPropagation()}>
-                            <h3>vs {selectedOpponent} 전적</h3>
-                            <div className="modal-stats">
-                                <div className="stat-box">
-                                    <span className="label">승률</span>
-                                    <span className="value">{opponentStats.winRate}%</span>
-                                </div>
-                                <div className="stat-box">
-                                    <span className="label">승</span>
-                                    <span className="value win">{opponentStats.wins}</span>
-                                </div>
-                                <div className="stat-box">
-                                    <span className="label">패</span>
-                                    <span className="value lose">{opponentStats.losses}</span>
-                                </div>
-                                <div className="stat-box">
-                                    <span className="label">총 게임</span>
-                                    <span className="value">{opponentStats.totalGames}</span>
-                                </div>
-                            </div>
-                            <button className="close-btn" onClick={closeStatsModal}>닫기</button>
-                        </div>
-                    </div>
-                )}
             </div>
+
+            {selectedOpponent && opponentStats && (
+                <div className="modal-overlay" onClick={closeStatsModal}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <h3>vs {selectedOpponent} 전적</h3>
+                        <div className="modal-stats">
+                            <div className="stat-box">
+                                <span className="label">승률</span>
+                                <span className="value">{opponentStats.winRate}%</span>
+                            </div>
+                            <div className="stat-box">
+                                <span className="label">승</span>
+                                <span className="value win">{opponentStats.wins}</span>
+                            </div>
+                            <div className="stat-box">
+                                <span className="label">패</span>
+                                <span className="value lose">{opponentStats.losses}</span>
+                            </div>
+                            <div className="stat-box">
+                                <span className="label">총 게임</span>
+                                <span className="value">{opponentStats.totalGames}</span>
+                            </div>
+                        </div>
+                        <button className="close-btn" onClick={closeStatsModal}>닫기</button>
+                    </div>
+                </div>
+            )}
         </div>
+
     );
 };
 
