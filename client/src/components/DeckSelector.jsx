@@ -86,10 +86,18 @@ export function DeckSelector({ onDeckSelected, username }) {
 
     const fetchSavedDecks = async () => {
         try {
-            const response = await fetch(`${API_URL}/api/auth/decks/${username}`);
+            console.log(`Fetching decks for user: ${username}`);
+            const encodedUsername = encodeURIComponent(username);
+            const response = await fetch(`${API_URL}/api/auth/decks/${encodedUsername}`);
+
             if (response.ok) {
                 const data = await response.json();
+                console.log('Loaded decks:', data);
                 setSavedDecks(data);
+            } else {
+                console.error('Failed to fetch decks:', response.status, response.statusText);
+                const errorText = await response.text();
+                console.error('Error details:', errorText);
             }
         } catch (error) {
             console.error('Error fetching saved decks:', error);

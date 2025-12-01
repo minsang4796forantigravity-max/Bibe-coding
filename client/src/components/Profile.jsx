@@ -140,41 +140,44 @@ const Profile = ({ username, onBack }) => {
                                 {userData.matchHistory.length === 0 ? (
                                     <p className="no-data">전적이 없습니다.</p>
                                 ) : (
-                                    <ul className="history-list">
-                                        {userData.matchHistory.slice().reverse().map((match, index) => (
-                                            <li key={index} className={`match-item ${match.result}`}>
-                                                <div className="match-info">
-                                                    <span className="result-badge">{match.result === 'win' ? 'WIN' : 'LOSE'}</span>
-                                                    <div className="opponent-info">
-                                                        <span className="vs">vs</span>
-                                                        <span
-                                                            className={`opponent-name ${match.opponent !== 'AI' ? 'clickable' : ''}`}
-                                                            onClick={() => handleOpponentClick(match.opponent)}
-                                                        >
-                                                            {match.opponent}
+                                    <div className="history-list-container">
+                                        <ul className="history-list">
+                                            {userData.matchHistory.slice().reverse().map((match, index) => (
+                                                <li key={index} className={`match-item ${match.result}`}>
+                                                    <div className="match-result-indicator">
+                                                        {match.result === 'win' ? 'W' : 'L'}
+                                                    </div>
+                                                    <div className="match-details">
+                                                        <div className="opponent-row">
+                                                            <span className="vs-label">VS</span>
+                                                            <span
+                                                                className={`opponent-name ${match.opponent !== 'AI' ? 'clickable' : ''}`}
+                                                                onClick={() => handleOpponentClick(match.opponent)}
+                                                            >
+                                                                {match.opponent}
+                                                            </span>
                                                             {match.aiDifficulty && (
-                                                                <span className="ai-info">
-                                                                    (AI: {match.aiDifficulty})
-                                                                    {match.aiDeck && <span className="ai-deck-name"> - {match.aiDeck}</span>}
+                                                                <span className="ai-badge">{match.aiDifficulty}</span>
+                                                            )}
+                                                        </div>
+                                                        <div className="match-rewards">
+                                                            <span className={`rating-change ${match.ratingChange >= 0 ? 'positive' : 'negative'}`}>
+                                                                {match.ratingChange > 0 ? '+' : ''}{match.ratingChange} MMR
+                                                            </span>
+                                                            {match.coinsEarned !== undefined && (
+                                                                <span className="coins-earned">
+                                                                    +{match.coinsEarned} 💰
                                                                 </span>
                                                             )}
-                                                        </span>
+                                                        </div>
+                                                        <div className="match-date">
+                                                            {new Date(match.date).toLocaleDateString()}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <div className="match-meta">
-                                                    <span className={`rating-change ${match.ratingChange >= 0 ? 'positive' : 'negative'}`}>
-                                                        {match.ratingChange > 0 ? '+' : ''}{match.ratingChange} MMR
-                                                    </span>
-                                                    {match.coinsEarned !== undefined && (
-                                                        <span className={`coins-earned ${match.coinsEarned >= 0 ? 'positive' : 'negative'}`} style={{ marginLeft: '8px' }}>
-                                                            {match.coinsEarned > 0 ? '+' : ''}{match.coinsEarned} 💰
-                                                        </span>
-                                                    )}
-                                                    <span className="date">{new Date(match.date).toLocaleDateString()}</span>
-                                                </div>
-                                            </li>
-                                        ))}
-                                    </ul>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
                                 )}
                             </div>
 
