@@ -24,8 +24,8 @@ app.use(cors());
 app.use(express.json());
 
 // 계정 관련 API 라우트
-// 클라이언트에서 POST /auth/signup, /auth/login 이런 식으로 호출 가능
-app.use('/auth', authRoutes);
+// 클라이언트에서 POST /api/auth/signup, /api/auth/login 호출
+app.use('/api/auth', authRoutes);
 // 만약 /api/auth로도 쓰고 싶으면 아래 줄 추가해도 됨
 // app.use('/api/auth', authRoutes);
 
