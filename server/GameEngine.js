@@ -217,7 +217,19 @@ class GameEngine {
             this.endGame('p1');
         }
 
-        this.io.to(this.roomId).emit('game_update', this.getSerializableState());
+        // Send update to client (throttle to 20 FPS to save bandwidth)
+        // 60 FPS update loop -> send every 3rd frame
+        if (!this.frameCount) this.frameCount = 0;
+        this.frameCount++;
+        if (this.frameCount % 3 === 0) {
+            this.io.to(this.roomId).emit('game_update', this.getSerializableState());
+        }
+
+        // Debug Timer every 10 seconds
+        if (Math.floor(this.state.timeLeft) % 10 === 0 && Math.floor(this.state.timeLeft) !== this.lastDebugTime) {
+            this.lastDebugTime = Math.floor(this.state.timeLeft);
+            console.log(`[Game ${this.roomId}] Time Left: ${this.state.timeLeft.toFixed(1)}s, DoubleElixir: ${this.state.isDoubleElixir}`);
+        }
     }
 
     endGame(winnerId) {
