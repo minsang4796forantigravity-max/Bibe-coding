@@ -1,44 +1,56 @@
+// 환경변수(.env) 읽기
 require('dotenv').config();
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const mongoose = require('mongoose');
+
 const GameEngine = require('./GameEngine');
 const BotAI = require('./BotAI');
 const authRoutes = require('./routes/auth');
 
+// ======================= MongoDB 연결 =======================
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/bibe-game';
+
+mongoose.connect(MONGO_URI)
+    .then(() => console.log("✅ MongoDB 연결 성공"))
+    .catch(err => console.error("❌ MongoDB 연결 실패:", err));
+
+// ======================= Express / Socket.io 기본 설정 =======================
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/bibe-game')
-    .then(() => console.log('MongoDB Connected'))
-    .catch(err => console.error('MongoDB Connection Error:', err));
-
-// Routes
-app.use('/api/auth', authRoutes);
+// 계정 관련 API 라우트
+// 클라이언트에서 POST /auth/signup, /auth/login 이런 식으로 호출 가능
+app.use('/auth', authRoutes);
+// 만약 /api/auth로도 쓰고 싶으면 아래 줄 추가해도 됨
+// app.use('/api/auth', authRoutes);
 
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
         origin: "*",
-        methods: ["GET", "POST"]
-    }
+        methods: ["GET", "POST"],
+    },
 });
 
+// 방마다 GameEngine 저장
 const games = new Map(); // roomId -> GameEngine
 
+// ======================= Socket.io 이벤트 =======================
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
+    // 멀티플레이 매칭
     socket.on('join_game', (data) => {
         const username = data ? data.username : null;
         let game = null;
         let gameId = null;
 
-        // Find waiting game
+        // 기다리는 게임 찾기
         for (const [id, g] of games.entries()) {
             if (!g.isFull() && !id.startsWith('single_')) {
                 game = g;
@@ -47,6 +59,7 @@ io.on('connection', (socket) => {
             }
         }
 
+        // 없으면 새 게임 생성
         if (!game) {
             gameId = Math.random().toString(36).substring(7);
             game = new GameEngine(gameId, io);
@@ -73,12 +86,13 @@ io.on('connection', (socket) => {
         }
     });
 
+    // 싱글 플레이 시작
     socket.on('start_single_player', (data) => {
         const { deck, difficulty, username } = data || {};
         console.log('[DEBUG] start_single_player received:', { deckLength: deck?.length, difficulty, username });
         const roomId = `single_${socket.id}`;
 
-        // Clean up existing game if any
+        // 기존 싱글 게임 있으면 정리
         if (games.has(roomId)) {
             games.get(roomId).stop();
             games.delete(roomId);
@@ -87,14 +101,14 @@ io.on('connection', (socket) => {
         const game = new GameEngine(roomId, io);
         games.set(roomId, game);
 
-        // Add Human
+        // 플레이어 참가
         const playerRole = game.joinGame(socket.id, username);
         if (deck) {
             game.setPlayerDeck(playerRole, deck);
         }
         console.log('[DEBUG] Player role:', playerRole);
 
-        // Add Bot
+        // 봇 생성 및 참가
         const bot = new BotAI(difficulty || 'medium');
         const botDeck = bot.getDeck();
         const botRole = game.joinGame('bot', 'AI'); // Bot joins as 'bot' ID
@@ -117,8 +131,8 @@ io.on('connection', (socket) => {
         }
     });
 
+    // 카드 배치
     socket.on('deploy_card', ({ cardId, x, y }) => {
-        // Find which game this socket is in
         for (const game of games.values()) {
             if (game.state.p1.id === socket.id) {
                 game.deployCard('p1', cardId, x, y);
@@ -132,11 +146,12 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
-        // Handle cleanup if needed
+        // TODO: 방 정리 로직 필요하면 여기서
     });
 });
 
+// ======================= 서버 시작 =======================
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
 });
