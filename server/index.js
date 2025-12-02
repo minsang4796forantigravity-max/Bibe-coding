@@ -45,24 +45,39 @@ io.on('connection', (socket) => {
 
     // 멀티플레이 매칭
     socket.on('join_game', (data) => {
-        const { username, deck } = data || {};
+        const { roomId, username, deck } = data || {};
         let game = null;
-        let gameId = null;
+        let gameId = roomId;
 
-        // 기다리는 게임 찾기
-        for (const [id, g] of games.entries()) {
-            if (!g.isFull() && !id.startsWith('single_')) {
-                game = g;
-                gameId = id;
-                break;
+        if (gameId) {
+            // 특정 방 참가 또는 생성
+            if (games.has(gameId)) {
+                game = games.get(gameId);
+                if (game.isFull()) {
+                    socket.emit('error', 'Room is full');
+                    return;
+                }
+            } else {
+                console.log(`Creating new room: ${gameId}`);
+                game = new GameEngine(gameId, io);
+                games.set(gameId, game);
             }
-        }
+        } else {
+            // 랜덤 매칭 (Room ID가 없을 경우)
+            for (const [id, g] of games.entries()) {
+                if (!g.isFull() && !id.startsWith('single_')) {
+                    game = g;
+                    gameId = id;
+                    break;
+                }
+            }
 
-        // 없으면 새 게임 생성
-        if (!game) {
-            gameId = Math.random().toString(36).substring(7);
-            game = new GameEngine(gameId, io);
-            games.set(gameId, game);
+            // 없으면 새 게임 생성
+            if (!game) {
+                gameId = Math.random().toString(36).substring(7);
+                game = new GameEngine(gameId, io);
+                games.set(gameId, game);
+            }
         }
 
         const playerRole = game.joinGame(socket.id, username);
