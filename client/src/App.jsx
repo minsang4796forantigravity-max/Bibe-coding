@@ -66,6 +66,11 @@ function App() {
     socket.on('game_start', onGameStart);
     socket.on('game_update', onGameUpdate);
     socket.on('game_over', onGameOver);
+    socket.on('error', (err) => {
+      console.error('Socket error:', err);
+      alert(`Error: ${err}`);
+      setStatus('lobby');
+    });
 
     return () => {
       socket.off('connect', onConnect);
@@ -73,6 +78,7 @@ function App() {
       socket.off('game_start', onGameStart);
       socket.off('game_update', onGameUpdate);
       socket.off('game_over', onGameOver);
+      socket.off('error');
       socket.disconnect();
     };
   }, []);
