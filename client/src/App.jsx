@@ -21,6 +21,42 @@ function checkAccessPassword() {
 
 checkAccessPassword();
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null, errorInfo: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("Uncaught error:", error, errorInfo);
+    this.setState({ error, errorInfo });
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '20px', color: 'white', backgroundColor: '#1a1a2e', height: '100vh' }}>
+          <h1>⚠️ Something went wrong.</h1>
+          <details style={{ whiteSpace: 'pre-wrap' }}>
+            {this.state.error && this.state.error.toString()}
+            <br />
+            {this.state.errorInfo && this.state.errorInfo.componentStack}
+          </details>
+          <button onClick={() => window.location.reload()} style={{ marginTop: '20px', padding: '10px' }}>
+            Reload Game
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 function App() {
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [gameState, setGameState] = useState(null);
@@ -35,24 +71,33 @@ function App() {
 
   useEffect(() => {
     function onConnect() {
+      console.log('Socket connected');
       setIsConnected(true);
     }
 
     function onDisconnect() {
+      console.log('Socket disconnected');
       setIsConnected(false);
     }
 
     function onGameStart({ state, player }) {
+      console.log('Game Start Event Received:', { state, player });
+      if (!state) {
+        console.error('Received game_start but state is missing!');
+        return;
+      }
       setGameState(state);
       setPlayerId(player);
       setStatus('playing');
     }
 
     function onGameUpdate(state) {
+      // console.log('Game Update:', state); // Too verbose
       setGameState(state);
     }
 
     function onGameOver({ winner }) {
+      console.log('Game Over:', winner);
       alert(`${winner} Wins!`);
       setGameState(null);
       setPlayerId(null);
@@ -83,244 +128,187 @@ function App() {
     };
   }, []);
 
-  useEffect(() => {
-    const savedUser = localStorage.getItem('bibeGameUser');
-    if (savedUser) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-        setStatus('lobby');
-      } catch (e) {
-        console.error('Failed to parse saved user:', e);
-        localStorage.removeItem('bibeGameUser');
+  // ... (rest of the component)
+
+  // Wrap the return with ErrorBoundary
+  const renderContent = () => {
+    if (status === 'login') {
+      return <Login onLogin={handleLogin} onNavigate={() => setStatus('signup')} />;
+    }
+
+    if (status === 'signup') {
+      return <Signup onNavigate={() => setStatus('login')} />;
+    }
+
+    if (status === 'profile') {
+      return <Profile username={user.username} onBack={() => setStatus('lobby')} />;
+    }
+
+    if (status === 'playing') {
+      if (!gameState) {
+        return <div style={{ color: 'white' }}>Waiting for game state...</div>;
       }
+      return (
+        <BattleScreen
+          gameState={gameState}
+          playerId={playerId}
+          socket={socket}
+        />
+      );
     }
-  }, []);
 
-  const handleLogin = (loggedInUser) => {
-    setUser(loggedInUser);
-    setStatus('lobby');
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    setStatus('login');
-    localStorage.removeItem('bibeGameUser');
-  };
-
-  const handleJoinClick = () => {
-    if (!roomId.trim()) {
-      alert('방 번호를 입력해주세요!');
-      return;
+    if (status === 'deck_select') {
+      return <DeckSelector onDeckSelected={handleDeckSelected} username={user ? user.username : null} />;
     }
-    setIsSinglePlayer(false);
-    setStatus('deck_select');
-  };
 
-  const handleSinglePlayerClick = () => {
-    setIsSinglePlayer(true);
-    setStatus('deck_select');
-  };
-
-  const handleDeckSelected = (deck) => {
-    setSelectedDeck(deck);
-    setStatus('waiting');
-
-    const sendDeckSelection = () => {
-      if (isSinglePlayer) {
-        socket.emit("start_single_player", {
-          deck,
-          difficulty,
-          username: user ? user.username : 'Guest'
-        });
-      } else {
-        const id = String(roomId).trim();
-        socket.emit("join_game", {
-          roomId: id,
-          deck,
-          username: user ? user.username : 'Guest'
-        });
-      }
-    };
-
-    if (!socket.connected) {
-      socket.connect();
-      socket.once('connect', () => {
-        sendDeckSelection();
-      });
-    } else {
-      sendDeckSelection();
+    if (status === 'waiting') {
+      return (
+        <div className="app-container">
+          <div className="lobby">
+            <h1>⏳ Waiting for opponent...</h1>
+            <div className="loading-spinner"></div>
+          </div>
+        </div>
+      );
     }
-  };
 
-  // Render different screens
-  if (status === 'login') {
-    return <Login onLogin={handleLogin} onNavigate={() => setStatus('signup')} />;
-  }
-
-  if (status === 'signup') {
-    return <Signup onNavigate={() => setStatus('login')} />;
-  }
-
-  if (status === 'profile') {
-    return <Profile username={user.username} onBack={() => setStatus('lobby')} />;
-  }
-
-  if (status === 'playing' && gameState) {
-    return (
-      <BattleScreen
-        gameState={gameState}
-        playerId={playerId}
-        socket={socket}
-      />
-    );
-  }
-
-  if (status === 'deck_select') {
-    return <DeckSelector onDeckSelected={handleDeckSelected} username={user ? user.username : null} />;
-  }
-
-  if (status === 'waiting') {
+    // Main lobby
     return (
       <div className="app-container">
+        {/* Background particles */}
+        <div className="background-particles">
+          <div className="particle"></div>
+          <div className="particle"></div>
+          <div className="particle"></div>
+        </div>
+
+        {/* Status indicator */}
+        <div className="status-indicator">
+          <div className={`status-dot ${!isConnected ? 'disconnected' : ''}`}></div>
+          {isConnected ? 'Connected' : 'Disconnected'}
+        </div>
+
         <div className="lobby">
-          <h1>⏳ Waiting for opponent...</h1>
-          <div className="loading-spinner"></div>
-        </div>
-      </div>
-    );
-  }
+          <h1>⚔️ Clash Royale Web</h1>
 
-  // Main lobby with tabs
-  return (
-    <div className="app-container">
-      {/* Background particles */}
-      <div className="background-particles">
-        <div className="particle"></div>
-        <div className="particle"></div>
-        <div className="particle"></div>
-      </div>
-
-      {/* Status indicator */}
-      <div className="status-indicator">
-        <div className={`status-dot ${!isConnected ? 'disconnected' : ''}`}></div>
-        {isConnected ? 'Connected' : 'Disconnected'}
-      </div>
-
-      <div className="lobby">
-        <h1>⚔️ Clash Royale Web</h1>
-
-        {/* User info header */}
-        {user && (
-          <div className="user-info-header">
-            <div className="user-info">
-              👋 환영합니다, <strong>{user.username}</strong>님!
-            </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button className="logout-button" onClick={() => setStatus('profile')}>
-                📊 내 전적
-              </button>
-              <button className="logout-button" onClick={handleLogout}>
-                🚪 로그아웃
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Tab Navigation */}
-        <div className="tab-navigation">
-          <button
-            className={`tab-button ${activeTab === 'play' ? 'active' : ''}`}
-            onClick={() => setActiveTab('play')}
-          >
-            🎮 플레이
-          </button>
-          <button
-            className={`tab-button ${activeTab === 'cards' ? 'active' : ''}`}
-            onClick={() => setActiveTab('cards')}
-          >
-            🃏 카드 업그레이드
-          </button>
-          <button
-            className={`tab-button ${activeTab === 'leaderboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('leaderboard')}
-          >
-            🏆 랭킹
-          </button>
-        </div>
-
-        {/* Tab Content */}
-        <div className="tab-content">
-          {activeTab === 'play' && (
-            <div>
-              {/* Multiplayer Section */}
-              <div className="section-card">
-                <h3>🌐 멀티플레이어</h3>
-                <div className="join-form">
-                  <input
-                    type="text"
-                    placeholder="방 번호 입력 (예: 123)"
-                    value={roomId}
-                    onChange={e => setRoomId(e.target.value)}
-                  />
-                  <button
-                    onClick={handleJoinClick}
-                    disabled={!roomId.trim()}
-                    className="primary-button"
-                    style={{
-                      backgroundColor: roomId.trim() ? '#3498db' : '#95a5a6',
-                      color: 'white'
-                    }}
-                  >
-                    방 참가하기
-                  </button>
-                </div>
+          {/* User info header */}
+          {user && (
+            <div className="user-info-header">
+              <div className="user-info">
+                👋 환영합니다, <strong>{user.username}</strong>님!
               </div>
-
-              {/* Single Player Section */}
-              <div className="single-player-section">
-                <h2>🤖 싱글 플레이 (AI 대전)</h2>
-
-                <div className="difficulty-selector">
-                  <label>난이도:</label>
-                  <select
-                    value={difficulty}
-                    onChange={(e) => setDifficulty(e.target.value)}
-                  >
-                    <option value="easy">😊 쉬움 (Easy)</option>
-                    <option value="medium">😐 보통 (Medium)</option>
-                    <option value="hard">😰 어려움 (Hard)</option>
-                    <option value="impossible">💀 불가능 (Impossible)</option>
-                  </select>
-                </div>
-
-                <button
-                  onClick={handleSinglePlayerClick}
-                  className="primary-button"
-                  style={{
-                    backgroundColor: '#2ecc71',
-                    color: 'white',
-                    width: '100%'
-                  }}
-                >
-                  ▶️ 게임 시작
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button className="logout-button" onClick={() => setStatus('profile')}>
+                  📊 내 전적
+                </button>
+                <button className="logout-button" onClick={handleLogout}>
+                  🚪 로그아웃
                 </button>
               </div>
             </div>
           )}
 
-          {activeTab === 'cards' && (
-            <CardUpgrade username={user ? user.username : ''} />
-          )}
+          {/* Tab Navigation */}
+          <div className="tab-navigation">
+            <button
+              className={`tab-button ${activeTab === 'play' ? 'active' : ''}`}
+              onClick={() => setActiveTab('play')}
+            >
+              🎮 플레이
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'cards' ? 'active' : ''}`}
+              onClick={() => setActiveTab('cards')}
+            >
+              🃏 카드 업그레이드
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'leaderboard' ? 'active' : ''}`}
+              onClick={() => setActiveTab('leaderboard')}
+            >
+              🏆 랭킹
+            </button>
+          </div>
 
-          {activeTab === 'leaderboard' && (
-            <div>
-              <Leaderboard currentUsername={user ? user.username : ''} limit={10} />
-            </div>
-          )}
+          {/* Tab Content */}
+          <div className="tab-content">
+            {activeTab === 'play' && (
+              <div>
+                {/* Multiplayer Section */}
+                <div className="section-card">
+                  <h3>🌐 멀티플레이어</h3>
+                  <div className="join-form">
+                    <input
+                      type="text"
+                      placeholder="방 번호 입력 (예: 123)"
+                      value={roomId}
+                      onChange={e => setRoomId(e.target.value)}
+                    />
+                    <button
+                      onClick={handleJoinClick}
+                      disabled={!roomId.trim()}
+                      className="primary-button"
+                      style={{
+                        backgroundColor: roomId.trim() ? '#3498db' : '#95a5a6',
+                        color: 'white'
+                      }}
+                    >
+                      방 참가하기
+                    </button>
+                  </div>
+                </div>
+
+                {/* Single Player Section */}
+                <div className="single-player-section">
+                  <h2>🤖 싱글 플레이 (AI 대전)</h2>
+
+                  <div className="difficulty-selector">
+                    <label>난이도:</label>
+                    <select
+                      value={difficulty}
+                      onChange={(e) => setDifficulty(e.target.value)}
+                    >
+                      <option value="easy">😊 쉬움 (Easy)</option>
+                      <option value="medium">😐 보통 (Medium)</option>
+                      <option value="hard">😰 어려움 (Hard)</option>
+                      <option value="impossible">💀 불가능 (Impossible)</option>
+                    </select>
+                  </div>
+
+                  <button
+                    onClick={handleSinglePlayerClick}
+                    className="primary-button"
+                    style={{
+                      backgroundColor: '#2ecc71',
+                      color: 'white',
+                      width: '100%'
+                    }}
+                  >
+                    ▶️ 게임 시작
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'cards' && (
+              <CardUpgrade username={user ? user.username : ''} />
+            )}
+
+            {activeTab === 'leaderboard' && (
+              <div>
+                <Leaderboard currentUsername={user ? user.username : ''} limit={10} />
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    );
+  };
+
+  return (
+    <ErrorBoundary>
+      {renderContent()}
+    </ErrorBoundary>
   );
 }
 
