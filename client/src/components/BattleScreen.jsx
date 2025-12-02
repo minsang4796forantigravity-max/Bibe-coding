@@ -56,28 +56,10 @@ const CARD_IMAGES = {
     electro_wizard: electroWizardImg,
     goblin_barrel: goblinBarrelImg,
 };
-
 export function BattleScreen({ gameState, playerId, socket }) {
     const [dragCard, setDragCard] = useState(null);
     const [dragPos, setDragPos] = useState(null); // { x, y } screen coords
     const fieldRef = useRef(null);
-
-    // Safeguard against missing state
-    if (!gameState || !playerId || !gameState[playerId]) {
-        return (
-            <div style={{
-                width: '100vw',
-                height: '100dvh',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                color: 'white',
-                backgroundColor: '#1a1a2e'
-            }}>
-                <h2>Loading game state...</h2>
-            </div>
-        );
-    }
 
     const myState = gameState[playerId];
     const opponentId = playerId === 'p1' ? 'p2' : 'p1';
