@@ -61,11 +61,19 @@ function App() {
       setIsSinglePlayer(false);
     }
 
+    function onError(message) {
+      alert(`Error: ${message}`);
+      setStatus('lobby');
+    }
+
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('game_start', onGameStart);
     socket.on('game_update', onGameUpdate);
     socket.on('game_over', onGameOver);
+    socket.on('error', onError);
+
+    socket.connect();
 
     return () => {
       socket.off('connect', onConnect);
@@ -73,11 +81,13 @@ function App() {
       socket.off('game_start', onGameStart);
       socket.off('game_update', onGameUpdate);
       socket.off('game_over', onGameOver);
+      socket.off('error', onError);
       socket.disconnect();
     };
   }, []);
 
   const handleLogin = (loggedInUser) => {
+    console.log('Logged in:', loggedInUser);
     setUser(loggedInUser);
     setStatus('lobby');
   };
@@ -90,27 +100,35 @@ function App() {
   };
 
   const handleJoinClick = () => {
-    if (!roomId.trim()) return;
+    console.log('Join clicked, Room ID:', roomId);
+    if (!roomId.trim()) {
+      alert('방 번호를 입력해주세요.');
+      return;
+    }
     setIsSinglePlayer(false);
     setStatus('deck_select');
   };
 
   const handleSinglePlayerClick = () => {
+    console.log('Single player clicked');
     setIsSinglePlayer(true);
     setStatus('deck_select');
   };
 
   const handleDeckSelected = (deck) => {
+    console.log('Deck selected:', deck);
     setSelectedDeck(deck);
     setStatus('waiting');
 
     if (isSinglePlayer) {
+      console.log('Starting single player game...');
       socket.emit('start_single_player', {
         deck,
         difficulty,
         username: user ? user.username : 'Guest'
       });
     } else {
+      console.log('Joining multiplayer game:', roomId);
       socket.emit('join_game', {
         roomId,
         username: user ? user.username : 'Guest',
