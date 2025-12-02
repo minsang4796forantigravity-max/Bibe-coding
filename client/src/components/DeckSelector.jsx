@@ -73,9 +73,6 @@ export function DeckSelector({ onDeckSelected, username }) {
     const [deckSlots, setDeckSlots] = useState(Array(8).fill(null));
     const [draggedCard, setDraggedCard] = useState(null);
     const [savedDecks, setSavedDecks] = useState([]);
-    const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
-    const [newDeckName, setNewDeckName] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     // Fetch saved decks on mount
@@ -97,8 +94,6 @@ export function DeckSelector({ onDeckSelected, username }) {
                 setSavedDecks(data);
             } else {
                 console.error('Failed to fetch decks:', response.status, response.statusText);
-                const errorText = await response.text();
-                console.error('Error details:', errorText);
             }
         } catch (error) {
             console.error('Error fetching saved decks:', error);
@@ -148,11 +143,13 @@ export function DeckSelector({ onDeckSelected, username }) {
     };
 
     const handleLoadDeck = (deck) => {
-        if (deck.cards.length !== 8) {
+        console.log('Loading deck:', deck);
+        if (!deck || !deck.cards || deck.cards.length !== 8) {
             alert('유효하지 않은 덱 데이터입니다.');
             return;
         }
         setDeckSlots(deck.cards);
+        setIsDropdownOpen(false);
     };
 
     const handleDeleteDeck = async (deckId, e) => {
@@ -259,6 +256,7 @@ export function DeckSelector({ onDeckSelected, username }) {
             maxWidth: '1000px', // Limit max width
             margin: '0 auto',   // Center horizontally
             height: '100vh',
+            height: '100dvh',   // Mobile viewport fix
             backgroundColor: '#1a1a1a',
             display: 'flex',
             flexDirection: 'column',
@@ -295,7 +293,7 @@ export function DeckSelector({ onDeckSelected, username }) {
                                 저장된 덱 불러오기 ({savedDecks.length})
                             </button>
                             {isDropdownOpen && (
-                                <div id="saved-decks-list" style={{
+                                <div style={{
                                     position: 'absolute',
                                     top: '100%',
                                     right: 0,
@@ -319,10 +317,7 @@ export function DeckSelector({ onDeckSelected, username }) {
                                                 borderBottom: '1px solid #333',
                                                 cursor: 'pointer'
                                             }}
-                                                onClick={() => {
-                                                    handleLoadDeck(deck);
-                                                    setIsDropdownOpen(false);
-                                                }}
+                                                onClick={() => handleLoadDeck(deck)}
                                                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#333'}
                                                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                             >
@@ -362,7 +357,8 @@ export function DeckSelector({ onDeckSelected, username }) {
                     </div>
                 )}
 
-                <p style={{ color: '#aaa', margin: 0, fontSize: '0.9rem' }}>
+                <p style={{ color: '#aaa', margin: 0, fontSize: '0.9rem', display: 'none' }}>
+                    {/* Hidden on small screens to save space */}
                     일반: {regularFilled}/6 | 진화: {evolutionFilled}/2
                 </p>
             </div>
@@ -442,6 +438,7 @@ export function DeckSelector({ onDeckSelected, username }) {
                 padding: '10px', // Reduced padding
                 backgroundColor: '#222',
                 flexShrink: 0,
+                overflowX: 'auto', // Allow horizontal scroll if needed on very small screens
             }}>
                 {/* Regular Slots */}
                 <div style={{
@@ -561,6 +558,7 @@ export function DeckSelector({ onDeckSelected, username }) {
                 padding: '10px', // Reduced padding
                 overflowY: 'auto',
                 backgroundColor: '#111',
+                WebkitOverflowScrolling: 'touch', // Smooth scroll on iOS
             }}>
                 {Object.keys(cardsByType).map(type => (
                     <div key={type} style={{ marginBottom: '15px' }}>
@@ -581,6 +579,16 @@ export function DeckSelector({ onDeckSelected, username }) {
                                         key={cardId}
                                         draggable={!isInDeck}
                                         onDragStart={(e) => handleDragStart(e, cardId)}
+                                        onClick={() => {
+                                            // Click to add support for mobile
+                                            if (isInDeck) return;
+                                            const emptyIndex = deckSlots.findIndex(s => s === null);
+                                            if (emptyIndex !== -1) {
+                                                const newSlots = [...deckSlots];
+                                                newSlots[emptyIndex] = cardId;
+                                                setDeckSlots(newSlots);
+                                            }
+                                        }}
                                         style={{
                                             position: 'relative',
                                             width: '100%',
@@ -590,15 +598,9 @@ export function DeckSelector({ onDeckSelected, username }) {
                                             backgroundPosition: 'center',
                                             borderRadius: '8px',
                                             border: isInDeck ? '2px solid #555' : '2px solid #444',
-                                            cursor: isInDeck ? 'not-allowed' : 'grab',
+                                            cursor: isInDeck ? 'not-allowed' : 'pointer',
                                             opacity: isInDeck ? 0.3 : 1,
                                             transition: 'all 0.2s',
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            if (!isInDeck) e.currentTarget.style.transform = 'scale(1.05)';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.transform = 'scale(1)';
                                         }}
                                     >
                                         <div style={{
@@ -626,6 +628,9 @@ export function DeckSelector({ onDeckSelected, username }) {
                                             textAlign: 'center',
                                             borderBottomLeftRadius: '6px',
                                             borderBottomRightRadius: '6px',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis'
                                         }}>
                                             {unitStats?.name}
                                         </div>
@@ -642,9 +647,10 @@ export function DeckSelector({ onDeckSelected, username }) {
                 position: 'sticky',
                 bottom: 0,
                 backgroundColor: '#1a1a1a',
-                padding: '20px',
+                padding: '15px',
                 borderTop: '2px solid #333',
                 textAlign: 'center',
+                paddingBottom: 'max(15px, env(safe-area-inset-bottom))' // Safe area for iPhone X+
             }}>
                 <button
                     onClick={handleConfirm}
@@ -659,6 +665,8 @@ export function DeckSelector({ onDeckSelected, username }) {
                         borderRadius: '10px',
                         cursor: isComplete ? 'pointer' : 'not-allowed',
                         boxShadow: isComplete ? '0 4px 10px rgba(39, 174, 96, 0.5)' : 'none',
+                        width: '100%',
+                        maxWidth: '300px'
                     }}
                 >
                     게임 시작
