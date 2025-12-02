@@ -62,6 +62,9 @@ export function BattleScreen({ gameState, playerId, socket }) {
     const fieldRef = useRef(null);
 
     const myState = gameState[playerId];
+    if (!myState) {
+        return <div style={{ color: 'white', textAlign: 'center', paddingTop: '50px' }}>Loading game data...</div>;
+    }
     const opponentId = playerId === 'p1' ? 'p2' : 'p1';
     const opponentState = gameState[opponentId];
     const isP1 = playerId === 'p1';

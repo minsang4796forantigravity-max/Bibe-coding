@@ -77,7 +77,47 @@ function App() {
     };
   }, []);
 
-  // ... (rest of the component)
+  const handleLogin = (loggedInUser) => {
+    setUser(loggedInUser);
+    setStatus('lobby');
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setStatus('login');
+    setRoomId('');
+    setIsSinglePlayer(false);
+  };
+
+  const handleJoinClick = () => {
+    if (!roomId.trim()) return;
+    setIsSinglePlayer(false);
+    setStatus('deck_select');
+  };
+
+  const handleSinglePlayerClick = () => {
+    setIsSinglePlayer(true);
+    setStatus('deck_select');
+  };
+
+  const handleDeckSelected = (deck) => {
+    setSelectedDeck(deck);
+    setStatus('waiting');
+
+    if (isSinglePlayer) {
+      socket.emit('start_single_player', {
+        deck,
+        difficulty,
+        username: user ? user.username : 'Guest'
+      });
+    } else {
+      socket.emit('join_game', {
+        roomId,
+        username: user ? user.username : 'Guest',
+        deck
+      });
+    }
+  };
 
   // Render different screens
   if (status === 'login') {
@@ -92,7 +132,7 @@ function App() {
     return <Profile username={user.username} onBack={() => setStatus('lobby')} />;
   }
 
-  if (status === 'playing' && gameState) {
+  if (status === 'playing' && gameState && playerId) {
     return (
       <BattleScreen
         gameState={gameState}
