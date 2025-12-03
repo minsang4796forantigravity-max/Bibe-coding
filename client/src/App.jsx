@@ -32,27 +32,42 @@ function App() {
   const [isSinglePlayer, setIsSinglePlayer] = useState(false);
   const [difficulty, setDifficulty] = useState('medium');
   const [user, setUser] = useState(null);
+  const [debugLogs, setDebugLogs] = useState([]);
+
+  const addLog = (msg) => {
+    setDebugLogs(prev => [...prev.slice(-19), `[${new Date().toLocaleTimeString()}] ${msg}`]);
+    console.log(msg);
+  };
 
   useEffect(() => {
     function onConnect() {
       setIsConnected(true);
+      addLog('Socket Connected: ' + socket.id);
     }
 
     function onDisconnect() {
       setIsConnected(false);
+      addLog('Socket Disconnected');
+    }
+
+    function onConnectError(err) {
+      addLog('Connection Error: ' + err.message);
     }
 
     function onGameStart({ state, player }) {
+      addLog(`Game Start Received! Player: ${player}`);
       setGameState(state);
       setPlayerId(player);
       setStatus('playing');
     }
 
     function onGameUpdate(state) {
+      // Too noisy to log every update
       setGameState(state);
     }
 
     function onGameOver({ winner }) {
+      addLog(`Game Over. Winner: ${winner}`);
       alert(`${winner} Wins!`);
       setGameState(null);
       setPlayerId(null);
@@ -62,17 +77,20 @@ function App() {
     }
 
     function onError(message) {
+      addLog(`Server Error: ${message}`);
       alert(`Error: ${message}`);
       setStatus('lobby');
     }
 
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
+    socket.on('connect_error', onConnectError);
     socket.on('game_start', onGameStart);
     socket.on('game_update', onGameUpdate);
     socket.on('game_over', onGameOver);
     socket.on('error', onError);
 
+    addLog('Attempting to connect to ' + socket.io.uri);
     socket.connect();
 
     return () => {
@@ -100,35 +118,50 @@ function App() {
   };
 
   const handleJoinClick = () => {
-    console.log('Join clicked, Room ID:', roomId);
+    addLog(`Join Clicked. Room: ${roomId}, Socket Connected: ${socket.connected}`);
     if (!roomId.trim()) {
       alert('방 번호를 입력해주세요.');
       return;
     }
+
+    // Proceed to deck selection even if not connected yet (it might connect while selecting)
+    if (!socket.connected) {
+      addLog('Socket not connected yet. Proceeding to deck select while connecting...');
+      socket.connect();
+    }
+
     setIsSinglePlayer(false);
     setStatus('deck_select');
   };
 
   const handleSinglePlayerClick = () => {
-    console.log('Single player clicked');
+    addLog('Single Player Clicked');
     setIsSinglePlayer(true);
     setStatus('deck_select');
   };
 
   const handleDeckSelected = (deck) => {
-    console.log('Deck selected:', deck);
+    addLog('Deck Selected. Checking connection...');
+
+    if (!socket.connected) {
+      addLog('Socket still not connected. Cannot start.');
+      alert('서버와 연결되지 않았습니다. 잠시만 기다려주세요.');
+      socket.connect();
+      return;
+    }
+
     setSelectedDeck(deck);
     setStatus('waiting');
 
     if (isSinglePlayer) {
-      console.log('Starting single player game...');
+      addLog('Emitting start_single_player');
       socket.emit('start_single_player', {
         deck,
         difficulty,
         username: user ? user.username : 'Guest'
       });
     } else {
-      console.log('Joining multiplayer game:', roomId);
+      addLog(`Emitting join_game for Room ${roomId}`);
       socket.emit('join_game', {
         roomId,
         username: user ? user.username : 'Guest',
@@ -303,6 +336,27 @@ function App() {
             </div>
           )}
         </div>
+      </div>
+      {/* Debug Console */}
+      <div style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: '150px',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        color: '#0f0',
+        fontFamily: 'monospace',
+        fontSize: '12px',
+        overflowY: 'auto',
+        padding: '10px',
+        zIndex: 9999,
+        pointerEvents: 'none' // Allow clicking through
+      }}>
+        <div style={{ borderBottom: '1px solid #333', marginBottom: '5px', fontWeight: 'bold' }}>DEBUG CONSOLE</div>
+        {debugLogs.map((log, i) => (
+          <div key={i}>{log}</div>
+        ))}
       </div>
     </div>
   );

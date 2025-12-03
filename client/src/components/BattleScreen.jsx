@@ -88,6 +88,10 @@ export function BattleScreen({ gameState, playerId, socket }) {
 
     const handleDragStart = (e, cardId) => {
         const cardStats = UNITS[cardId.toUpperCase()];
+        if (!cardStats) {
+            console.error(`Missing stats for card: ${cardId}`);
+            return;
+        }
         if (myState.mana < cardStats.cost) return;
 
         // Prevent default to stop scrolling on mobile
