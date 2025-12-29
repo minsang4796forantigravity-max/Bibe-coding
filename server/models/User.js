@@ -32,11 +32,14 @@ const userSchema = new mongoose.Schema({
         },
         myDeck: [String] // Array of card IDs
     }],
-    savedDecks: [{
-        name: { type: String, required: true },
-        cards: [String], // Array of card IDs
-        createdAt: { type: Date, default: Date.now }
-    }]
+    savedDecks: {
+        type: [{
+            name: { type: String, required: true },
+            cards: [String], // Array of card IDs
+            createdAt: { type: Date, default: Date.now }
+        }],
+        default: []
+    }
 });
 
 module.exports = mongoose.model('User', userSchema);

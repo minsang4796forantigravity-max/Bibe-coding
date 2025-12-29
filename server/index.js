@@ -84,6 +84,18 @@ io.on('connection', (socket) => {
 
             if (game.isFull()) {
                 console.log(`Room ${gameId} full. Starting game.`);
+
+                // Ensure both players have decks before starting
+                const defaultDeck = ['knight', 'archer', 'giant', 'wizard', 'fireball', 'cannon', 'goblin', 'skeletons'];
+                if (!game.state.p1.deck || game.state.p1.deck.length === 0) {
+                    console.log('Player 1 missing deck, assigning default');
+                    game.setPlayerDeck('p1', defaultDeck);
+                }
+                if (!game.state.p2.deck || game.state.p2.deck.length === 0) {
+                    console.log('Player 2 missing deck, assigning default');
+                    game.setPlayerDeck('p2', defaultDeck);
+                }
+
                 game.start();
             }
         } else {
