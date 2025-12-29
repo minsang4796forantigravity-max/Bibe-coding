@@ -1,5 +1,5 @@
 export const UNITS = {
-  // === 1 코스트: 사이클 & 물량 ===
+  // === 1 코스트: 사이클 &amp; 물량 ===
   SKELETONS: {
     id: 'skeletons',
     name: 'Skeletons',
@@ -48,7 +48,7 @@ export const UNITS = {
     speed: 12,
   },
 
-  // === 3 코스트: 기본 전투 유닛 & 스펠 ===
+  // === 3 코스트: 기본 전투 유닛 &amp; 스펠 ===
   KNIGHT: {
     id: 'knight',
     name: 'Knight',
@@ -135,7 +135,7 @@ export const UNITS = {
     speed: 15,
   },
 
-  // === 4 코스트: 특수 유닛 & 스펠 ===
+  // === 4 코스트: 특수 유닛 &amp; 스펠 ===
   VALKYRIE: {
     id: 'valkyrie',
     name: 'Valkyrie',
@@ -225,7 +225,7 @@ export const UNITS = {
     projectileSpeed: 20,
   },
 
-  // === 5 코스트: 강력한 유닛 & 건물 ===
+  // === 5 코스트: 강력한 유닛 &amp; 건물 ===
   GIANT: {
     id: 'giant',
     name: 'Giant',
@@ -492,54 +492,13 @@ export const EVOLVED_STATS = {
     radius: 3.5,
     duration: 3,
     healPerSecond: 200,
-    deathDamageRadius: 3.0,
-    count: 1,
   },
-  GOBLIN_HUT: {
-    id: 'goblin_hut',
-    name: 'Goblin Hut',
-    cost: 5,
-    hp: 1200,
-    type: 'building',
-    lifetime: 50,
-    spawnUnit: 'goblin',
-    spawnInterval: 4.5,
-  },
-
-  // === 6 코스트 ===
-  MANA_COLLECTOR: {
-    id: 'mana_collector',
-    name: 'Mana Collector',
-    cost: 6, // 8 -> 6
-    hp: 1000,
-    type: 'building',
-    lifetime: 70,
-    manaProduction: 1,
-    productionInterval: 8.5,
-  },
-
-  // === 1 코스트 스펠 ===
-  HEAL: {
-    id: 'heal',
-    name: 'Heal',
-    cost: 1,
-    type: 'spell',
-    radius: 2.5,
-    duration: 2,
-    healPerSecond: 150,
-  },
-
-  // === 타워 ===
-  TOWER: {
-    id: 'tower',
-    name: 'King Tower',
-    hp: 4000,
-    damage: 110,
-    range: 7,
-    attackSpeed: 0.8,
-    type: 'building',
-  }
 };
 
-// 진화 스탯: 각 유닛마다 개별적으로 조정된 강화 스탯
-
+export const GAME_CONFIG = {
+  MANA_REGEN_RATE: 0.5,
+  MAX_MANA: 20,
+  FIELD_WIDTH: 10,
+  FIELD_HEIGHT: 18,
+  FPS: 30,
+};
