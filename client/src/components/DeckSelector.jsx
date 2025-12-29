@@ -123,6 +123,8 @@ export function DeckSelector({ onDeckSelected, username }) {
 
         // Filter out nulls to get card IDs
         const cards = deckSlots.filter(c => c !== null);
+        console.log('Saving deck. Name:', newDeckName, 'Cards:', cards);
+
         if (cards.length !== 8) {
             alert('덱을 모두 채워주세요 (일반 6장 + 진화 2장).');
             return;
@@ -130,28 +132,41 @@ export function DeckSelector({ onDeckSelected, username }) {
 
         setIsLoading(true);
         try {
+            const requestBody = {
+                username,
+                deckName: newDeckName,
+                cards
+            };
+            console.log('Sending save request to:', `${API_URL}/api/auth/decks/save`);
+            console.log('Request body:', requestBody);
+
             const response = await fetch(`${API_URL}/api/auth/decks/save`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username,
-                    deckName: newDeckName,
-                    cards
-                })
+                body: JSON.stringify(requestBody)
             });
+
+            console.log('Save response status:', response.status, response.ok);
 
             if (response.ok) {
                 const updatedDecks = await response.json();
+                console.log('Deck saved successfully! Updated decks:', updatedDecks);
                 setSavedDecks(updatedDecks);
                 setIsSaveModalOpen(false);
                 setNewDeckName('');
-                alert('덱이 저장되었습니다.');
+                alert('덱이 저장되었습니다!');
+
+                // Re-fetch to verify save
+                console.log('Re-fetching to verify save...');
+                await fetchSavedDecks();
             } else {
-                alert('덱 저장에 실패했습니다.');
+                const errorData = await response.text();
+                console.error('Failed to save deck. Status:', response.status, 'Error:', errorData);
+                alert('덱 저장에 실패했습니다: ' + errorData);
             }
         } catch (error) {
             console.error('Error saving deck:', error);
-            alert('오류가 발생했습니다.');
+            alert('오류가 발생했습니다: ' + error.message);
         } finally {
             setIsLoading(false);
         }
