@@ -309,7 +309,12 @@ export function DeckSelector({ onDeckSelected, username }) {
                                 className="load-deck-btn"
                                 onClick={() => {
                                     const dropdown = document.getElementById('saved-decks-list');
-                                    dropdown.classList.toggle('show');
+                                    // Use style.display instead of classList for inline styles
+                                    if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+                                        dropdown.style.display = 'block';
+                                    } else {
+                                        dropdown.style.display = 'none';
+                                    }
                                     console.log('Dropdown toggled. SavedDecks:', savedDecks);
                                 }}
                                 style={{
@@ -355,7 +360,7 @@ export function DeckSelector({ onDeckSelected, username }) {
                                         }}
                                             onClick={() => {
                                                 handleLoadDeck(deck);
-                                                document.getElementById('saved-decks-list').classList.remove('show');
+                                                document.getElementById('saved-decks-list').style.display = 'none';
                                             }}
                                             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#333'}
                                             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
