@@ -80,19 +80,38 @@ export function DeckSelector({ onDeckSelected, username }) {
     // Fetch saved decks on mount
     useEffect(() => {
         if (username) {
+            console.log('DeckSelector: Fetching saved decks for user:', username);
             fetchSavedDecks();
         }
     }, [username]);
 
     const fetchSavedDecks = async () => {
         try {
+            console.log('Fetching decks from:', `${API_URL}/api/auth/decks/${username}`);
             const response = await fetch(`${API_URL}/api/auth/decks/${username}`);
+            console.log('Response status:', response.status, response.ok);
+
             if (response.ok) {
                 const data = await response.json();
-                setSavedDecks(data);
+                console.log('Received deck data:', data);
+                console.log('Data type:', typeof data, 'Is array:', Array.isArray(data));
+                console.log('Data length:', data?.length);
+
+                if (Array.isArray(data)) {
+                    setSavedDecks(data);
+                    console.log('Set savedDecks to:', data);
+                } else {
+                    console.error('Data is not an array:', data);
+                    setSavedDecks([]);
+                }
+            } else {
+                const errorText = await response.text();
+                console.error('Failed to fetch decks. Status:', response.status, 'Error:', errorText);
+                setSavedDecks([]);
             }
         } catch (error) {
             console.error('Error fetching saved decks:', error);
+            setSavedDecks([]);
         }
     };
 
@@ -270,36 +289,45 @@ export function DeckSelector({ onDeckSelected, username }) {
                 {/* Saved Decks Controls */}
                 {username && (
                     <div style={{ display: 'flex', gap: '10px' }}>
-                        <div className="saved-decks-dropdown" style={{ position: 'relative' }}>
+                        <div className="dropdown">
                             <button
-                                className="dropdown-btn"
-                                style={{
-                                    padding: '5px 10px',
-                                    backgroundColor: '#333',
-                                    color: 'white',
-                                    border: '1px solid #555',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer'
+                                className="load-deck-btn"
+                                onClick={() => {
+                                    const dropdown = document.getElementById('saved-decks-list');
+                                    dropdown.classList.toggle('show');
+                                    console.log('Dropdown toggled. SavedDecks:', savedDecks);
                                 }}
-                                onClick={() => document.getElementById('saved-decks-list').classList.toggle('show')}
+                                style={{
+                                    padding: '12px 24px',
+                                    backgroundColor: '#3498db',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold',
+                                    fontSize: '14px',
+                                    boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                                    transition: 'all 0.3s ease',
+                                }}
                             >
                                 저장된 덱 불러오기 ({savedDecks.length})
                             </button>
-                            <div id="saved-decks-list" style={{
-                                display: 'none',
-                                position: 'absolute',
-                                top: '100%',
-                                right: 0,
-                                backgroundColor: '#222',
-                                border: '1px solid #444',
-                                borderRadius: '4px',
-                                padding: '5px',
-                                zIndex: 100,
-                                minWidth: '200px',
-                                boxShadow: '0 4px 8px rgba(0,0,0,0.3)'
-                            }}>
+                            <div
+                                id="saved-decks-list"
+                                className="dropdown-content"
+                                style={{
+                                    display: 'none',
+                                    position: 'absolute',
+                                    backgroundColor: '#2c3e50',
+                                    minWidth: '200px',
+                                    boxShadow: '0 8px 16px rgba(0,0,0,0.4)',
+                                    borderRadius: '8px',
+                                    zIndex: 1000,
+                                    marginTop: '5px'
+                                }}
+                            >
                                 {savedDecks.length === 0 ? (
-                                    <div style={{ padding: '10px', color: '#888', fontSize: '0.9rem' }}>저장된 덱이 없습니다.</div>
+                                    <div style={{ padding: '10px', color: '#888', fontSize: '0.9rem' }}>저장된 덱이 없습니다. (디버그: API 응답 확인 필요)</div>
                                 ) : (
                                     savedDecks.map(deck => (
                                         <div key={deck._id} style={{
