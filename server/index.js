@@ -50,12 +50,26 @@ io.on('connection', (socket) => {
         let game = null;
         let gameId = null;
 
-        // 기다리는 게임 찾기
-        for (const [id, g] of games.entries()) {
-            if (!g.isFull() && !id.startsWith('single_')) {
-                game = g;
-                gameId = id;
-                break;
+        // 찾기 전에, 이미 방에 들어가 있는 같은 유저인지 확인 (재연결 지원)
+        if (username && username !== 'Guest') {
+            for (const [id, g] of games.entries()) {
+                if ((g.state.p1.username === username || g.state.p2.username === username) && !id.startsWith('single_')) {
+                    game = g;
+                    gameId = id;
+                    console.log(`[Server] User ${username} found existing multiplayer game ${gameId}. Handling reconnection.`);
+                    break;
+                }
+            }
+        }
+
+        if (!game) {
+            // 빈 방 찾기
+            for (const [id, g] of games.entries()) {
+                if (!g.isFull() && !id.startsWith('single_')) {
+                    game = g;
+                    gameId = id;
+                    break;
+                }
             }
         }
 
@@ -150,15 +164,18 @@ io.on('connection', (socket) => {
 
     // 카드 배치
     socket.on('deploy_card', ({ cardId, x, y }) => {
+        // Find game by socket ID more efficiently if possible, 
+        // but for now let's make the search robust
         for (const game of games.values()) {
             if (game.state.p1.id === socket.id) {
                 game.deployCard('p1', cardId, x, y);
-                break;
+                return;
             } else if (game.state.p2.id === socket.id) {
                 game.deployCard('p2', cardId, x, y);
-                break;
+                return;
             }
         }
+        console.log(`[WARN] Received deploy_card from ${socket.id} but no active game found for this socket.`);
     });
 
     socket.on('disconnect', () => {

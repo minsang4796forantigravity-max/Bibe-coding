@@ -42,6 +42,21 @@ class GameEngine {
     }
 
     joinGame(playerId, username = null) {
+        // Handle reconnection: Check if username already exists in game
+        if (username && username !== 'Guest') {
+            if (this.state.p1.username === username) {
+                console.log(`[GameEngine] Player 1 (${username}) reconnected with new socket ${playerId}`);
+                this.state.p1.id = playerId;
+                return 'p1';
+            }
+            if (this.state.p2.username === username) {
+                console.log(`[GameEngine] Player 2 (${username}) reconnected with new socket ${playerId}`);
+                this.state.p2.id = playerId;
+                return 'p2';
+            }
+        }
+
+        // Normal join
         if (!this.state.p1.id) {
             this.state.p1.id = playerId;
             this.state.p1.username = username;
