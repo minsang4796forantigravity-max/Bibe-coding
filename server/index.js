@@ -180,13 +180,19 @@ io.on('connection', (socket) => {
         console.log('[DEBUG] start_single_player received:', { deckLength: deck?.length, difficulty, username });
         const roomId = `single_${socket.id}`;
 
-        // 기존 싱글 게임 있으면 정리
-        if (games.has(roomId)) {
-            games.get(roomId).stop();
-            games.delete(roomId);
+        // Clean up ANY existing single player games for this user (prevents stale "Guest" sessions)
+        for (const [id, g] of games.entries()) {
+            if (id.startsWith('single_') && (g.state.p1.username === username || g.state.p1.id === socket.id)) {
+                console.log(`[Server] Cleaning up stale single player game ${id} for user ${username}`);
+                g.stop();
+                games.delete(id);
+            }
         }
 
-        const game = new GameEngine(roomId, io);
+        const game = new GameEngine(roomId, io, (id) => {
+            console.log(`[Server] Cleaning up single player game ${id}`);
+            games.delete(id);
+        });
         games.set(roomId, game);
 
         // 플레이어 참가
@@ -221,19 +227,46 @@ io.on('connection', (socket) => {
 
     // 카드 배치
     socket.on('deploy_card', ({ cardId, x, y }) => {
+        let targetGame = null;
+        let pId = null;
+
+        // 1. Prioritize EXACT socket ID match
         for (const game of games.values()) {
-            if (game.state.p1.id === socket.id || (socket.username && game.state.p1.username === socket.username)) {
-                // If it was a username match but ID mismatched, update ID
-                if (game.state.p1.id !== socket.id) game.state.p1.id = socket.id;
-                game.deployCard('p1', cardId, x, y);
-                return;
-            } else if (game.state.p2.id === socket.id || (socket.username && game.state.p2.username === socket.username)) {
-                if (game.state.p2.id !== socket.id) game.state.p2.id = socket.id;
-                game.deployCard('p2', cardId, x, y);
-                return;
+            if (game.state.p1.id === socket.id) {
+                targetGame = game;
+                pId = 'p1';
+                break;
+            } else if (game.state.p2.id === socket.id) {
+                targetGame = game;
+                pId = 'p2';
+                break;
             }
         }
-        console.log(`[WARN] Received deploy_card from ${socket.id} (${socket.username}) but no active game found.`);
+
+        // 2. If no exact match, look for username match (Reconnection scenario)
+        if (!targetGame) {
+            for (const game of games.values()) {
+                if (socket.username && game.state.p1.username === socket.username) {
+                    targetGame = game;
+                    pId = 'p1';
+                    // Update connection
+                    game.state.p1.id = socket.id;
+                    break;
+                } else if (socket.username && game.state.p2.username === socket.username) {
+                    targetGame = game;
+                    pId = 'p2';
+                    // Update connection
+                    game.state.p2.id = socket.id;
+                    break;
+                }
+            }
+        }
+
+        if (targetGame && pId) {
+            targetGame.deployCard(pId, cardId, x, y);
+        } else {
+            console.log(`[WARN] Received deploy_card from ${socket.id} (${socket.username}) but no active game found.`);
+        }
     });
 
     socket.on('disconnect', () => {
