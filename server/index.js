@@ -78,6 +78,7 @@ io.on('connection', (socket) => {
     // 멀티플레이 매칭
     socket.on('join_game', (data) => {
         const { username, deck } = data || {};
+        socket.username = username; // Store for reconnection fallback
         let game = null;
         let gameId = null;
 
@@ -151,6 +152,7 @@ io.on('connection', (socket) => {
     // 싱글 플레이 시작
     socket.on('start_single_player', (data) => {
         const { deck, difficulty, username } = data || {};
+        socket.username = username; // Store for reconnection fallback
         console.log('[DEBUG] start_single_player received:', { deckLength: deck?.length, difficulty, username });
         const roomId = `single_${socket.id}`;
 
@@ -195,18 +197,19 @@ io.on('connection', (socket) => {
 
     // 카드 배치
     socket.on('deploy_card', ({ cardId, x, y }) => {
-        // Find game by socket ID more efficiently if possible, 
-        // but for now let's make the search robust
         for (const game of games.values()) {
-            if (game.state.p1.id === socket.id) {
+            if (game.state.p1.id === socket.id || (socket.username && game.state.p1.username === socket.username)) {
+                // If it was a username match but ID mismatched, update ID
+                if (game.state.p1.id !== socket.id) game.state.p1.id = socket.id;
                 game.deployCard('p1', cardId, x, y);
                 return;
-            } else if (game.state.p2.id === socket.id) {
+            } else if (game.state.p2.id === socket.id || (socket.username && game.state.p2.username === socket.username)) {
+                if (game.state.p2.id !== socket.id) game.state.p2.id = socket.id;
                 game.deployCard('p2', cardId, x, y);
                 return;
             }
         }
-        console.log(`[WARN] Received deploy_card from ${socket.id} but no active game found for this socket.`);
+        console.log(`[WARN] Received deploy_card from ${socket.id} (${socket.username}) but no active game found.`);
     });
 
     socket.on('disconnect', () => {

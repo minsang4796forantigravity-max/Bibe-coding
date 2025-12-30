@@ -185,19 +185,6 @@ export function Lobby({
                         onMouseUp={e => e.target.style.transform = 'scale(1)'}
                     >📅 출석체크</button>
 
-                    <button
-                        onClick={onProfileClick}
-                        style={{
-                            backgroundColor: 'rgba(255,255,255,0.1)',
-                            border: 'none',
-                            color: 'white',
-                            padding: '8px 16px',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            fontSize: '0.85rem'
-                        }}
-                    >Profile</button>
-
                     {isAdmin && (
                         <button
                             onClick={() => setIsAdminMode(!isAdminMode)}
@@ -213,19 +200,6 @@ export function Lobby({
                             }}
                         >{isAdminMode ? 'Close Admin' : 'Admin Panel'}</button>
                     )}
-
-                    <button
-                        onClick={onLogout}
-                        style={{
-                            backgroundColor: 'transparent',
-                            border: '1px solid rgba(255,255,255,0.3)',
-                            color: 'white',
-                            padding: '8px 12px',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            fontSize: '0.8rem'
-                        }}
-                    >Logout</button>
                 </div>
             </header>
 
@@ -283,7 +257,8 @@ export function Lobby({
                     cursor: 'pointer',
                     zIndex: 1,
                     transition: 'transform 0.3s',
-                    flexShrink: 0
+                    flexShrink: 0,
+                    boxSizing: 'border-box'
                 }}
                 onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
                 onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}

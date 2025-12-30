@@ -186,6 +186,42 @@ function App() {
 
   return (
     <div className="App">
+      {status === 'lobby' && user && (
+        <div style={{
+          position: 'fixed',
+          top: '70px',
+          right: '20px',
+          zIndex: 1000,
+          display: 'flex',
+          gap: '10px'
+        }}>
+          <button
+            onClick={() => setStatus('profile')}
+            style={{
+              background: 'rgba(255,255,255,0.1)',
+              border: 'none',
+              color: 'white',
+              padding: '5px 12px',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontSize: '0.75rem'
+            }}
+          >My Records</button>
+          <button
+            onClick={handleLogout}
+            style={{
+              background: 'rgba(231, 76, 60, 0.4)',
+              border: 'none',
+              color: 'white',
+              padding: '5px 12px',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontSize: '0.75rem'
+            }}
+          >Logout</button>
+        </div>
+      )}
+
       {status !== 'lobby' && (
         <div className="status-bar">
           Status: {isConnected ? 'Connected' : 'Disconnected'}
