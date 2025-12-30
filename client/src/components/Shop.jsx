@@ -3,13 +3,13 @@ import { API_URL } from '../socket';
 import { UNITS, EMOTES, BOOSTERS } from '../game/constants';
 
 export default function Shop({ user, setUser, onClose }) {
-    const [activeTab, setActiveTab] = useState('store'); // 'store', 'emotes', 'boosters', 'collection'
+    const [activeTab, setActiveTab] = useState('store'); // 'store', 'emotes', 'boosters', 'collection', 'event'
     const [isOpeningBox, setIsOpeningBox] = useState(false);
     const [boxRewards, setBoxRewards] = useState(null);
     const [loading, setLoading] = useState(false);
 
     const buyBox = async (boxType = 'silver') => {
-        if (loading) return;
+        if (loading || !user) return;
         setLoading(true);
         try {
             const res = await fetch(`${API_URL}/api/shop/buy-box`, {
@@ -36,7 +36,7 @@ export default function Shop({ user, setUser, onClose }) {
     };
 
     const buyEmote = async (emoteId) => {
-        if (loading) return;
+        if (loading || !user) return;
         setLoading(true);
         try {
             const res = await fetch(`${API_URL}/api/shop/buy-emote`, {
@@ -61,7 +61,7 @@ export default function Shop({ user, setUser, onClose }) {
     };
 
     const buyBooster = async (boosterId) => {
-        if (loading) return;
+        if (loading || !user) return;
         setLoading(true);
         try {
             const res = await fetch(`${API_URL}/api/shop/buy-booster`, {
@@ -144,7 +144,7 @@ export default function Shop({ user, setUser, onClose }) {
                         fontSize: '1.2rem',
                         border: '2px solid rgba(255,184,0,0.2)'
                     }}>
-                        💰 {user.coins}
+                        💰 {user?.coins || 0}
                     </div>
                 </div>
                 <button
@@ -172,7 +172,7 @@ export default function Shop({ user, setUser, onClose }) {
                 borderRadius: '40px',
                 border: '1px solid rgba(255,255,255,0.1)'
             }}>
-                {['STORE', 'EMOTES', 'BOOSTERS', 'COLLECTION'].map(tab => (
+                {['STORE', 'EMOTES', 'BOOSTERS', 'COLLECTION', 'EVENT'].map(tab => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab.toLowerCase())}
@@ -253,7 +253,7 @@ export default function Shop({ user, setUser, onClose }) {
                         gap: '20px'
                     }}>
                         {Object.values(EMOTES).map(emote => {
-                            const isOwned = user.inventory.ownedEmotes.includes(emote.id);
+                            const isOwned = user?.inventory?.ownedEmotes?.includes(emote.id) || false;
                             return (
                                 <div key={emote.id} style={{
                                     background: 'rgba(255,255,255,0.05)',
@@ -338,7 +338,7 @@ export default function Shop({ user, setUser, onClose }) {
                                 gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
                                 gap: '20px'
                             }}>
-                                {user.inventory.unlockedCards.map(cardId => {
+                                {user?.inventory?.unlockedCards?.map(cardId => {
                                     const unit = Object.values(UNITS).find(u => u.id === cardId);
                                     return (
                                         <div key={cardId} style={{
@@ -362,7 +362,7 @@ export default function Shop({ user, setUser, onClose }) {
                         <div>
                             <h2 style={{ fontSize: '1.5rem', fontWeight: '900', color: '#3498db', marginBottom: '20px' }}>OWNED EMOTES</h2>
                             <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                                {user.inventory.ownedEmotes.map(emoteId => (
+                                {user?.inventory?.ownedEmotes?.map(emoteId => (
                                     <div key={emoteId} style={{
                                         background: 'rgba(255,255,255,0.05)',
                                         width: '80px', height: '80px',
@@ -380,14 +380,22 @@ export default function Shop({ user, setUser, onClose }) {
                             <div style={{ display: 'flex', gap: '20px' }}>
                                 <div style={{ background: 'rgba(52,152,219,0.1)', padding: '20px 30px', borderRadius: '25px', border: '1px solid #3498db' }}>
                                     <div style={{ fontSize: '0.9rem', color: '#3498db', fontWeight: 'bold' }}>COIN BOOST</div>
-                                    <div style={{ fontSize: '2rem', fontWeight: '900' }}>{user.inventory.boosters.coinBoost} Matches</div>
+                                    <div style={{ fontSize: '2rem', fontWeight: '900' }}>{user?.inventory?.boosters?.coinBoost || 0} Matches</div>
                                 </div>
                                 <div style={{ background: 'rgba(46,204,113,0.1)', padding: '20px 30px', borderRadius: '25px', border: '1px solid #2ecc71' }}>
                                     <div style={{ fontSize: '0.9rem', color: '#2ecc71', fontWeight: 'bold' }}>EGG BOOST</div>
-                                    <div style={{ fontSize: '2rem', fontWeight: '900' }}>{user.inventory.boosters.eggBoost} Matches</div>
+                                    <div style={{ fontSize: '2rem', fontWeight: '900' }}>{user?.inventory?.boosters?.eggBoost || 0} Matches</div>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                )}
+
+                {activeTab === 'event' && (
+                    <div style={{ textAlign: 'center', padding: '100px 0' }}>
+                        <div style={{ fontSize: '5rem', marginBottom: '20px' }}>🎪</div>
+                        <h2 style={{ fontSize: '2.5rem', fontWeight: '900' }}>COMING SOON</h2>
+                        <p style={{ color: '#95a5a6', fontSize: '1.2rem' }}>새로운 시즌 이벤트가 준비 중입니다!</p>
                     </div>
                 )}
             </div>
