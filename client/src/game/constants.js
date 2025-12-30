@@ -129,7 +129,7 @@ export const UNITS = {
     hp: 700,
     damage: 120,
     speed: 0,
-    range: 5.5,
+    range: 7.0,
     attackSpeed: 0.8,
     type: 'building',
     targets: 'ground',

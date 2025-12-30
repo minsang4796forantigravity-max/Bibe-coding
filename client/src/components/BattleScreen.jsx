@@ -235,12 +235,21 @@ export function BattleScreen({ gameState, playerId, socket }) {
                 style={{
                     flex: 1,
                     position: 'relative',
-                    background: 'linear-gradient(180deg, #1e3c25 0%, #2ecc71 45%, #27ae60 50%, #2ecc71 55%, #1e3c25 100%)',
+                    background: '#27ae60', // Base green
+                    backgroundImage: `
+                        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px),
+                        linear-gradient(0deg, #1e3c25 0%, transparent 40%, transparent 60%, #1e3c25 100%),
+                        radial-gradient(circle at 50% 50%, rgba(46,204,113,0.4) 0%, transparent 70%)
+                    `,
+                    backgroundSize: '20px 20px, 20px 20px, 100% 100%, 100% 100%',
                     overflow: 'hidden',
-                    boxShadow: 'inset 0 0 100px rgba(0,0,0,0.7), 0 0 50px rgba(46,204,113,0.3)',
+                    boxShadow: 'inset 0 0 100px rgba(0,0,0,0.8), 0 0 40px rgba(0,0,0,0.5)',
                     margin: '0 auto',
                     aspectRatio: '10 / 18',
-                    borderRadius: '5px',
+                    borderRadius: '8px',
+                    border: '8px solid #3d2b1f', // Wooden/Stone border feel
+                    outline: '2px solid #5d4037'
                 }}
             >
                 {/* Arena Grid Decor */}
@@ -383,9 +392,9 @@ export function BattleScreen({ gameState, playerId, socket }) {
                         spellEffectStyle.boxShadow = '0 0 15px #f1c40f';
                     }
 
-                    let unitSize = unit.type === 'building' ? '50px' : '40px';
-                    if (unit.cardId === 'king_tower') unitSize = '70px';
-                    if (unit.cardId === 'side_tower') unitSize = '48px';
+                    let unitSize = unit.type === 'building' ? '40px' : '30px';
+                    if (unit.cardId === 'king_tower') unitSize = '55px';
+                    if (unit.cardId === 'side_tower') unitSize = '38px';
 
                     const isKing = unit.cardId === 'king_tower';
                     // Check if unit is on the opponent's side (top part of the field)
@@ -453,10 +462,10 @@ export function BattleScreen({ gameState, playerId, socket }) {
 
                             <div style={{
                                 position: 'absolute',
-                                ...(isOpponentTop ? { bottom: -12 } : { top: -8 }),
+                                ...(isOpponentTop ? { bottom: -10 } : { top: -6 }),
                                 left: 0,
                                 width: '100%',
-                                height: '4px',
+                                height: '3px',
                                 backgroundColor: 'red',
                                 borderRadius: '2px',
                                 zIndex: 11
@@ -473,10 +482,10 @@ export function BattleScreen({ gameState, playerId, socket }) {
                             {unit.shield > 0 && (
                                 <div style={{
                                     position: 'absolute',
-                                    ...(isOpponentTop ? { bottom: -18 } : { top: -14 }),
+                                    ...(isOpponentTop ? { bottom: -15 } : { top: -11 }),
                                     left: 0,
                                     width: '100%',
-                                    height: '4px',
+                                    height: '3px',
                                     backgroundColor: 'rgba(0,0,0,0.5)',
                                     borderRadius: '2px',
                                     border: '1px solid #3498db'

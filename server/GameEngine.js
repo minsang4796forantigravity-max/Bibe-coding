@@ -627,10 +627,12 @@ class GameEngine {
                 }
             } else {
                 let target = null;
-                if (p.targetId === 'tower_p1') {
-                    target = { x: 5, y: 0, type: 'tower' };
-                } else if (p.targetId === 'tower_p2') {
-                    target = { x: 5, y: GAME_CONFIG.FIELD_HEIGHT, type: 'tower' };
+                let target = null;
+                if (p.targetId === 'tower_p1' || p.targetId === 'tower_p2') {
+                    // Try to find the actual King Tower unit for this player
+                    const targetPlayerId = p.targetId === 'tower_p1' ? 'p1' : 'p2';
+                    target = this.state[targetPlayerId].units.find(u => u.cardId === 'king_tower') ||
+                        { x: 5, y: targetPlayerId === 'p1' ? 0 : GAME_CONFIG.FIELD_HEIGHT, hp: 1, type: 'tower' }; // Fallback dummy with hp
                 } else {
                     const p1Unit = this.state.p1.units.find(u => u.id === p.targetId);
                     const p2Unit = this.state.p2.units.find(u => u.id === p.targetId);
@@ -703,7 +705,7 @@ class GameEngine {
                 }
             });
 
-            if (!target && u.type !== 'building') {
+            if (!target) {
                 if (!u.favoriteTarget || u.favoriteTarget === 'building') {
                     // Towers are buildings
                     if (u.targets === 'ground' || u.targets === 'both') {
