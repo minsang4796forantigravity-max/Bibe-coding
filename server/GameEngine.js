@@ -2,9 +2,10 @@ const { UNITS, EVOLVED_STATS, GAME_CONFIG } = require('./constants');
 const User = require('./models/User');
 
 class GameEngine {
-    constructor(roomId, io) {
+    constructor(roomId, io, onGameEnd = null) {
         this.roomId = roomId;
         this.io = io;
+        this.onGameEnd = onGameEnd;
         this.logIdCounter = 0;
         this.state = {
             p1: {
@@ -252,6 +253,11 @@ class GameEngine {
         this.saveMatchHistory(winnerId);
 
         this.io.to(this.roomId).emit('game_over', { winner: this.state.winner });
+
+        if (this.onGameEnd) {
+            this.onGameEnd(this.roomId);
+        }
+
         this.stop();
     }
 

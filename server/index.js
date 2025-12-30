@@ -85,17 +85,38 @@ io.on('connection', (socket) => {
         // 찾기 전에, 이미 방에 들어가 있는 같은 유저인지 확인 (재연결 지원)
         if (username && username !== 'Guest') {
             for (const [id, g] of games.entries()) {
-                if ((g.state.p1.username === username || g.state.p2.username === username) && !id.startsWith('single_')) {
+                // Reconnect ONLY if the game is NOT over
+                if (!g.state.gameOver && (g.state.p1.username === username || g.state.p2.username === username) && !id.startsWith('single_')) {
                     game = g;
                     gameId = id;
-                    console.log(`[Server] User ${username} found existing multiplayer game ${gameId}. Handling reconnection.`);
+                    console.log(`[Server] User ${username} reconnecting to ACTIVE multiplayer game ${gameId}.`);
                     break;
                 }
             }
         }
 
+        // 특정 Room ID로 참가 요청이 왔을 때
+        if (!game && data.roomId) {
+            const requestedId = String(data.roomId).trim();
+            if (games.has(requestedId)) {
+                const g = games.get(requestedId);
+                if (!g.isFull()) {
+                    game = g;
+                    gameId = requestedId;
+                }
+            } else {
+                // Requested room doesn't exist, create it with that ID
+                gameId = requestedId;
+                game = new GameEngine(gameId, io, (id) => {
+                    console.log(`[Server] Cleaning up game ${id}`);
+                    games.delete(id);
+                });
+                games.set(gameId, game);
+            }
+        }
+
         if (!game) {
-            // 빈 방 찾기
+            // 빈 방 찾기 (Random Matchmaking)
             for (const [id, g] of games.entries()) {
                 if (!g.isFull() && !id.startsWith('single_')) {
                     game = g;
@@ -105,10 +126,13 @@ io.on('connection', (socket) => {
             }
         }
 
-        // 없으면 새 게임 생성
+        // 없으면 새 게임 생성 (Random ID)
         if (!game) {
             gameId = Math.random().toString(36).substring(7);
-            game = new GameEngine(gameId, io);
+            game = new GameEngine(gameId, io, (id) => {
+                console.log(`[Server] Cleaning up game ${id}`);
+                games.delete(id);
+            });
             games.set(gameId, game);
         }
 
