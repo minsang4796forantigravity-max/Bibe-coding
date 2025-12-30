@@ -28,12 +28,33 @@ function pickRandomCard(rarityWeights) {
     return cardsOfRarity[Math.floor(Math.random() * cardsOfRarity.length)].id;
 }
 
+function ensureInventoryObject(user) {
+    // If inventory is an array or missing required fields, migrate it
+    if (Array.isArray(user.inventory) || !user.inventory || !user.inventory.unlockedCards) {
+        console.log(`Migrating inventory for user: ${user.username}`);
+        const oldItems = Array.isArray(user.inventory) ? user.inventory : [];
+        const unlockedFromOld = oldItems.map(item => item.cardId).filter(id => id);
+
+        const STARTER_CARDS = ['knight', 'archer', 'giant', 'wizard', 'fireball', 'cannon', 'goblin', 'skeletons', 'egg_1', 'egg_2', 'egg_3', 'egg_4', 'egg_5', 'chicken'];
+        const uniqueUnlocked = [...new Set([...STARTER_CARDS, ...unlockedFromOld])];
+
+        user.inventory = {
+            unlockedCards: uniqueUnlocked,
+            ownedEmotes: user.inventory?.ownedEmotes || ['smile', 'angry', 'thumbsup'],
+            boosters: user.inventory?.boosters || { coinBoost: 0, eggBoost: 0 }
+        };
+        user.markModified('inventory');
+    }
+}
+
 // Buy Mystery Box (Unlocked Cards)
 router.post('/buy-box', async (req, res) => {
     const { username, boxType = 'silver' } = req.body;
     try {
         const user = await User.findOne({ username });
         if (!user) return res.status(404).json({ message: 'User not found' });
+
+        ensureInventoryObject(user);
 
         const config = BOX_CONFIG[boxType] || BOX_CONFIG.silver;
         if (user.coins < config.cost) {
@@ -68,6 +89,10 @@ router.post('/buy-emote', async (req, res) => {
     const { username, emoteId } = req.body;
     try {
         const user = await User.findOne({ username });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        ensureInventoryObject(user);
+
         const emote = EMOTES[emoteId];
         if (!emote) return res.status(404).json({ message: 'Emote not found' });
 
@@ -94,6 +119,10 @@ router.post('/buy-booster', async (req, res) => {
     const { username, boosterId } = req.body;
     try {
         const user = await User.findOne({ username });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        ensureInventoryObject(user);
+
         const booster = BOOSTERS[boosterId.toUpperCase()];
         if (!booster) return res.status(404).json({ message: 'Booster not found' });
 

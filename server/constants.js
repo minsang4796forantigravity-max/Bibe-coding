@@ -32,9 +32,9 @@ const UNITS = {
     WITCH: { id: 'witch', name: 'Witch', cost: 5, hp: 700, damage: 100, speed: 1.0, range: 5, attackSpeed: 0.7, type: 'ground', targets: 'both', splash: 1.0, spawnUnit: 'skeletons', spawnInterval: 5, spawnCount: 3, spawnOnDeploy: true, count: 1, rarity: 'epic' },
     BARBARIANS: { id: 'barbarians', name: 'Barbarians', cost: 5, hp: 550, damage: 150, speed: 1.2, range: 1, attackSpeed: 1.4, type: 'ground', targets: 'ground', count: 5, brotherhood: true, rarity: 'rare' },
     BALLOON: { id: 'balloon', name: 'Balloon', cost: 5, hp: 1400, damage: 800, speed: 1.0, range: 1.5, attackSpeed: 3.0, type: 'flying', targets: 'ground', favoriteTarget: 'building', deathDamage: 200, deathDamageRadius: 3.0, count: 1, rarity: 'epic' },
+    GIANT: { id: 'giant', name: 'Giant', cost: 5, hp: 4500, damage: 210, speed: 0.7, range: 1.5, attackSpeed: 1.5, type: 'ground', targets: 'ground', count: 1, rarity: 'normal' },
 
     // === 6+ 코스트 ===
-    GIANT: { id: 'giant', name: 'Giant', cost: 5, hp: 4500, damage: 210, speed: 0.7, range: 1.5, attackSpeed: 1.5, type: 'ground', targets: 'ground', count: 1, rarity: 'normal' },
     GOBLIN_HUT: { id: 'goblin_hut', name: 'Goblin Hut', cost: 5, hp: 1200, type: 'building', targets: 'ground', lifetime: 40, spawnUnit: 'goblin', spawnInterval: 8.0, spawnCount: 3, rarity: 'epic' },
     MANA_COLLECTOR: { id: 'mana_collector', name: 'Mana Collector', cost: 6, hp: 1000, type: 'building', lifetime: 70, manaProduction: 1, productionInterval: 8.5, rarity: 'master' },
 

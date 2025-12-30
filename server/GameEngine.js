@@ -574,7 +574,10 @@ class GameEngine {
                                 spawnId = tiers[Math.floor(Math.random() * tiers.length)];
                             }
 
-                            this.spawnUnit(playerState, spawnId, unit.x + offsetX, unit.y + offsetY);
+                            const spawnStats = UNITS[spawnId?.toUpperCase()];
+                            if (spawnStats) {
+                                this.spawnUnit(playerState, spawnStats, unit.x + offsetX, unit.y + offsetY);
+                            }
                         }
                     }
                 }
