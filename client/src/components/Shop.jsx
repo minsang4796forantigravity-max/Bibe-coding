@@ -8,14 +8,14 @@ export default function Shop({ user, setUser, onClose }) {
     const [boxRewards, setBoxRewards] = useState(null);
     const [loading, setLoading] = useState(false);
 
-    const buyBox = async () => {
+    const buyBox = async (boxType = 'silver') => {
         if (loading) return;
         setLoading(true);
         try {
             const res = await fetch(`${API_URL}/api/shop/buy-box`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: user.username })
+                body: JSON.stringify({ username: user.username, boxType })
             });
             const data = await res.json();
             if (res.ok) {
@@ -31,6 +31,35 @@ export default function Shop({ user, setUser, onClose }) {
         } catch (err) {
             console.error("Buy box error:", err);
             alert("서버 통신 오류");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const buyShards = async (cardId, shards, cost) => {
+        if (loading) return;
+        if (user.coins < cost) {
+            alert("코인이 부족합니다.");
+            return;
+        }
+        setLoading(true);
+        try {
+            const res = await fetch(`${API_URL}/api/shop/buy-shards`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: user.username, cardId, shards, cost })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert(`${cardId} 샤드 ${shards}개를 획득했습니다!`);
+                const updatedUser = { ...user, coins: data.coins, inventory: data.inventory };
+                setUser(updatedUser);
+                localStorage.setItem('bibeGameUser', JSON.stringify(updatedUser));
+            } else {
+                alert(data.message);
+            }
+        } catch (err) {
+            console.error("Buy shards error:", err);
         } finally {
             setLoading(false);
         }
@@ -150,41 +179,100 @@ export default function Shop({ user, setUser, onClose }) {
             {/* Store Content */}
             {activeTab === 'store' && (
                 <div style={{
-                    width: '90%',
-                    maxWidth: '800px',
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                    gap: '20px',
-                    padding: '10px'
+                    width: '95%',
+                    maxWidth: '1000px',
+                    height: 'calc(100vh - 250px)',
+                    overflowY: 'auto',
+                    padding: '10px',
+                    scrollbarWidth: 'none'
                 }}>
+                    <h2 style={{ fontSize: '1.2rem', color: '#7f8c8d', marginBottom: '20px', textAlign: 'left', marginLeft: '10px' }}>MYSTERY CHESTS</h2>
                     <div style={{
-                        background: 'linear-gradient(180deg, #34495e 0%, #2c3e50 100%)',
-                        padding: '30px',
-                        borderRadius: '24px',
-                        textAlign: 'center',
-                        border: '2px solid rgba(255,255,255,0.1)',
-                        boxShadow: '0 15px 35px rgba(0,0,0,0.5)'
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                        gap: '25px',
+                        marginBottom: '50px'
                     }}>
-                        <div style={{ fontSize: '4rem', marginBottom: '15px' }}>🎁</div>
-                        <h3 style={{ margin: '0 0 10px' }}>Mystery Box</h3>
-                        <p style={{ fontSize: '0.9rem', color: '#95a5a6', marginBottom: '20px' }}>Random shards for 3 units!</p>
-                        <button
-                            onClick={buyBox}
-                            disabled={loading}
-                            style={{
-                                width: '100%',
-                                padding: '15px',
-                                background: '#f1c40f',
-                                border: 'none',
-                                borderRadius: '12px',
-                                fontWeight: '900',
-                                fontSize: '1.2rem',
-                                cursor: loading ? 'not-allowed' : 'pointer',
-                                color: '#000'
-                            }}
-                        >
-                            💰 200
-                        </button>
+                        {[
+                            { id: 'silver', name: 'Silver Box', cost: 200, emoji: '📦', desc: 'Random shards for 3 units!' },
+                            { id: 'gold', name: 'Gold Box', cost: 500, emoji: '🎁', desc: 'Random shards for 5 units!' },
+                            { id: 'diamond', name: 'Diamond Box', cost: 1200, emoji: '💎', desc: 'Random shards for 8 units!' }
+                        ].map(item => (
+                            <div key={item.id} style={{
+                                background: 'linear-gradient(180deg, rgba(52,73,94,0.4) 0%, rgba(44,62,80,0.6) 100%)',
+                                padding: '40px 30px',
+                                borderRadius: '32px',
+                                textAlign: 'center',
+                                border: '1px solid rgba(255,255,255,0.08)',
+                                backdropFilter: 'blur(10px)',
+                                boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+                                cursor: 'default'
+                            }}>
+                                <div style={{ fontSize: '5rem', marginBottom: '15px' }}>{item.emoji}</div>
+                                <h3 style={{ margin: '0 0 10px', fontSize: '1.6rem' }}>{item.name}</h3>
+                                <p style={{ fontSize: '0.9rem', color: '#95a5a6', marginBottom: '25px' }}>{item.desc}</p>
+                                <button
+                                    onClick={() => buyBox(item.id)}
+                                    disabled={loading}
+                                    style={{
+                                        width: '100%',
+                                        padding: '15px',
+                                        background: item.id === 'diamond' ? 'linear-gradient(90deg, #3498db, #9b59b6)' : '#f1c40f',
+                                        border: 'none',
+                                        borderRadius: '16px',
+                                        fontWeight: '900',
+                                        fontSize: '1.3rem',
+                                        cursor: loading ? 'not-allowed' : 'pointer',
+                                        color: item.id === 'diamond' ? '#fff' : '#000'
+                                    }}
+                                >
+                                    💰 {item.cost}
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+
+                    <h2 style={{ fontSize: '1.2rem', color: '#7f8c8d', marginBottom: '20px', textAlign: 'left', marginLeft: '10px' }}>DAILY SPECIALS</h2>
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                        gap: '20px',
+                        marginBottom: '40px'
+                    }}>
+                        {[
+                            { id: 'giant', shards: 30, cost: 350 },
+                            { id: 'balloon', shards: 20, cost: 600 },
+                            { id: 'witch', shards: 25, cost: 450 },
+                            { id: 'hog_rider', shards: 40, cost: 500 }
+                        ].map(deal => (
+                            <div key={deal.id} style={{
+                                background: 'rgba(255,255,255,0.05)',
+                                padding: '20px',
+                                borderRadius: '24px',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                textAlign: 'center'
+                            }}>
+                                <div style={{ fontSize: '3rem', marginBottom: '10px' }}>{getCardIcon(deal.id)}</div>
+                                <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>{deal.id.replace('_', ' ').toUpperCase()}</div>
+                                <div style={{ color: '#2ecc71', fontWeight: '900', marginBottom: '15px' }}>x{deal.shards}</div>
+                                <button
+                                    onClick={() => buyShards(deal.id, deal.shards, deal.cost)}
+                                    disabled={loading}
+                                    style={{
+                                        width: '100%',
+                                        padding: '10px',
+                                        background: '#3498db',
+                                        border: 'none',
+                                        borderRadius: '10px',
+                                        color: 'white',
+                                        fontWeight: 'bold',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    💰 {deal.cost}
+                                </button>
+                            </div>
+                        ))}
                     </div>
                 </div>
             )}

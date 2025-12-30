@@ -133,12 +133,17 @@ class GameEngine {
         const yBase = isP1 ? 1.5 : 16.5; // Moved princess towers forward
         const kingY = isP1 ? 0.5 : 17.5; // Moved king tower slightly forward
 
+        const kingStats = UNITS.KING_TOWER;
+        const sideStats = UNITS.SIDE_TOWER;
+
         // King Tower
-        this.spawnUnit(this.state[playerId], 'king_tower', 5, kingY);
+        if (kingStats) this.spawnUnit(this.state[playerId], kingStats, 5, kingY);
 
         // Princess Towers (Wider spacing)
-        this.spawnUnit(this.state[playerId], 'side_tower', 1.5, yBase);
-        this.spawnUnit(this.state[playerId], 'side_tower', 8.5, yBase);
+        if (sideStats) {
+            this.spawnUnit(this.state[playerId], sideStats, 1.5, yBase);
+            this.spawnUnit(this.state[playerId], sideStats, 8.5, yBase);
+        }
     }
 
     stop() {
@@ -988,31 +993,19 @@ class GameEngine {
                 const offsetY = count > 1 ? (Math.random() - 0.5) * 1.5 : 0;
 
                 let finalStats = { ...unitStats };
-                let finalId = cardId;
 
                 // Handle Goblin split (3 Melee, 2 Spear)
                 if (cardId === 'goblin') {
                     if (i >= unitStats.meleeCount) {
-                        finalStats = UNITS.SPEAR_GOBLIN;
-                        finalId = 'spear_goblin';
+                        finalStats = { ...UNITS.SPEAR_GOBLIN, level: unitStats.level };
                     }
                 }
 
-                playerState.units.push({
-                    ...finalStats,
-                    cardId: finalId,
-                    id: `${finalId}_${Date.now()}_${i}`,
-                    x: Math.max(0, Math.min(GAME_CONFIG.FIELD_WIDTH, x + offsetX)),
-                    y: Math.max(0, Math.min(GAME_CONFIG.FIELD_HEIGHT, y + offsetY)),
-                    hp: finalStats.hp,
-                    maxHp: finalStats.hp,
-                    shield: finalStats.shield || 0,
-                    maxShield: finalStats.shield || 0,
-                    attackTimer: 0,
-                    ownerId: playerId,
-                    isEvolved: isEvolved,
-                    statusEffects: [],
-                });
+                this.spawnUnit(playerState, finalStats, Math.max(0, Math.min(GAME_CONFIG.FIELD_WIDTH, x + offsetX)), Math.max(0, Math.min(GAME_CONFIG.FIELD_HEIGHT, y + offsetY)));
+                // Mark the last spawned unit as evolved if applicable
+                if (isEvolved) {
+                    playerState.units[playerState.units.length - 1].isEvolved = true;
+                }
             }
         }
 
@@ -1145,9 +1138,8 @@ class GameEngine {
             for (let i = 0; i < count; i++) {
                 const offsetX = count > 1 ? (Math.random() - 0.5) * 1.5 : 0;
                 const offsetY = count > 1 ? (Math.random() - 0.5) * 1.5 : 0;
-                this.spawnUnit(playerState, selectedId, egg.x + offsetX, egg.y + offsetY);
+                this.spawnUnit(playerState, unitStats, egg.x + offsetX, egg.y + offsetY);
             }
-
             console.log(`Egg hatched into ${count}x ${selectedId} (Tier ${finalTier}) - Lucky!`);
         } else {
             // Fallback to Skeletons (now spawns the whole squad)
@@ -1156,7 +1148,7 @@ class GameEngine {
             for (let i = 0; i < count; i++) {
                 const offsetX = (Math.random() - 0.5) * 1.5;
                 const offsetY = (Math.random() - 0.5) * 1.5;
-                this.spawnUnit(playerState, 'skeletons', egg.x + offsetX, egg.y + offsetY);
+                this.spawnUnit(playerState, unitStats, egg.x + offsetX, egg.y + offsetY);
             }
         }
     }

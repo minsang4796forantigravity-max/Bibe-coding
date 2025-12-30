@@ -19,27 +19,33 @@ const ALL_CARD_IDS = [
     'goblin_barrel', 'freeze', 'rage', 'heal'
 ];
 
-// Buy Mystery Box (200 coins)
+const BOX_CONFIG = {
+    silver: { cost: 200, name: 'Silver Box', cards: 3, shardMin: 5, shardMax: 15, emoji: '📦' },
+    gold: { cost: 500, name: 'Gold Box', cards: 5, shardMin: 12, shardMax: 30, emoji: '🎁' },
+    diamond: { cost: 1200, name: 'Diamond Box', cards: 8, shardMin: 30, shardMax: 70, emoji: '💎' }
+};
+
+// Buy Mystery Box
 router.post('/buy-box', async (req, res) => {
-    const { username } = req.body;
+    const { username, boxType = 'silver' } = req.body;
     try {
         const user = await User.findOne({ username });
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        if (user.coins < 200) {
+        const config = BOX_CONFIG[boxType] || BOX_CONFIG.silver;
+
+        if (user.coins < config.cost) {
             return res.status(400).json({ message: '코인이 부족합니다.' });
         }
 
-        user.coins -= 200;
+        user.coins -= config.cost;
 
-        // Pick 3 random cards and give random shards (5-15 each)
         const rewards = [];
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < config.cards; i++) {
             const cardId = ALL_CARD_IDS[Math.floor(Math.random() * ALL_CARD_IDS.length)];
-            const shards = Math.floor(Math.random() * 11) + 5; // 5 to 15
+            const shards = Math.floor(Math.random() * (config.shardMax - config.shardMin + 1)) + config.shardMin;
             rewards.push({ cardId, shards });
 
-            // Update inventory
             const invItem = user.inventory.find(item => item.cardId === cardId);
             if (invItem) {
                 invItem.shards += shards;
@@ -50,11 +56,38 @@ router.post('/buy-box', async (req, res) => {
 
         await user.save();
         res.json({
-            message: 'Mystery Box Opened!',
+            message: `${config.name} Opened!`,
             rewards,
             coins: user.coins,
             inventory: user.inventory
         });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Buy Shards Directly
+router.post('/buy-shards', async (req, res) => {
+    const { username, cardId, shards, cost } = req.body;
+    try {
+        const user = await User.findOne({ username });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        if (user.coins < cost) {
+            return res.status(400).json({ message: '코인이 부족합니다.' });
+        }
+
+        user.coins -= cost;
+
+        const invItem = user.inventory.find(item => item.cardId === cardId);
+        if (invItem) {
+            invItem.shards += shards;
+        } else {
+            user.inventory.push({ cardId, shards, level: 1 });
+        }
+
+        await user.save();
+        res.json({ message: 'Purchase successful!', coins: user.coins, inventory: user.inventory });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

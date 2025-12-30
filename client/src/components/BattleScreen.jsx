@@ -421,9 +421,9 @@ export function BattleScreen({ gameState, playerId, socket }) {
                         spellEffectStyle.boxShadow = '0 0 15px #f1c40f';
                     }
 
-                    let unitSize = unit.type === 'building' ? '40px' : '30px';
-                    if (unit.cardId === 'king_tower') unitSize = '55px';
-                    if (unit.cardId === 'side_tower') unitSize = '38px';
+                    let unitSize = unit.type === 'building' ? '32px' : '24px';
+                    if (unit.cardId === 'king_tower') unitSize = '48px';
+                    if (unit.cardId === 'side_tower') unitSize = '32px';
 
                     const isKing = unit.cardId === 'king_tower';
                     // Check if unit is on the opponent's side (top part of the field)
