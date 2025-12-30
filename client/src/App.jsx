@@ -186,16 +186,18 @@ function App() {
 
   return (
     <div className="App">
-      <div className="status-bar">
-        Status: {isConnected ? 'Connected' : 'Disconnected'}
-        {user && (
-          <div className="user-info">
-            <span>환영합니다, {user.username}님!</span>
-            <button onClick={() => setStatus('profile')}>내 전적</button>
-            <button onClick={handleLogout}>로그아웃</button>
-          </div>
-        )}
-      </div>
+      {status !== 'lobby' && (
+        <div className="status-bar">
+          Status: {isConnected ? 'Connected' : 'Disconnected'}
+          {user && (
+            <div className="user-info">
+              <span>환영합니다, {user.username}님!</span>
+              <button onClick={() => setStatus('profile')}>내 전적</button>
+              <button onClick={handleLogout}>로그아웃</button>
+            </div>
+          )}
+        </div>
+      )}
 
       {status === 'lobby' && (
         <Lobby

@@ -43,6 +43,10 @@ export function Lobby({
     };
 
     const claimDailyReward = async () => {
+        if (!user?.username) {
+            alert("로그인이 필요합니다.");
+            return;
+        }
         try {
             const res = await fetch('/api/game/daily-reward', {
                 method: 'POST',
@@ -50,10 +54,15 @@ export function Lobby({
                 body: JSON.stringify({ username: user.username })
             });
             const data = await res.json();
-            alert(data.message);
-            if (res.ok) setCoins(data.coins);
+            if (res.ok) {
+                alert(data.message);
+                setCoins(data.coins);
+            } else {
+                alert(data.message || "보상 획득에 실패했습니다.");
+            }
         } catch (err) {
-            alert("Error claiming reward");
+            console.error("Daily reward error:", err);
+            alert("서버와 통신 중 오류가 발생했습니다.");
         }
     };
 
@@ -263,6 +272,7 @@ export function Lobby({
                     maxWidth: '1000px',
                     marginTop: '20px',
                     borderRadius: '24px',
+                    minHeight: '200px',
                     height: '240px',
                     background: 'linear-gradient(135deg, #2980b9 0%, #2c3e50 50%, #c0392b 100%)',
                     position: 'relative',
@@ -272,7 +282,8 @@ export function Lobby({
                     alignItems: 'center',
                     cursor: 'pointer',
                     zIndex: 1,
-                    transition: 'transform 0.3s'
+                    transition: 'transform 0.3s',
+                    flexShrink: 0
                 }}
                 onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
                 onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}

@@ -21,10 +21,12 @@ router.post('/notices', async (req, res) => {
     }
 
     try {
+        console.log(`[Admin] Notice attempt by ${username}: ${title}`);
         const notice = new Notice({ title, content, type, coinsReward });
         await notice.save();
         res.status(201).json(notice);
     } catch (err) {
+        console.error(`[Admin] Notice error:`, err);
         res.status(400).json({ message: err.message });
     }
 });
@@ -33,13 +35,16 @@ router.post('/notices', async (req, res) => {
 router.post('/daily-reward', async (req, res) => {
     const { username } = req.body;
     try {
+        console.log(`[Economy] Daily reward attempt by ${username}`);
         const user = await User.findOne({ username });
-        if (!user) return res.status(404).json({ message: 'User not found' });
+        if (!user) {
+            console.log(`[Economy] User ${username} not found`);
+            return res.status(404).json({ message: 'User not found' });
+        }
 
         const now = new Date();
         const lastReward = user.lastDailyReward ? new Date(user.lastDailyReward) : null;
 
-        // Check if same day (UTC)
         if (lastReward &&
             lastReward.getUTCFullYear() === now.getUTCFullYear() &&
             lastReward.getUTCMonth() === now.getUTCMonth() &&
@@ -48,12 +53,14 @@ router.post('/daily-reward', async (req, res) => {
         }
 
         const rewardCoins = 50;
-        user.coins += rewardCoins;
+        user.coins = (user.coins || 0) + rewardCoins;
         user.lastDailyReward = now;
         await user.save();
 
+        console.log(`[Economy] Daily reward granted to ${username}: 50 coins`);
         res.json({ message: `보상 획득! +${rewardCoins} 코인`, coins: user.coins });
     } catch (err) {
+        console.error(`[Economy] Daily reward error for ${username}:`, err);
         res.status(500).json({ message: err.message });
     }
 });
