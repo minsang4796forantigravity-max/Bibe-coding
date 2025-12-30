@@ -321,7 +321,10 @@ class GameEngine {
                 await User.findOneAndUpdate(
                     { username: p1.username },
                     {
-                        $inc: { rating: ratingChange },
+                        $inc: {
+                            rating: ratingChange,
+                            coins: result === 'win' ? 50 : 10
+                        },
                         $push: {
                             matchHistory: {
                                 result,
@@ -359,7 +362,10 @@ class GameEngine {
                 await User.findOneAndUpdate(
                     { username: p2.username },
                     {
-                        $inc: { rating: ratingChange },
+                        $inc: {
+                            rating: ratingChange,
+                            coins: result === 'win' ? 50 : 10
+                        },
                         $push: {
                             matchHistory: {
                                 result,

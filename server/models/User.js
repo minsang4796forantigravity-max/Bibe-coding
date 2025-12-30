@@ -21,6 +21,14 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 1000 // Starting rating
     },
+    coins: {
+        type: Number,
+        default: 100 // Starting coins
+    },
+    lastDailyReward: {
+        type: Date,
+        default: null
+    },
     matchHistory: [{
         result: String, // 'win' or 'lose'
         opponent: String,

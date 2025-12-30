@@ -10,12 +10,42 @@ const mongoose = require('mongoose');
 const GameEngine = require('./GameEngine');
 const BotAI = require('./BotAI');
 const authRoutes = require('./routes/auth');
+const gameRoutes = require('./routes/game');
+const bcrypt = require('bcryptjs');
+const User = require('./models/User');
+const Notice = require('./models/Notice');
 
 // ======================= MongoDB 연결 =======================
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/bibe-game';
 
 mongoose.connect(MONGO_URI)
-    .then(() => console.log("✅ MongoDB 연결 성공"))
+    .then(async () => {
+        console.log("✅ MongoDB 연결 성공");
+
+        // Create Admin account if it doesn't exist
+        const adminUsername = 'Grand Warden';
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash('admin777', salt);
+
+        const existingAdmin = await User.findOne({ username: adminUsername });
+        if (!existingAdmin) {
+            const admin = new User({
+                username: adminUsername,
+                password: hashedPassword,
+                coins: 999999
+            });
+            await admin.save();
+            console.log("👑 Admin 'Grand Warden' created. Password: admin777");
+
+            // Create welcome notice
+            const welcomeNotice = new Notice({
+                title: 'Welcome to Bibe Royale!',
+                content: '새롭게 단장한 로비에 오신 것을 환영합니다. 매일 접속해서 보상을 받고 순위권에 도전하세요!',
+                type: 'event'
+            });
+            await welcomeNotice.save();
+        }
+    })
     .catch(err => console.error("❌ MongoDB 연결 실패:", err));
 
 // ======================= Express / Socket.io 기본 설정 =======================
@@ -26,6 +56,7 @@ app.use(express.json());
 // 계정 관련 API 라우트
 // 클라이언트에서 POST /api/auth/signup, /api/auth/login 호출
 app.use('/api/auth', authRoutes);
+app.use('/api/game', gameRoutes);
 // 만약 /api/auth로도 쓰고 싶으면 아래 줄 추가해도 됨
 // app.use('/api/auth', authRoutes);
 
