@@ -31,13 +31,19 @@ import freezeImg from '../assets/freeze_card.png';
 import electroWizardImg from '../assets/electro_wizard_card.png';
 import goblinBarrelImg from '../assets/goblin_barrel_card.png';
 import airDefenseImg from '../assets/air_defense_card.png';
+import egg1Img from '../assets/egg_tier_1.png';
+import egg2Img from '../assets/egg_tier_2.png';
+import egg3Img from '../assets/egg_tier_3.png';
+import egg4Img from '../assets/egg_tier_4.png';
+import egg5Img from '../assets/egg_tier_5.png';
 
 const ALL_CARDS = [
     'skeletons', 'goblin', 'knight', 'archer', 'bomber', 'kamikaze',
     'cannon', 'sniper', 'fireball', 'giant', 'wizard', 'goblin_hut', 'mana_collector',
     'valkyrie', 'hog_rider', 'witch', 'baby_dragon', 'barbarians',
     'tornado', 'rage', 'heal', 'balloon',
-    'log', 'freeze', 'electro_wizard', 'goblin_barrel', 'air_defense'
+    'log', 'freeze', 'electro_wizard', 'goblin_barrel', 'air_defense',
+    'egg_1', 'egg_2', 'egg_3', 'egg_4', 'egg_5'
 ];
 
 const CARD_IMAGES = {
@@ -68,6 +74,11 @@ const CARD_IMAGES = {
     electro_wizard: electroWizardImg,
     goblin_barrel: goblinBarrelImg,
     air_defense: airDefenseImg,
+    egg_1: egg1Img,
+    egg_2: egg2Img,
+    egg_3: egg3Img,
+    egg_4: egg4Img,
+    egg_5: egg5Img,
 };
 
 export function DeckSelector({ onDeckSelected, username }) {

@@ -27,6 +27,11 @@ import freezeImg from '../assets/freeze_card.png';
 import electroWizardImg from '../assets/electro_wizard_card.png';
 import goblinBarrelImg from '../assets/goblin_barrel_card.png';
 import airDefenseImg from '../assets/air_defense_card.png';
+import egg1Img from '../assets/egg_tier_1.png';
+import egg2Img from '../assets/egg_tier_2.png';
+import egg3Img from '../assets/egg_tier_3.png';
+import egg4Img from '../assets/egg_tier_4.png';
+import egg5Img from '../assets/egg_tier_5.png';
 import towerImg from '../assets/tower_asset.png';
 import '../styles/evolution-effects.css';
 
@@ -58,6 +63,12 @@ const CARD_IMAGES = {
     electro_wizard: electroWizardImg,
     goblin_barrel: goblinBarrelImg,
     air_defense: airDefenseImg,
+    spear_goblin: goblinImg,
+    egg_1: egg1Img,
+    egg_2: egg2Img,
+    egg_3: egg3Img,
+    egg_4: egg4Img,
+    egg_5: egg5Img,
 };
 
 export function PlayerView({ playerId, gameState, onDeploy, isRotated }) {

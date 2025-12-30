@@ -416,6 +416,13 @@ class GameEngine {
                 currentAttackSpeed *= (1 + curse.slow);
             }
 
+            // Brotherhood Logic (Barbarians)
+            if (unit.brotherhood) {
+                const teammates = playerState.units.filter(u => u.id !== unit.id && Math.hypot(u.x - unit.x, u.y - unit.y) < 3);
+                const boost = Math.min(0.5, teammates.length * 0.1);
+                currentAttackSpeed /= (1 + boost);
+            }
+
             const rageSpell = this.state.activeSpells.find(s =>
                 s.id === 'rage' &&
                 s.ownerId === playerState.id &&
@@ -427,16 +434,25 @@ class GameEngine {
                 currentAttackSpeed /= 1.35;
             }
 
-            if (unit.type === 'building') {
+            if (unit.type === 'building' || unit.type === 'egg') {
                 if (unit.lifetime !== undefined) {
                     unit.lifetime -= dt;
-                    const decayAmount = (unit.maxHp / UNITS[unit.cardId.toUpperCase()].lifetime) * dt;
-                    // Decay doesn't affect shield, only HP
-                    unit.hp -= decayAmount;
-                    if (unit.lifetime <= 0) unit.hp = 0;
+
+                    if (unit.type === 'building') {
+                        const decayAmount = (unit.maxHp / UNITS[unit.cardId.toUpperCase()].lifetime) * dt;
+                        unit.hp -= decayAmount;
+                    }
+
+                    if (unit.lifetime <= 0) {
+                        unit.hp = 0;
+                        if (unit.type === 'egg') {
+                            this.hatchEgg(playerState, unit);
+                        }
+                    }
                 }
 
                 if (unit.manaProduction) {
+                    // ... code continues
                     unit.productionTimer = (unit.productionTimer || 0) + dt;
                     if (unit.productionTimer >= unit.productionInterval) {
                         unit.productionTimer = 0;
@@ -725,6 +741,9 @@ class GameEngine {
         if (attacker.curseSlow) {
             effects.push({ type: 'curse', slow: attacker.curseSlow, duration: attacker.curseDuration });
         }
+        if (attacker.concussion) {
+            effects.push({ type: 'slow', slow: 0.2, duration: 1.5 });
+        }
         return effects;
     }
 
@@ -746,7 +765,9 @@ class GameEngine {
         enemyUnits.forEach(u => {
             if (Math.hypot(u.x - x, u.y - y) <= radius) {
                 this.dealDamage(damage, u, targetPlayerId);
-                this.applyStatusEffects(u, statusEffects);
+                if (statusEffects) {
+                    this.applyStatusEffects(u, statusEffects);
+                }
             }
         });
 
@@ -890,16 +911,27 @@ class GameEngine {
                 const offsetX = count > 1 ? (Math.random() - 0.5) * 1.5 : 0;
                 const offsetY = count > 1 ? (Math.random() - 0.5) * 1.5 : 0;
 
+                let finalStats = { ...unitStats };
+                let finalId = cardId;
+
+                // Handle Goblin split (3 Melee, 2 Spear)
+                if (cardId === 'goblin') {
+                    if (i >= unitStats.meleeCount) {
+                        finalStats = UNITS.SPEAR_GOBLIN;
+                        finalId = 'spear_goblin';
+                    }
+                }
+
                 playerState.units.push({
-                    ...unitStats,
-                    cardId: cardId,
-                    id: `${cardId}_${Date.now()}_${i}`,
+                    ...finalStats,
+                    cardId: finalId,
+                    id: `${finalId}_${Date.now()}_${i}`,
                     x: Math.max(0, Math.min(GAME_CONFIG.FIELD_WIDTH, x + offsetX)),
                     y: Math.max(0, Math.min(GAME_CONFIG.FIELD_HEIGHT, y + offsetY)),
-                    hp: unitStats.hp,
-                    maxHp: unitStats.hp,
-                    shield: unitStats.shield || 0,
-                    maxShield: unitStats.shield || 0,
+                    hp: finalStats.hp,
+                    maxHp: finalStats.hp,
+                    shield: finalStats.shield || 0,
+                    maxShield: finalStats.shield || 0,
                     attackTimer: 0,
                     ownerId: playerId,
                     isEvolved: isEvolved,
@@ -988,6 +1020,43 @@ class GameEngine {
             ownerId: playerState.id,
             statusEffects: [],
         });
+    }
+
+    hatchEgg(playerState, egg) {
+        const targetTier = egg.hatchTier;
+        const rand = Math.random() * 100;
+        let finalTier = targetTier;
+
+        if (rand < 50) finalTier = targetTier;
+        else if (rand < 70) finalTier = targetTier + 1;
+        else if (rand < 85) finalTier = targetTier - 1;
+        else if (rand < 90) finalTier = targetTier + 2;
+        else if (rand < 95) finalTier = targetTier - 2;
+        else {
+            // Jackpot or dud
+            finalTier = Math.random() < 0.5 ? targetTier + 3 : targetTier - 3;
+        }
+
+        // Clamp tier 1-7 (Max cost Giant is 7 now)
+        finalTier = Math.max(1, Math.min(7, finalTier));
+
+        // Find all non-spell units with this cost
+        const candidates = Object.keys(UNITS).filter(key => {
+            const u = UNITS[key];
+            return u.cost === finalTier && u.type !== 'spell' && u.type !== 'egg' && u.id !== 'spear_goblin';
+        });
+
+        if (candidates.length > 0) {
+            const selectedKey = candidates[Math.floor(Math.random() * candidates.length)];
+            const selectedId = selectedKey.toLowerCase();
+            this.spawnUnit(playerState, selectedId, egg.x, egg.y);
+
+            // Log for visual/debug
+            console.log(`Egg hatched into ${selectedId} (Tier ${finalTier})`);
+        } else {
+            // Fallback to Tier 1
+            this.spawnUnit(playerState, 'skeletons', egg.x, egg.y);
+        }
     }
 }
 

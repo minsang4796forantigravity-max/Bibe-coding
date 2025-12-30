@@ -17,16 +17,32 @@ const UNITS = {
     // === 2 코스트: 저렴한 유틸리티 ===
     GOBLIN: {
         id: 'goblin',
-        name: 'Goblin',
-        cost: 2,
+        name: 'Goblins',
+        cost: 4,
         hp: 160,
         damage: 100,
         speed: 3.0,
-        range: 0.5,
+        range: 1.0,
         attackSpeed: 1.1,
         type: 'ground',
         targets: 'ground',
-        count: 3,
+        count: 5, // 3 Melee + 2 Spear logic in GameEngine
+        meleeCount: 3,
+        spearCount: 2,
+    },
+    SPEAR_GOBLIN: {
+        id: 'spear_goblin',
+        name: 'Spear Goblin',
+        cost: 0,
+        hp: 110,
+        damage: 50,
+        speed: 3.0,
+        range: 5.0,
+        attackSpeed: 1.3,
+        type: 'ground',
+        targets: 'both',
+        projectile: 'spear',
+        projectileSpeed: 15,
     },
     RAGE: {
         id: 'rage',
@@ -54,16 +70,16 @@ const UNITS = {
     KNIGHT: {
         id: 'knight',
         name: 'Knight',
-        cost: 3,
-        hp: 1200, // 1400 -> 1200
-        damage: 145, // 160 -> 145
+        cost: 4, // 3 -> 4
+        hp: 1400,
+        damage: 145,
         speed: 1.2,
         range: 1,
         attackSpeed: 1.2,
         type: 'ground',
         targets: 'ground',
         count: 1,
-        shield: 300, // New trait: Shield
+        shield: 300,
     },
     ARCHER: {
         id: 'archer',
@@ -88,23 +104,24 @@ const UNITS = {
         range: 4.5,
         attackSpeed: 1.8,
         type: 'ground',
-        targets: 'ground', // Fixed targeting
-        splash: 1.5,
+        targets: 'ground',
+        splash: 2.2, // 1.5 -> 2.2
         count: 1,
+        concussion: true, // New trait: 20% slow for 1.5s
     },
     KAMIKAZE: {
         id: 'kamikaze',
         name: 'Kamikaze',
         cost: 3,
-        hp: 200,
-        damage: 600, // 800 -> 600
-        speed: 3.0, // 3.5 -> 3.0
+        hp: 400, // 200 -> 400
+        damage: 600,
+        speed: 3.2, // 3.0 -> 3.2
         range: 0.5,
         attackSpeed: 0,
         type: 'ground',
         targets: 'ground',
         selfDestruct: true,
-        splash: 2.0, // 2.5 -> 2.0
+        splash: 2.0,
         count: 1,
     },
     CANNON: {
@@ -128,10 +145,10 @@ const UNITS = {
         name: 'Tornado',
         cost: 3,
         type: 'spell',
-        radius: 3.0,
+        radius: 3.5, // 3.0 -> 3.5
         duration: 3,
-        damagePerSecond: 70,
-        pullForce: 3.5,
+        damagePerSecond: 0, // Damage removed
+        pullForce: 4.0, // 3.5 -> 4.0
     },
     GOBLIN_BARREL: {
         id: 'goblin_barrel',
@@ -147,9 +164,9 @@ const UNITS = {
     VALKYRIE: {
         id: 'valkyrie',
         name: 'Valkyrie',
-        cost: 4,
-        hp: 1600,
-        damage: 180, // 220 -> 180
+        cost: 3, // 4 -> 3
+        hp: 1200, // 1600 -> 1200
+        damage: 150, // 180 -> 150
         speed: 1.5,
         range: 1,
         attackSpeed: 1.5,
@@ -187,14 +204,14 @@ const UNITS = {
         splash: 1.5,
         count: 1,
         projectile: 'fireball_small',
-        projectileSpeed: 10,
+        projectileSpeed: 11,
     },
     SNIPER: {
         id: 'sniper',
         name: 'Sniper',
         cost: 4,
         hp: 350,
-        damage: 300,
+        damage: 265, // 300 -> 265
         speed: 1.0,
         range: 7.0,
         attackSpeed: 2.5,
@@ -224,7 +241,7 @@ const UNITS = {
         id: 'fireball',
         name: 'Fireball',
         cost: 4,
-        damage: 572,
+        damage: 686, // 572 * 1.2
         type: 'spell',
         targets: 'both',
         radius: 2.5,
@@ -236,22 +253,22 @@ const UNITS = {
         cost: 4,
         type: 'spell',
         radius: 3.0,
-        duration: 4.0,
+        duration: 5.5, // 4.0 -> 5.5
     },
     ELECTRO_WIZARD: {
         id: 'electro_wizard',
         name: 'Electro Wizard',
         cost: 4,
-        hp: 600,
-        damage: 100,
+        hp: 800, // 600 -> 800
+        damage: 120, // 100 -> 120
         speed: 1.4,
         range: 5.0,
         attackSpeed: 1.7,
         type: 'ground',
         targets: 'both',
         count: 1,
-        stunDuration: 0.5,
-        deployStunRadius: 2.0,
+        stunDuration: 0.8, // 0.5 -> 0.8
+        deployStunRadius: 2.5,
         projectile: 'zap',
         projectileSpeed: 20,
     },
@@ -260,23 +277,22 @@ const UNITS = {
     GIANT: {
         id: 'giant',
         name: 'Giant',
-        cost: 5,
-        hp: 2800, // 3300 -> 2800
+        cost: 7, // 5 -> 7
+        hp: 4500, // 2800 -> 4500
         damage: 210,
         speed: 0.9,
-        range: 1,
+        range: 1.5,
         attackSpeed: 1.5,
         type: 'ground',
-        targets: 'ground',
-        favoriteTarget: 'building',
+        targets: 'ground', // No longer building only
         count: 1,
     },
     WIZARD: {
         id: 'wizard',
         name: 'Wizard',
-        cost: 5,
+        cost: 4, // 5 -> 4
         hp: 600,
-        damage: 230,
+        damage: 200, // 230 -> 200
         speed: 1.4,
         range: 5.5,
         attackSpeed: 1.4,
@@ -286,7 +302,7 @@ const UNITS = {
         count: 1,
         projectile: 'fireball_small',
         projectileSpeed: 11,
-        burnDps: 20, // New trait: Burn
+        burnDps: 20,
         burnDuration: 3,
     },
     WITCH: {
@@ -302,13 +318,13 @@ const UNITS = {
         targets: 'both',
         splash: 1.0,
         spawnUnit: 'skeletons',
-        spawnInterval: 7,
+        spawnInterval: 5, // 7 -> 5
         spawnCount: 3,
         spawnOnDeploy: true,
         count: 1,
         projectile: 'magic_bolt',
         projectileSpeed: 9,
-        curseSlow: 0.4, // New trait: Slow (Curse)
+        curseSlow: 0.4,
         curseDuration: 2,
     },
     BARBARIANS: {
@@ -323,6 +339,7 @@ const UNITS = {
         type: 'ground',
         targets: 'ground',
         count: 5,
+        brotherhood: true, // +10% attack speed per nearby teammate
     },
     BALLOON: {
         id: 'balloon',
@@ -330,8 +347,8 @@ const UNITS = {
         cost: 5,
         hp: 1400,
         damage: 800,
-        speed: 1.5,
-        range: 0.5,
+        speed: 1.3, // 1.5 -> 1.3
+        range: 1.5, // Increased slightly to allow projectile to fall
         attackSpeed: 3.0,
         type: 'flying',
         targets: 'ground',
@@ -339,6 +356,8 @@ const UNITS = {
         deathDamage: 200,
         deathDamageRadius: 3.0,
         count: 1,
+        projectile: 'bomb',
+        projectileSpeed: 8,
     },
     GOBLIN_HUT: {
         id: 'goblin_hut',
@@ -350,6 +369,7 @@ const UNITS = {
         lifetime: 50,
         spawnUnit: 'goblin',
         spawnInterval: 4.5,
+        spawnCount: 3, // Now spawns 3 at once
     },
 
     // === 6 코스트 ===
@@ -371,8 +391,55 @@ const UNITS = {
         cost: 1,
         type: 'spell',
         radius: 2.5,
-        duration: 2,
+        duration: 2.5, // 2 -> 2.5
         healPerSecond: 150,
+    },
+
+    // === EGGS ===
+    EGG_1: {
+        id: 'egg_1',
+        name: 'Egg (1)',
+        cost: 1,
+        type: 'egg',
+        hatchTier: 1,
+        hp: 100,
+        lifetime: 3,
+    },
+    EGG_2: {
+        id: 'egg_2',
+        name: 'Egg (2)',
+        cost: 2,
+        type: 'egg',
+        hatchTier: 2,
+        hp: 150,
+        lifetime: 3,
+    },
+    EGG_3: {
+        id: 'egg_3',
+        name: 'Egg (3)',
+        cost: 3,
+        type: 'egg',
+        hatchTier: 3,
+        hp: 200,
+        lifetime: 3,
+    },
+    EGG_4: {
+        id: 'egg_4',
+        name: 'Egg (4)',
+        cost: 4,
+        type: 'egg',
+        hatchTier: 4,
+        hp: 250,
+        lifetime: 3,
+    },
+    EGG_5: {
+        id: 'egg_5',
+        name: 'Egg (5)',
+        cost: 5,
+        type: 'egg',
+        hatchTier: 5,
+        hp: 300,
+        lifetime: 3,
     },
 
     // === 타워 ===

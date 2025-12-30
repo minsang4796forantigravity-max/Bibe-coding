@@ -180,7 +180,7 @@ class BotAI {
         // Elixir Management: Don't leak elixir
         if (myState.mana >= 9.5) {
             // Must play something
-            const cycleCard = this.pickCard(myState.hand, ['skeletons', 'goblin', 'archer', 'knight', 'log']);
+            const cycleCard = this.pickCard(myState.hand, ['skeletons', 'goblin', 'archer', 'knight', 'log', 'egg_1', 'egg_2']);
             const anyCard = cycleCard || myState.hand[0];
 
             // Play in back
@@ -192,8 +192,8 @@ class BotAI {
 
         if (hasTankOnField) {
             // Support the tank
-            if (myState.mana >= 4) {
-                const supportCard = this.pickCard(myState.hand, ['witch', 'wizard', 'baby_dragon', 'bomber', 'archer', 'musketeer']);
+            if (myState.mana >= 3.5) {
+                const supportCard = this.pickCard(myState.hand, ['witch', 'wizard', 'baby_dragon', 'bomber', 'archer', 'sniper', 'egg_3']);
                 if (supportCard) {
                     const tank = myUnits.find(u => tanks.includes(u.cardId));
                     if (tank) {
@@ -206,10 +206,10 @@ class BotAI {
             }
         } else {
             // Start a push
-            const pushMana = this.difficulty === 'easy' ? 7 : 8;
+            const pushMana = this.difficulty === 'easy' ? 8 : 9;
 
             if (myState.mana >= pushMana) {
-                const tankCard = this.pickCard(myState.hand, tanks);
+                const tankCard = this.pickCard(myState.hand, [...tanks, 'egg_4', 'egg_5']);
                 if (tankCard) {
                     // Build push from back
                     const deployX = GAME_CONFIG.FIELD_WIDTH / 2 + (Math.random() * 4 - 2);

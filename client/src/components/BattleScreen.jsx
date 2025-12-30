@@ -28,6 +28,11 @@ import freezeImg from '../assets/freeze_card.png';
 import electroWizardImg from '../assets/electro_wizard_card.png';
 import goblinBarrelImg from '../assets/goblin_barrel_card.png';
 import airDefenseImg from '../assets/air_defense_card.png';
+import egg1Img from '../assets/egg_tier_1.png';
+import egg2Img from '../assets/egg_tier_2.png';
+import egg3Img from '../assets/egg_tier_3.png';
+import egg4Img from '../assets/egg_tier_4.png';
+import egg5Img from '../assets/egg_tier_5.png';
 
 const CARD_IMAGES = {
     knight: knightImg,
@@ -57,6 +62,12 @@ const CARD_IMAGES = {
     electro_wizard: electroWizardImg,
     goblin_barrel: goblinBarrelImg,
     air_defense: airDefenseImg,
+    spear_goblin: goblinImg, // Placeholder for spear goblin
+    egg_1: egg1Img,
+    egg_2: egg2Img,
+    egg_3: egg3Img,
+    egg_4: egg4Img,
+    egg_5: egg5Img,
 };
 
 export function BattleScreen({ gameState, playerId, socket }) {
@@ -375,6 +386,32 @@ export function BattleScreen({ gameState, playerId, socket }) {
                                 ...spellEffectStyle
                             }}
                         >
+                            {/* Special Visual Effects */}
+                            {unit.type === 'egg' && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    width: '100%',
+                                    height: '100%',
+                                    borderRadius: '5px',
+                                    animation: 'pulse 0.5s infinite alternate',
+                                    boxShadow: '0 0 20px gold',
+                                    pointerEvents: 'none'
+                                }} />
+                            )}
+                            {unit.statusEffects?.some(e => e.type === 'slow') && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    width: '100%',
+                                    height: '100%',
+                                    backgroundColor: 'rgba(0, 255, 255, 0.2)',
+                                    borderRadius: '50%',
+                                    pointerEvents: 'none'
+                                }} />
+                            )}
                             <div style={{
                                 position: 'absolute',
                                 bottom: -5,
@@ -450,6 +487,8 @@ export function BattleScreen({ gameState, playerId, socket }) {
                     if (proj.type === 'arrow') { color = 'brown'; size = '6px'; }
                     if (proj.type === 'bullet') { color = 'silver'; size = '4px'; }
                     if (proj.type === 'zap') { color = '#f1c40f'; size = '4px'; } // Electro Wizard
+                    if (proj.type === 'bomb') { color = '#2c3e50'; size = '16px'; } // Balloon
+                    if (proj.type === 'spear') { color = '#7f8c8d'; size = '8px'; } // Spear Goblin
 
                     // Image-based projectiles
                     if (proj.type === 'log') {
