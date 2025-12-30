@@ -176,49 +176,48 @@ function App() {
     return <DeckSelector onDeckSelected={handleDeckSelected} username={user ? user.username : null} />;
   }
 
+  if (status === 'lobby') {
+    return (
+      <Lobby
+        user={user}
+        roomId={roomId}
+        setRoomId={setRoomId}
+        difficulty={difficulty}
+        setDifficulty={setDifficulty}
+        onJoinClick={handleJoinClick}
+        onSinglePlayerClick={handleSinglePlayerClick}
+        onProfileClick={() => setStatus('profile')}
+        onLogout={handleLogout}
+      />
+    );
+  }
+
   if (status === 'waiting') {
     return (
-      <div className="lobby">
-        return (
-        <div className="App" style={{ width: '100vw', height: '100vh', overflow: 'hidden' }}>
-          {status === 'lobby' && (
-            <Lobby
-              user={user}
-              roomId={roomId}
-              setRoomId={setRoomId}
-              difficulty={difficulty}
-              setDifficulty={setDifficulty}
-              onJoinClick={handleJoinClick}
-              onSinglePlayerClick={handleSinglePlayerClick}
-              onProfileClick={() => setStatus('profile')}
-              onLogout={handleLogout}
-            />
-          )}
+      <div style={{
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #1a1c2c 0%, #4a192c 100%)',
+        color: 'white'
+      }}>
+        <div className="spinner" style={{ marginBottom: '20px' }}></div>
+        <h1>Searching for opponent...</h1>
+        <button onClick={() => setStatus('lobby')} style={{
+          marginTop: '20px',
+          padding: '10px 20px',
+          background: 'rgba(255,255,255,0.1)',
+          border: 'none',
+          color: 'white',
+          borderRadius: '5px'
+        }}>Cancel</button>
+      </div>
+    );
+  }
 
-          {status === 'waiting' && (
-            <div style={{
-              height: '100vh',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'linear-gradient(135deg, #1a1c2c 0%, #4a192c 100%)',
-              color: 'white'
-            }}>
-              <div className="spinner" style={{ marginBottom: '20px' }}></div>
-              <h1>Searching for opponent...</h1>
-              <button onClick={() => setStatus('lobby')} style={{
-                marginTop: '20px',
-                padding: '10px 20px',
-                background: 'rgba(255,255,255,0.1)',
-                border: 'none',
-                color: 'white',
-                borderRadius: '5px'
-              }}>Cancel</button>
-            </div>
-          )}
-        </div>
-        );
+  return null;
 }
 
-        export default App;
+export default App;

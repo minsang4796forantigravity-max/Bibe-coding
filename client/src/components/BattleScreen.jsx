@@ -445,7 +445,6 @@ export function BattleScreen({ gameState, playerId, socket }) {
                                 backgroundSize: 'cover',
                                 borderRadius: unit.type === 'building' ? '5px' : '50%',
                                 border: isKing ? `4px solid gold` : `3px solid ${isMine ? '#3498db' : '#e74c3c'}`,
-                                transition: 'left 0.1s linear, bottom 0.1s linear',
                                 zIndex: isKing ? 10 : 5,
                                 boxShadow: isKing ? '0 0 20px rgba(241, 196, 15, 0.6), 0 4px 6px rgba(0,0,0,0.5)' : '0 4px 6px rgba(0,0,0,0.5)',
                                 ...spellEffectStyle
