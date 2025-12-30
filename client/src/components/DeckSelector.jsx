@@ -43,7 +43,7 @@ const ALL_CARDS = [
     'valkyrie', 'hog_rider', 'witch', 'baby_dragon', 'barbarians',
     'tornado', 'rage', 'heal', 'balloon',
     'log', 'freeze', 'electro_wizard', 'goblin_barrel', 'air_defense',
-    'egg_1', 'egg_2', 'egg_3', 'egg_4', 'egg_5'
+    'egg_1', 'egg_2', 'egg_3', 'egg_4', 'egg_5', 'chicken'
 ];
 
 const CARD_IMAGES = {
@@ -79,6 +79,7 @@ const CARD_IMAGES = {
     egg_3: egg3Img,
     egg_4: egg4Img,
     egg_5: egg5Img,
+    chicken: goblinHutImg, // Use goblinHutImg as fallback if chicken asset is missing
 };
 
 export function DeckSelector({ onDeckSelected, username }) {
@@ -226,14 +227,17 @@ export function DeckSelector({ onDeckSelected, username }) {
         'Ranged': [],
         'Air': [],
         'Building': [],
-        'Spell': []
+        'Spell': [],
+        'Special/Egg': []
     };
 
     sortedCards.forEach(card => {
         const stats = UNITS[card.toUpperCase()];
         if (!stats) return;
 
-        if (stats.type === 'spell') {
+        if (card.startsWith('egg_') || card === 'chicken') {
+            cardsByType['Special/Egg'].push(card);
+        } else if (stats.type === 'spell') {
             cardsByType['Spell'].push(card);
         } else if (stats.type === 'building') {
             cardsByType['Building'].push(card);

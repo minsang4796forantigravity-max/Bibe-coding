@@ -31,6 +31,8 @@ class GameEngine {
             },
             projectiles: [],
             activeSpells: [],
+            matchTime: 180, // 3 Minutes
+            isOvertime: false,
             gameOver: false,
             winner: null,
         };
@@ -98,12 +100,30 @@ class GameEngine {
 
     start() {
         this.lastTime = Date.now();
+
+        // Initialize Towers
+        this.initTowers('p1');
+        this.initTowers('p2');
+
         this.interval = setInterval(() => {
             const now = Date.now();
             const dt = (now - this.lastTime) / 1000;
             this.lastTime = now;
             this.update(dt);
         }, 1000 / 60); // 60 FPS
+    }
+
+    initTowers(playerId) {
+        const isP1 = playerId === 'p1';
+        const yBase = isP1 ? 0.5 : 17.5;
+        const kingY = isP1 ? 0 : 18;
+
+        // King Tower
+        this.spawnUnit(this.state[playerId], 'king_tower', 5, kingY);
+
+        // Princess Towers
+        this.spawnUnit(this.state[playerId], 'side_tower', 2.5, yBase);
+        this.spawnUnit(this.state[playerId], 'side_tower', 7.5, yBase);
     }
 
     stop() {
@@ -147,6 +167,25 @@ class GameEngine {
 
         const now = Date.now();
 
+        // Match Timer & Overtime Logic
+        this.state.matchTime -= dt;
+        if (this.state.matchTime <= 0) {
+            if (!this.state.isOvertime) {
+                const p1Towers = this.state.p1.units.filter(u => u.cardId === 'king_tower' || u.cardId === 'side_tower').length;
+                const p2Towers = this.state.p2.units.filter(u => u.cardId === 'king_tower' || u.cardId === 'side_tower').length;
+
+                if (p1Towers === p2Towers) {
+                    this.state.isOvertime = true;
+                    this.state.matchTime = 120;
+                } else {
+                    this.state.gameOver = true;
+                    this.state.winner = p1Towers > p2Towers ? 'p1' : 'p2';
+                }
+            } else {
+                this.handleSuddenDeath();
+            }
+        }
+
         // Bot Update
         if (this.bot && this.botPlayerId && !this.state.gameOver) {
             this.bot.update(dt, this.state, this.botPlayerId, (cardId, x, y) => {
@@ -158,21 +197,17 @@ class GameEngine {
         let botMultiplier = 1.0;
         switch (this.botDifficulty) {
             case 'easy': botMultiplier = 0.8; break;
-            case 'medium': botMultiplier = 1.0; break;
             case 'hard': botMultiplier = 1.2; break;
             case 'impossible': botMultiplier = 2.0; break;
             default: botMultiplier = 1.0;
         }
 
-        const p1Regen = (this.botPlayerId === 'p1' ? botMultiplier : 1.0) * GAME_CONFIG.MANA_REGEN_RATE * dt;
-        const p2Regen = (this.botPlayerId === 'p2' ? botMultiplier : 1.0) * GAME_CONFIG.MANA_REGEN_RATE * dt;
+        const otMultiplier = this.state.isOvertime ? 2.0 : 1.0;
+        const p1Regen = (this.botPlayerId === 'p1' ? botMultiplier : 1.0) * GAME_CONFIG.MANA_REGEN_RATE * otMultiplier * dt;
+        const p2Regen = (this.botPlayerId === 'p2' ? botMultiplier : 1.0) * GAME_CONFIG.MANA_REGEN_RATE * otMultiplier * dt;
 
-        if (this.state.p1.mana < GAME_CONFIG.MAX_MANA) {
-            this.state.p1.mana = Math.min(GAME_CONFIG.MAX_MANA, this.state.p1.mana + p1Regen);
-        }
-        if (this.state.p2.mana < GAME_CONFIG.MAX_MANA) {
-            this.state.p2.mana = Math.min(GAME_CONFIG.MAX_MANA, this.state.p2.mana + p2Regen);
-        }
+        this.state.p1.mana = Math.min(GAME_CONFIG.MAX_MANA, this.state.p1.mana + p1Regen);
+        this.state.p2.mana = Math.min(GAME_CONFIG.MAX_MANA, this.state.p2.mana + p2Regen);
 
         // Update Spells
         this.updateSpells(dt);
@@ -208,29 +243,24 @@ class GameEngine {
         this.stop();
     }
 
-    calculateRatingChange(myRating, opponentRating, result, isAI = false, aiDifficulty = 'medium') {
-        // K-factor: how much rating changes per game
-        const K = 32;
+    calculateRatingChange(myRating, opponentRating, result, isNewPlayer = false) {
+        // K-factor: New players (first 20 games) get K=64 for faster placement
+        const K = isNewPlayer ? 64 : 32;
 
         // Expected score based on rating difference
         const expectedScore = 1 / (1 + Math.pow(10, (opponentRating - myRating) / 400));
 
-        // Actual score (1 for win, 0 for loss)
+        // Actual score (1 for win, 0 for loss, 0.5 for draw - though not currently in game)
         const actualScore = result === 'win' ? 1 : 0;
 
         // Base rating change
         let ratingChange = Math.round(K * (actualScore - expectedScore));
 
-        // AI adjustments
-        if (isAI) {
-            const aiMultipliers = {
-                easy: 0.5,
-                medium: 0.75,
-                hard: 1.0,
-                impossible: 1.25
-            };
-            const multiplier = aiMultipliers[aiDifficulty] || 0.75;
-            ratingChange = Math.round(ratingChange * multiplier);
+        // Minimum change: Ensure winning always gives some points, and losing always costs some
+        if (result === 'win' && ratingChange < 2) {
+            ratingChange = 2;
+        } else if (result === 'lose' && ratingChange > -2) {
+            ratingChange = -2;
         }
 
         return ratingChange;
@@ -241,40 +271,52 @@ class GameEngine {
             const p1 = this.state.p1;
             const p2 = this.state.p2;
 
-            // For PvP, we need both players' ratings
-            let p1Rating = 1000;
-            let p2Rating = 1000;
+            // Fetch actual user data to get accurate ratings and game counts
+            let p1Rating = 1000, p2Rating = 1000;
+            let p1Games = 0, p2Games = 0;
 
             if (p1 && p1.username) {
                 const p1User = await User.findOne({ username: p1.username });
-                if (p1User) p1Rating = p1User.rating || 1000;
+                if (p1User) {
+                    p1Rating = p1User.rating || 1000;
+                    p1Games = p1User.matchHistory ? p1User.matchHistory.length : 0;
+                }
             }
 
             if (p2 && p2.username) {
                 const p2User = await User.findOne({ username: p2.username });
-                if (p2User) p2Rating = p2User.rating || 1000;
+                if (p2User) {
+                    p2Rating = p2User.rating || 1000;
+                    p2Games = p2User.matchHistory ? p2User.matchHistory.length : 0;
+                }
             }
+
+            // AI Virtual Ratings Map
+            const aiRatings = {
+                easy: 600,
+                medium: 1000,
+                hard: 1400,
+                impossible: 1800
+            };
 
             // Update Player 1
             if (p1 && p1.username) {
                 const result = winnerId === 'p1' ? 'win' : 'lose';
                 const opponentName = p2 && p2.username ? p2.username : 'AI';
 
-                // Determine AI difficulty
                 let aiDifficulty = null;
                 const isAI = opponentName === 'AI';
                 if (isAI && this.botPlayerId === 'p2') {
                     aiDifficulty = this.botDifficulty || 'medium';
                 }
 
-                // Calculate rating change
-                const opponentRating = isAI ? 1000 : p2Rating; // AI has base rating of 1000
+                // Use virtual rating for AI, actual for PvP
+                const opponentRatingValue = isAI ? (aiRatings[aiDifficulty] || 1000) : p2Rating;
                 const ratingChange = this.calculateRatingChange(
                     p1Rating,
-                    opponentRating,
+                    opponentRatingValue,
                     result,
-                    isAI,
-                    aiDifficulty
+                    p1Games < 20 // isNewPlayer
                 );
 
                 await User.findOneAndUpdate(
@@ -307,14 +349,12 @@ class GameEngine {
                     aiDifficulty = this.botDifficulty || 'medium';
                 }
 
-                // Calculate rating change
-                const opponentRating = isAI ? 1000 : p1Rating; // AI has base rating of 1000
+                const opponentRatingValue = isAI ? (aiRatings[aiDifficulty] || 1000) : p1Rating;
                 const ratingChange = this.calculateRatingChange(
                     p2Rating,
-                    opponentRating,
+                    opponentRatingValue,
                     result,
-                    isAI,
-                    aiDifficulty
+                    p2Games < 20 // isNewPlayer
                 );
 
                 await User.findOneAndUpdate(
@@ -468,7 +508,15 @@ class GameEngine {
                         for (let i = 0; i < spawnCount; i++) {
                             const offsetX = (Math.random() - 0.5) * 1.5;
                             const offsetY = (Math.random() - 0.5) * 1.5;
-                            this.spawnUnit(playerState, unit.spawnUnit, unit.x + offsetX, unit.y + offsetY);
+
+                            let spawnId = unit.spawnUnit;
+                            if (spawnId === 'egg_random') {
+                                // Pick random egg Tier 1-3
+                                const tiers = ['egg_1', 'egg_2', 'egg_3'];
+                                spawnId = tiers[Math.floor(Math.random() * tiers.length)];
+                            }
+
+                            this.spawnUnit(playerState, spawnId, unit.x + offsetX, unit.y + offsetY);
                         }
                     }
                 }
@@ -678,9 +726,6 @@ class GameEngine {
             }
         });
 
-        this.towerAttack(this.state.p1, p2Units, 5, 0, dt, 'tower_p1');
-        this.towerAttack(this.state.p2, p1Units, 5, GAME_CONFIG.FIELD_HEIGHT, dt, 'tower_p2');
-
         const handleDeath = (u, playerId) => {
             if (u.hp <= 0) {
                 if (u.deathDamage) {
@@ -762,6 +807,7 @@ class GameEngine {
     }
 
     dealSplashDamage(x, y, radius, damage, targetPlayerId, enemyUnits, canHitTower = true, statusEffects = null) {
+        // Find damageable units including buildings/towers in units list
         enemyUnits.forEach(u => {
             if (Math.hypot(u.x - x, u.y - y) <= radius) {
                 this.dealDamage(damage, u, targetPlayerId);
@@ -770,65 +816,25 @@ class GameEngine {
                 }
             }
         });
-
-        if (canHitTower) {
-            const towerY = targetPlayerId === 'p1' ? 0 : GAME_CONFIG.FIELD_HEIGHT;
-            if (Math.hypot(5 - x, towerY - y) <= radius) {
-                this.dealDamage(damage, { type: 'tower', id: `tower_${targetPlayerId}` }, targetPlayerId);
-            }
-        }
-    }
-
-    towerAttack(ownerState, enemyUnits, towerX, towerY, dt, towerId) {
-        if (ownerState.frozenUntil && ownerState.frozenUntil > Date.now()) return;
-
-        const towerStats = UNITS.TOWER;
-        let target = null;
-        let minDist = Infinity;
-
-        enemyUnits.forEach(u => {
-            const dist = Math.hypot(towerX - u.x, towerY - u.y);
-            if (dist <= towerStats.range && dist < minDist) {
-                minDist = dist;
-                target = u;
-            }
-        });
-
-        if (target) {
-            ownerState.towerAttackTimer = (ownerState.towerAttackTimer || 0) + dt;
-            if (ownerState.towerAttackTimer >= towerStats.attackSpeed) {
-                ownerState.towerAttackTimer = 0;
-                this.state.projectiles.push({
-                    x: towerX,
-                    y: towerY,
-                    targetId: target.id,
-                    targetX: target.x,
-                    targetY: target.y,
-                    damage: towerStats.damage,
-                    speed: 15,
-                    type: 'arrow',
-                    targetPlayerId: ownerState.id === this.state.p1.id ? 'p2' : 'p1',
-                    ownerId: ownerState.id
-                });
-            }
-        }
     }
 
     dealDamage(damage, target, targetPlayerId) {
-        if (target.type === 'tower') {
-            this.state[targetPlayerId].hp -= damage;
-        } else {
-            if (target.shield && target.shield > 0) {
-                if (target.shield >= damage) {
-                    target.shield -= damage;
-                } else {
-                    const remaining = damage - target.shield;
-                    target.shield = 0;
-                    target.hp -= remaining;
-                }
+        if (target.shield && target.shield > 0) {
+            if (target.shield >= damage) {
+                target.shield -= damage;
             } else {
-                target.hp -= damage;
+                const remaining = damage - target.shield;
+                target.shield = 0;
+                target.hp -= remaining;
             }
+        } else {
+            target.hp -= damage;
+        }
+
+        // Check if King Tower was destroyed
+        if (target.hp <= 0 && target.cardId === 'king_tower') {
+            this.state.gameOver = true;
+            this.state.winner = targetPlayerId === 'p1' ? 'p2' : 'p1';
         }
     }
 
@@ -1002,6 +1008,22 @@ class GameEngine {
         }
     }
 
+    handleSuddenDeath() {
+        const p1Towers = this.state.p1.units.filter(u => u.cardId === 'king_tower' || u.cardId === 'side_tower');
+        const p2Towers = this.state.p2.units.filter(u => u.cardId === 'king_tower' || u.cardId === 'side_tower');
+
+        const allTowers = [...p1Towers, ...p2Towers];
+        if (allTowers.length === 0) return;
+
+        allTowers.sort((a, b) => a.hp - b.hp);
+        const lowest = allTowers[0];
+        lowest.hp = 0;
+
+        const loserId = p1Towers.includes(lowest) ? 'p1' : 'p2';
+        this.state.gameOver = true;
+        this.state.winner = loserId === 'p1' ? 'p2' : 'p1';
+    }
+
     spawnUnit(playerState, unitId, x, y) {
         const unitStats = UNITS[unitId.toUpperCase()];
         if (!unitStats) return;
@@ -1027,17 +1049,15 @@ class GameEngine {
         const rand = Math.random() * 100;
         let finalTier = targetTier;
 
-        if (rand < 50) finalTier = targetTier;
-        else if (rand < 70) finalTier = targetTier + 1;
-        else if (rand < 85) finalTier = targetTier - 1;
-        else if (rand < 90) finalTier = targetTier + 2;
-        else if (rand < 95) finalTier = targetTier - 2;
-        else {
-            // Jackpot or dud
-            finalTier = Math.random() < 0.5 ? targetTier + 3 : targetTier - 3;
-        }
+        // "Lucky" Egg Distribution
+        if (rand < 30) finalTier = targetTier;
+        else if (rand < 70) finalTier = targetTier + 1; // +1 Tier (40% chance)
+        else if (rand < 85) finalTier = targetTier + 2; // +2 Tier (15% chance)
+        else if (rand < 90) finalTier = targetTier + 3; // +3 Tier (5% chance)
+        else if (rand < 97) finalTier = targetTier - 1; // -1 Tier (7% chance)
+        else finalTier = targetTier - 2; // -2 Tier (3% chance)
 
-        // Clamp tier 1-7 (Max cost Giant is 7 now)
+        // Clamp tier 1-7
         finalTier = Math.max(1, Math.min(7, finalTier));
 
         // Find all non-spell units with this cost
@@ -1049,13 +1069,25 @@ class GameEngine {
         if (candidates.length > 0) {
             const selectedKey = candidates[Math.floor(Math.random() * candidates.length)];
             const selectedId = selectedKey.toLowerCase();
-            this.spawnUnit(playerState, selectedId, egg.x, egg.y);
+            const unitStats = UNITS[selectedKey];
+            const count = unitStats.count || 1;
 
-            // Log for visual/debug
-            console.log(`Egg hatched into ${selectedId} (Tier ${finalTier})`);
+            for (let i = 0; i < count; i++) {
+                const offsetX = count > 1 ? (Math.random() - 0.5) * 1.5 : 0;
+                const offsetY = count > 1 ? (Math.random() - 0.5) * 1.5 : 0;
+                this.spawnUnit(playerState, selectedId, egg.x + offsetX, egg.y + offsetY);
+            }
+
+            console.log(`Egg hatched into ${count}x ${selectedId} (Tier ${finalTier}) - Lucky!`);
         } else {
-            // Fallback to Tier 1
-            this.spawnUnit(playerState, 'skeletons', egg.x, egg.y);
+            // Fallback to Skeletons (now spawns the whole squad)
+            const unitStats = UNITS.SKELETONS;
+            const count = unitStats.count || 4;
+            for (let i = 0; i < count; i++) {
+                const offsetX = (Math.random() - 0.5) * 1.5;
+                const offsetY = (Math.random() - 0.5) * 1.5;
+                this.spawnUnit(playerState, 'skeletons', egg.x + offsetX, egg.y + offsetY);
+            }
         }
     }
 }

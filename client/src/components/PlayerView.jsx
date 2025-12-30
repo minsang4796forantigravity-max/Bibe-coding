@@ -69,6 +69,7 @@ const CARD_IMAGES = {
     egg_3: egg3Img,
     egg_4: egg4Img,
     egg_5: egg5Img,
+    chicken: goblinHutImg,
 };
 
 export function PlayerView({ playerId, gameState, onDeploy, isRotated }) {

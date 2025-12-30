@@ -179,9 +179,9 @@ const UNITS = {
         id: 'hog_rider',
         name: 'Hog Rider',
         cost: 4,
-        hp: 1400,
-        damage: 260,
-        speed: 2.5,
+        hp: 1250, // 1400 -> 1250
+        damage: 240, // 260 -> 240
+        speed: 2.3, // 2.5 -> 2.3
         range: 1,
         attackSpeed: 1.6,
         type: 'ground',
@@ -362,14 +362,14 @@ const UNITS = {
     GOBLIN_HUT: {
         id: 'goblin_hut',
         name: 'Goblin Hut',
-        cost: 5,
+        cost: 7, // 5 -> 7
         hp: 1200,
         type: 'building',
         targets: 'ground',
-        lifetime: 50,
+        lifetime: 40, // 50 -> 40
         spawnUnit: 'goblin',
         spawnInterval: 4.5,
-        spawnCount: 3, // Now spawns 3 at once
+        spawnCount: 3,
     },
 
     // === 6 코스트 ===
@@ -441,17 +441,43 @@ const UNITS = {
         hp: 300,
         lifetime: 3,
     },
+    CHICKEN: {
+        id: 'chicken',
+        name: 'Chicken (치킨)',
+        cost: 5,
+        hp: 800,
+        type: 'building',
+        targets: 'none',
+        lifetime: 9.1, // Slightly more than 9 to ensure 3 spawns
+        spawnUnit: 'egg_random',
+        spawnInterval: 3.0,
+        spawnCount: 1,
+    },
 
     // === 타워 ===
-    TOWER: {
-        id: 'tower',
+    KING_TOWER: {
+        id: 'king_tower',
         name: 'King Tower',
         hp: 4000,
-        damage: 110,
+        damage: 120,
         range: 7,
+        attackSpeed: 1.0,
+        type: 'building',
+        targets: 'both',
+        projectile: 'cannonball',
+        projectileSpeed: 15,
+    },
+    SIDE_TOWER: {
+        id: 'side_tower',
+        name: 'Princess Tower',
+        hp: 2800,
+        damage: 100,
+        range: 7.5,
         attackSpeed: 0.8,
         type: 'building',
         targets: 'both',
+        projectile: 'arrow',
+        projectileSpeed: 18,
     }
 };
 
@@ -584,7 +610,7 @@ const EVOLVED_STATS = {
     },
     GOBLIN_HUT: {
         hp: 1500,
-        lifetime: 60,
+        lifetime: 50, // 60 -> 50
         spawnInterval: 4.0,
     },
 

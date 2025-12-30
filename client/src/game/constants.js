@@ -177,9 +177,9 @@ export const UNITS = {
     id: 'hog_rider',
     name: 'Hog Rider',
     cost: 4,
-    hp: 1400,
-    damage: 260,
-    speed: 2.5,
+    hp: 1250,
+    damage: 240,
+    speed: 2.3,
     range: 1,
     attackSpeed: 1.6,
     type: 'ground',
@@ -360,11 +360,11 @@ export const UNITS = {
   GOBLIN_HUT: {
     id: 'goblin_hut',
     name: 'Goblin Hut',
-    cost: 5,
+    cost: 7, // 5 -> 7
     hp: 1200,
     type: 'building',
     targets: 'ground',
-    lifetime: 50,
+    lifetime: 40, // 50 -> 40
     spawnUnit: 'goblin',
     spawnInterval: 4.5,
     spawnCount: 3,
@@ -436,6 +436,18 @@ export const UNITS = {
     hatchTier: 5,
     hp: 300,
     lifetime: 3,
+  },
+  CHICKEN: {
+    id: 'chicken',
+    name: 'Chicken (치킨)',
+    cost: 5,
+    hp: 800,
+    type: 'building',
+    targets: 'none',
+    lifetime: 9.1,
+    spawnUnit: 'egg_random',
+    spawnInterval: 3.0,
+    spawnCount: 1,
   },
 
   // === 타워 ===
@@ -580,7 +592,7 @@ export const EVOLVED_STATS = {
   },
   GOBLIN_HUT: {
     hp: 1500,
-    lifetime: 60,
+    lifetime: 50, // 60 -> 50
     spawnInterval: 4.0,
   },
 

@@ -68,6 +68,9 @@ const CARD_IMAGES = {
     egg_3: egg3Img,
     egg_4: egg4Img,
     egg_5: egg5Img,
+    chicken: goblinHutImg,
+    king_tower: towerImg,
+    side_tower: towerImg,
 };
 
 export function BattleScreen({ gameState, playerId, socket }) {
@@ -179,8 +182,51 @@ export function BattleScreen({ gameState, playerId, socket }) {
         };
     }, [dragCard]);
 
+    const formatTime = (seconds) => {
+        const m = Math.floor(Math.max(0, seconds) / 60);
+        const s = Math.floor(Math.max(0, seconds) % 60);
+        return `${m}:${s < 10 ? '0' : ''}${s}`;
+    };
+
     return (
-        <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', overflow: 'hidden', touchAction: 'none' }}>
+        <div style={{
+            width: '100vw',
+            height: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            backgroundColor: '#000',
+            userSelect: 'none',
+            overflow: 'hidden',
+            touchAction: 'none'
+        }}>
+            {/* Header / Timer Overlay */}
+            <div style={{
+                padding: '10px 20px',
+                background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 40,
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+            }}>
+                <div style={{
+                    backgroundColor: 'rgba(0,0,0,0.6)',
+                    padding: '8px 30px',
+                    borderRadius: '30px',
+                    border: '2px solid #f1c40f',
+                    color: '#f1c40f',
+                    fontWeight: 'bold',
+                    fontSize: '1.4rem',
+                    textAlign: 'center',
+                    boxShadow: '0 0 20px rgba(241,196,15,0.4)',
+                }}>
+                    {formatTime(gameState.matchTime)}
+                    {gameState.isOvertime && <div style={{ fontSize: '0.7rem', color: '#e74c3c', letterSpacing: '1px' }}>OVERTIME (2x Mana)</div>}
+                </div>
+            </div>
             {/* Game Field */}
             <div
                 ref={fieldRef}
@@ -188,71 +234,41 @@ export function BattleScreen({ gameState, playerId, socket }) {
                 style={{
                     flex: 1,
                     position: 'relative',
-                    background: 'linear-gradient(180deg, #0f3460 0%, #16213e 45%, #1a5f3a 50%, #2d8659 55%, #16213e 100%)',
+                    background: 'linear-gradient(180deg, #1e3c25 0%, #2ecc71 45%, #27ae60 50%, #2ecc71 55%, #1e3c25 100%)',
                     overflow: 'hidden',
-                    boxShadow: 'inset 0 0 100px rgba(0,0,0,0.7), 0 0 50px rgba(26,188,156,0.3)',
+                    boxShadow: 'inset 0 0 100px rgba(0,0,0,0.7), 0 0 50px rgba(46,204,113,0.3)',
+                    margin: '0 auto',
+                    aspectRatio: '10 / 18',
+                    borderRadius: '5px',
                 }}
             >
-                {/* Grid */}
+                {/* Arena Grid Decor */}
                 <div style={{
                     position: 'absolute',
+                    top: 0,
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    height: '100%',
-                    backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px)',
-                    backgroundSize: '20px 20px',
+                    backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)',
+                    backgroundSize: '10% 5.55%',
                     pointerEvents: 'none'
-                }}></div>
+                }} />
 
-                {/* River */}
+                {/* River & Bridges */}
                 <div style={{
                     position: 'absolute',
                     top: '50%',
                     left: 0,
                     right: 0,
-                    height: '4px',
-                    backgroundColor: '#3498db',
+                    height: '11%',
+                    background: 'linear-gradient(180deg, #2980b9 0%, #3498db 50%, #2980b9 100%)',
                     transform: 'translateY(-50%)',
-                    boxShadow: '0 0 10px #3498db',
+                    boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)',
                     zIndex: 1,
-                }}></div>
-
-                {/* My Tower */}
-                <div style={{
-                    position: 'absolute',
-                    left: '50%',
-                    bottom: 0,
-                    transform: 'translateX(-50%)',
-                    width: '60px',
-                    height: '60px',
-                    backgroundImage: `url(${towerImg})`,
-                    backgroundSize: 'contain',
-                    backgroundRepeat: 'no-repeat',
-                    zIndex: 10,
+                    opacity: 0.6,
                 }}>
-                    <div style={{ position: 'absolute', top: -20, left: 0, right: 0, textAlign: 'center', color: 'white', fontSize: 14, fontWeight: 'bold', textShadow: '1px 1px 2px black' }}>
-                        {myState.hp}
-                    </div>
-                </div>
-
-                {/* Opponent Tower */}
-                <div style={{
-                    position: 'absolute',
-                    left: '50%',
-                    top: 0,
-                    transform: 'translateX(-50%)',
-                    width: '60px',
-                    height: '60px',
-                    backgroundImage: `url(${towerImg})`,
-                    backgroundSize: 'contain',
-                    backgroundRepeat: 'no-repeat',
-                    filter: 'hue-rotate(180deg)',
-                    zIndex: 10,
-                }}>
-                    <div style={{ position: 'absolute', bottom: -20, left: 0, right: 0, textAlign: 'center', color: 'white', fontSize: 14, fontWeight: 'bold', textShadow: '1px 1px 2px black' }}>
-                        {opponentState.hp}
-                    </div>
+                    <div style={{ position: 'absolute', left: '10%', width: '25%', height: '100%', backgroundColor: '#7f8c8d', borderLeft: '2px solid #555', borderRight: '2px solid #555' }} />
+                    <div style={{ position: 'absolute', right: '10%', width: '25%', height: '100%', backgroundColor: '#7f8c8d', borderLeft: '2px solid #555', borderRight: '2px solid #555' }} />
                 </div>
 
                 {/* Active Spells */}
@@ -282,7 +298,7 @@ export function BattleScreen({ gameState, playerId, socket }) {
                             left: `${left}%`,
                             bottom: `${bottom}%`,
                             width: `${radiusPercent * 2}%`,
-                            height: `${radiusPercent * 2 * (GAME_CONFIG.FIELD_WIDTH / GAME_CONFIG.FIELD_HEIGHT)}%`,
+                            aspectRatio: '1/1',
                             transform: 'translate(-50%, 50%)',
                             backgroundColor: color,
                             borderRadius: '50%',
@@ -603,6 +619,8 @@ export function BattleScreen({ gameState, playerId, socket }) {
                                         border: '2px dashed rgba(255,255,255,0.8)',
                                         borderRadius: '50%',
                                         backgroundColor: 'rgba(255,255,255,0.2)',
+                                        // Ensure it stays a circle regardless of container aspect ratio
+                                        aspectRatio: '1/1',
                                     }}></div>
                                 );
                             }
