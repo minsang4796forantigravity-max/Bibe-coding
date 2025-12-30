@@ -628,7 +628,6 @@ class GameEngine {
                 }
             } else {
                 let target = null;
-                let target = null;
                 if (p.targetId === 'tower_p1' || p.targetId === 'tower_p2') {
                     // Try to find the actual King Tower unit for this player
                     const targetPlayerId = p.targetId === 'tower_p1' ? 'p1' : 'p2';
