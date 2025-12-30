@@ -173,7 +173,7 @@ function App() {
   }
 
   if (status === 'deck_select') {
-    return <DeckSelector onDeckSelected={handleDeckSelected} username={user ? user.username : null} />;
+    return <DeckSelector onDeckSelected={handleDeckSelected} user={user} />;
   }
 
   if (status === 'lobby') {
@@ -188,6 +188,7 @@ function App() {
         onSinglePlayerClick={handleSinglePlayerClick}
         onProfileClick={() => setStatus('profile')}
         onLogout={handleLogout}
+        setUser={setUser}
       />
     );
   }

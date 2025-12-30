@@ -90,18 +90,20 @@ class GameEngine {
 
     setPlayerDeck(playerId, fullDeck) {
         if (this.state[playerId]) {
-            // Client sends 8 cards: 6 regular + 2 evolutions
-            // We'll treat all 8 as the deck for cycling, but mark the last 2 as evolutions
             this.state[playerId].deck = fullDeck;
-
             // Identify evolution cards (last 2)
             if (fullDeck.length >= 8) {
                 this.state[playerId].evolutions = fullDeck.slice(6, 8);
             }
-
             // Initialize hand (first 6 cards)
             this.state[playerId].hand = fullDeck.slice(0, 6);
             this.state[playerId].nextCard = fullDeck[6] || fullDeck[0];
+        }
+    }
+
+    setPlayerInventory(playerId, inventory) {
+        if (this.state[playerId]) {
+            this.state[playerId].inventory = inventory || [];
         }
     }
 
@@ -908,6 +910,20 @@ class GameEngine {
             };
         }
 
+        // Apply Level Multiplier from inventory
+        const invItem = playerState.inventory?.find(item => item.cardId === cardId);
+        if (invItem && invItem.level > 1) {
+            const levelMultipliers = { 2: 1.1, 3: 1.25, 4: 1.5, 5: 2.0 };
+            const multiplier = levelMultipliers[invItem.level] || 1.0;
+
+            unitStats = {
+                ...unitStats,
+                hp: Math.floor(unitStats.hp * multiplier),
+                damage: Math.floor(unitStats.damage * (unitStats.type === 'spell' ? multiplier : (1 + (multiplier - 1) * 0.5))), // Spells get full buff, units get half damage buff for balance
+                name: `${unitStats.name} (Lv.${invItem.level})`
+            };
+        }
+
         if (cardId === 'mana_collector') {
             const collectorCount = playerState.units.filter(u => u.cardId === 'mana_collector').length;
             if (collectorCount >= 3) return;
@@ -1078,18 +1094,18 @@ class GameEngine {
         this.endGame(winnerId);
     }
 
-    spawnUnit(playerState, unitId, x, y) {
-        const unitStats = UNITS[unitId.toUpperCase()];
+    spawnUnit(playerState, unitStats, x, y) {
         if (!unitStats) return;
 
         playerState.units.push({
             ...unitStats,
-            cardId: unitId,
-            id: `${unitId}_${Date.now()}_${Math.random()}`,
+            cardId: unitStats.id,
+            id: `${unitStats.id}_${Date.now()}_${Math.random()}`,
             x: x,
             y: y,
             hp: unitStats.hp,
             maxHp: unitStats.hp,
+            level: unitStats.level || 1,
             shield: unitStats.shield || 0,
             maxShield: unitStats.shield || 0,
             attackTimer: 0,

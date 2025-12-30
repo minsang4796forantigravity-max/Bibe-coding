@@ -47,6 +47,23 @@ const userSchema = new mongoose.Schema({
             createdAt: { type: Date, default: Date.now }
         }],
         default: []
+    },
+    inventory: {
+        type: [{
+            cardId: String,
+            shards: { type: Number, default: 0 },
+            level: { type: Number, default: 1 }
+        }],
+        default: [
+            { cardId: 'knight', shards: 0, level: 1 },
+            { cardId: 'archer', shards: 0, level: 1 },
+            { cardId: 'giant', shards: 0, level: 1 },
+            { cardId: 'wizard', shards: 0, level: 1 },
+            { cardId: 'fireball', shards: 0, level: 1 },
+            { cardId: 'cannon', shards: 0, level: 1 },
+            { cardId: 'goblin', shards: 0, level: 1 },
+            { cardId: 'skeletons', shards: 0, level: 1 }
+        ]
     }
 });
 

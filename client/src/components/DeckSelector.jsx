@@ -82,7 +82,8 @@ const CARD_IMAGES = {
     chicken: goblinHutImg, // Use goblinHutImg as fallback if chicken asset is missing
 };
 
-export function DeckSelector({ onDeckSelected, username }) {
+export function DeckSelector({ onDeckSelected, user }) {
+    const username = user?.username;
     // 8 slots: [0-5] regular cards, [6-7] evolution cards
     const [deckSlots, setDeckSlots] = useState(Array(8).fill(null));
     const [draggedCard, setDraggedCard] = useState(null);

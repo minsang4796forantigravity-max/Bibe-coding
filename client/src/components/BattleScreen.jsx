@@ -486,7 +486,7 @@ export function BattleScreen({ gameState, playerId, socket }) {
                                 padding: '1px 3px',
                                 borderRadius: '4px',
                                 border: '1px solid #fff',
-                            }}>Lv.1</div>
+                            }}>Lv.{unit.level || 1}</div>
 
                             <div style={{
                                 position: 'absolute',
