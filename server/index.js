@@ -53,10 +53,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const shopRoutes = require('./routes/shop');
+
 // 계정 관련 API 라우트
 // 클라이언트에서 POST /api/auth/signup, /api/auth/login 호출
 app.use('/api/auth', authRoutes);
 app.use('/api/game', gameRoutes);
+app.use('/api/shop', shopRoutes);
 // 만약 /api/auth로도 쓰고 싶으면 아래 줄 추가해도 됨
 // app.use('/api/auth', authRoutes);
 
@@ -272,6 +275,35 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
         // TODO: 방 정리 로직 필요하면 여기서
+    });
+
+    // Emote System
+    socket.on('send_emote', ({ emoteId, gameId }) => {
+        const game = games.get(gameId);
+        if (game) {
+            // Determine which player sent it
+            let playerId = null;
+            if (game.state.p1.id === socket.id) playerId = 'p1';
+            else if (game.state.p2.id === socket.id) playerId = 'p2';
+
+            if (playerId) {
+                // Broadcast to everyone in the room (including sender) or just opponent?
+                // Usually nicer to echo back to confirm Server received it.
+                io.to(gameId).emit('emote_received', { playerId, emoteId });
+
+                // If Single Player, maybe Bot replies?
+                if (gameId.startsWith('single_')) {
+                    // Simple Bot Reply Logic (20% chance)
+                    if (Math.random() < 0.2) {
+                        setTimeout(() => {
+                            const botEmotes = ['emote_angry', 'emote_crying', 'emote_thumbsup'];
+                            const randomEmote = botEmotes[Math.floor(Math.random() * botEmotes.length)];
+                            io.to(gameId).emit('emote_received', { playerId: 'p2', emoteId: randomEmote });
+                        }, 1500);
+                    }
+                }
+            }
+        }
     });
 });
 

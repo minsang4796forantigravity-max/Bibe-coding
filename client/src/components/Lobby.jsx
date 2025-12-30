@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Leaderboard from './Leaderboard';
+import Shop from './Shop';
 import { API_URL } from '../socket';
 
 export function Lobby({
@@ -16,10 +17,12 @@ export function Lobby({
     const [notices, setNotices] = useState([]);
     const [selectedNotice, setSelectedNotice] = useState(null);
     const [coins, setCoins] = useState(user?.coins || 0);
+    const [rating, setRating] = useState(user?.rating || 1000);
     const [adminTitle, setAdminTitle] = useState('');
     const [adminContent, setAdminContent] = useState('');
     const [isAdminMode, setIsAdminMode] = useState(false);
     const [showAttendance, setShowAttendance] = useState(false);
+    const [showShop, setShowShop] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
 
     const isAdmin = user?.username === 'Grand Warden';
@@ -29,8 +32,11 @@ export function Lobby({
         if (user?.username) {
             fetch(`${API_URL}/api/auth/profile/${user.username}`)
                 .then(res => res.json())
-                .then(data => setCoins(data.coins))
-                .catch(err => console.error("Error fetching coins:", err));
+                .then(data => {
+                    setCoins(data.coins);
+                    if (data.rating) setRating(data.rating);
+                })
+                .catch(err => console.error("Error fetching profile:", err));
         }
     }, [user]);
 
@@ -173,13 +179,34 @@ export function Lobby({
                     <div>
                         <div style={{ fontWeight: '800', fontSize: '0.95rem', letterSpacing: '0.5px' }}>{user?.username || 'Guest'}</div>
                         <div style={{ display: 'flex', gap: '10px', marginTop: '2px' }}>
-                            <span style={{ fontSize: '0.75rem', color: '#f1c40f', fontWeight: 'bold' }}>🏆 {user?.rating || 1000}</span>
+                            <span style={{ fontSize: '0.75rem', color: '#f1c40f', fontWeight: 'bold' }}>🏆 {rating}</span>
                             <span style={{ fontSize: '0.75rem', color: '#2ecc71', fontWeight: 'bold' }}>💰 {coins}</span>
                         </div>
                     </div>
                 </div>
 
                 <div className="header-controls" style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                    <button
+                        onClick={() => setShowShop(true)}
+                        style={{
+                            backgroundColor: 'transparent',
+                            border: '1px solid rgba(46, 204, 113, 0.5)',
+                            color: '#2ecc71',
+                            padding: '8px 14px',
+                            borderRadius: '20px',
+                            cursor: 'pointer',
+                            fontSize: '0.85rem',
+                            fontWeight: 'bold',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'all 0.3s ease',
+                            background: 'rgba(46, 204, 113, 0.05)'
+                        }}
+                    >
+                        <span style={{ fontSize: '1.1rem' }}>🛒</span> 상점
+                    </button>
+
                     <button
                         onClick={() => setShowAttendance(true)}
                         style={{
@@ -540,6 +567,15 @@ export function Lobby({
                     </div>
                 </section>
             </div>
+
+            {/* Shop Modal */}
+            {showShop && (
+                <Shop
+                    user={user}
+                    onClose={() => setShowShop(false)}
+                    onPurchase={(newCoins) => setCoins(newCoins)}
+                />
+            )}
 
             {/* Attendance Modal */}
             {showAttendance && (

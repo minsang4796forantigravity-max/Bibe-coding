@@ -44,21 +44,54 @@ router.post('/daily-reward', async (req, res) => {
 
         const now = new Date();
         const lastReward = user.lastDailyReward ? new Date(user.lastDailyReward) : null;
+        let streak = user.dailyStreak || 0;
 
-        if (lastReward &&
-            lastReward.getUTCFullYear() === now.getUTCFullYear() &&
-            lastReward.getUTCMonth() === now.getUTCMonth() &&
-            lastReward.getUTCDate() === now.getUTCDate()) {
-            return res.status(400).json({ message: '오늘은 이미 보상을 받았습니다.' });
+        if (lastReward) {
+            const isToday = lastReward.getUTCFullYear() === now.getUTCFullYear() &&
+                lastReward.getUTCMonth() === now.getUTCMonth() &&
+                lastReward.getUTCDate() === now.getUTCDate();
+            if (isToday) {
+                return res.status(400).json({ message: '오늘은 이미 보상을 받았습니다.' });
+            }
+
+            // Calculate days diff
+            const diffTime = Math.abs(now - lastReward);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 1) {
+                // Consecutive day
+                streak += 1;
+            } else if (diffDays > 1) {
+                // Missed a day
+                // Check if has attendance ticket
+                const ticketIndex = user.activeBuffs.findIndex(b => b.type === 'attendance_auto');
+                if (ticketIndex !== -1) {
+                    const ticket = user.activeBuffs[ticketIndex];
+                    if (ticket.count > 0) {
+                        ticket.count -= 1;
+                        if (ticket.count === 0) user.activeBuffs.splice(ticketIndex, 1);
+
+                        console.log(`[Economy] Used Attendance Ticket for ${username}`);
+                        streak += 1; // Saved!
+                    } else {
+                        streak = 1; // Reset
+                    }
+                } else {
+                    streak = 1; // Reset
+                }
+            }
+        } else {
+            streak = 1;
         }
 
-        const rewardCoins = 50;
+        const rewardCoins = 50 + (streak > 1 ? (streak - 1) * 10 : 0); // Bonus for streak
         user.coins = (user.coins || 0) + rewardCoins;
         user.lastDailyReward = now;
+        user.dailyStreak = streak;
         await user.save();
 
-        console.log(`[Economy] Daily reward granted to ${username}: 50 coins`);
-        res.json({ message: `보상 획득! +${rewardCoins} 코인`, coins: user.coins });
+        console.log(`[Economy] Daily reward granted to ${username}: ${rewardCoins} coins (Streak: ${streak})`);
+        res.json({ message: `보상 획득! +${rewardCoins} 코인 (연속 ${streak}일)`, coins: user.coins });
     } catch (err) {
         console.error(`[Economy] Daily reward error for ${username}:`, err);
         res.status(500).json({ message: err.message });

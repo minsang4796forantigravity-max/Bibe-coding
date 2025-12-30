@@ -261,7 +261,7 @@ class GameEngine {
         this.stop();
     }
 
-    calculateRatingChange(myRating, opponentRating, result, isNewPlayer = false) {
+    calculateRatingChange(myRating, opponentRating, result, isNewPlayer = false, userBuffs = []) {
         // K-factor: New players (first 20 games) get K=64 for faster placement
         const K = isNewPlayer ? 64 : 32;
 
@@ -279,6 +279,15 @@ class GameEngine {
             ratingChange = 2;
         } else if (result === 'lose' && ratingChange > -2) {
             ratingChange = -2;
+        }
+
+        // Rating Boost Buff
+        if (result === 'win' && userBuffs) {
+            const boostBuff = userBuffs.find(b => b.type === 'rating_2x' && new Date(b.expiresAt) > new Date());
+            if (boostBuff) {
+                console.log('Applying 2x Rating Boost!');
+                ratingChange *= 2;
+            }
         }
 
         return ratingChange;
@@ -330,11 +339,20 @@ class GameEngine {
 
                 // Use virtual rating for AI, actual for PvP
                 const opponentRatingValue = isAI ? (aiRatings[aiDifficulty] || 1000) : p2Rating;
+
+                // Get buffs
+                let p1Buffs = [];
+                if (p1 && p1.username) {
+                    const u = await User.findOne({ username: p1.username });
+                    if (u) p1Buffs = u.activeBuffs || [];
+                }
+
                 const ratingChange = this.calculateRatingChange(
                     p1Rating,
                     opponentRatingValue,
                     result,
-                    p1Games < 20 // isNewPlayer
+                    p1Games < 20, // isNewPlayer
+                    p1Buffs
                 );
 
                 await User.findOneAndUpdate(
@@ -371,11 +389,20 @@ class GameEngine {
                 }
 
                 const opponentRatingValue = isAI ? (aiRatings[aiDifficulty] || 1000) : p1Rating;
+
+                // Get buffs
+                let p2Buffs = [];
+                if (p2 && p2.username) {
+                    const u = await User.findOne({ username: p2.username });
+                    if (u) p2Buffs = u.activeBuffs || [];
+                }
+
                 const ratingChange = this.calculateRatingChange(
                     p2Rating,
                     opponentRatingValue,
                     result,
-                    p2Games < 20 // isNewPlayer
+                    p2Games < 20, // isNewPlayer
+                    p2Buffs
                 );
 
                 await User.findOneAndUpdate(

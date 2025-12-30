@@ -83,13 +83,42 @@ export function BattleScreen({ gameState, playerId, socket }) {
     const opponentState = gameState[opponentId];
     const isP1 = playerId === 'p1';
 
+    const [activeEmotes, setActiveEmotes] = useState([]); // Array of { playerId, emoteId, id, timestamp }
+    const [showEmoteSelector, setShowEmoteSelector] = useState(false);
+
+    // Default emotes + user owned ones (could pass user prop or fetch, using defaults for now)
+    const AVAILABLE_EMOTES = ['emote_thumbsup', 'emote_angry', 'emote_crying', 'emote_laugh', 'emote_gg', 'emote_fire', 'emote_ghost', 'emote_party'];
+    const EMOTE_ICONS = {
+        'emote_thumbsup': '👍', 'emote_angry': '😡', 'emote_crying': '😭', 'emote_laugh': '😂',
+        'emote_gg': '🤝', 'emote_fire': '🔥', 'emote_ghost': '👻', 'emote_party': '🎉'
+    };
+
     // Ensure socket is connected when component mounts
     useEffect(() => {
         if (socket && !socket.connected) {
             console.log('Socket disconnected in BattleScreen, reconnecting...');
             socket.connect();
         }
+
+        const onEmoteReceived = ({ playerId, emoteId }) => {
+            const id = Date.now() + Math.random();
+            setActiveEmotes(prev => [...prev, { playerId, emoteId, id }]);
+            // Remove after 3 seconds
+            setTimeout(() => {
+                setActiveEmotes(prev => prev.filter(e => e.id !== id));
+            }, 3000);
+        };
+
+        socket.on('emote_received', onEmoteReceived);
+        return () => {
+            socket.off('emote_received', onEmoteReceived);
+        };
     }, [socket]);
+
+    const handleSendEmote = (emoteId) => {
+        socket.emit('send_emote', { emoteId, gameId: gameState.gameId || (isP1 ? gameState.p1.id : gameState.p2.id) }); // Fallback ID if missing
+        setShowEmoteSelector(false);
+    };
 
     const getClientCoords = (e) => {
         if (e.touches && e.touches[0]) {
@@ -678,6 +707,98 @@ export function BattleScreen({ gameState, playerId, socket }) {
                     </div>
                 )}
             </div>
+
+            {/* Emote Layer */}
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 100 }}>
+                {activeEmotes.map(emote => {
+                    const isMe = emote.playerId === playerId;
+                    return (
+                        <div key={emote.id} style={{
+                            position: 'absolute',
+                            left: '50%',
+                            top: isMe ? '75%' : '20%', // Rough position near King Towers
+                            transform: 'translate(-50%, -50%) scale(0)',
+                            animation: 'popIn 0.3s forwards, floatUp 1.5s 1.5s forwards',
+                            fontSize: '4rem',
+                            filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.5))',
+                            zIndex: 101
+                        }}>
+                            {EMOTE_ICONS[emote.emoteId] || '❓'}
+                            <style>{`
+                                @keyframes popIn { to { transform: translate(-50%, -50%) scale(1); } }
+                                @keyframes floatUp { to { opacity: 0; transform: translate(-50%, -100%) scale(1); } }
+                            `}</style>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Emote Selector Button */}
+            <button
+                onClick={() => setShowEmoteSelector(!showEmoteSelector)}
+                style={{
+                    position: 'absolute',
+                    bottom: '180px',
+                    right: '20px',
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '50%',
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #f1c40f, #e67e22)',
+                    fontSize: '1.5rem',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
+                    zIndex: 200,
+                    transition: 'transform 0.1s',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}
+                onMouseDown={e => e.currentTarget.style.transform = 'scale(0.9)'}
+                onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+            >
+                😀
+            </button>
+
+            {/* Emote Selector Panel */}
+            {showEmoteSelector && (
+                <div style={{
+                    position: 'absolute',
+                    bottom: '240px',
+                    right: '20px',
+                    background: 'rgba(20, 30, 40, 0.95)',
+                    backdropFilter: 'blur(10px)',
+                    padding: '15px',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gap: '10px',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                    zIndex: 200,
+                    animation: 'fadeIn 0.2s ease-out'
+                }}>
+                    {AVAILABLE_EMOTES.map(id => (
+                        <button
+                            key={id}
+                            onClick={() => handleSendEmote(id)}
+                            style={{
+                                background: 'rgba(255,255,255,0.05)',
+                                border: '1px solid rgba(255,255,255,0.05)',
+                                borderRadius: '8px',
+                                width: '50px',
+                                height: '50px',
+                                fontSize: '1.8rem',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                        >
+                            {EMOTE_ICONS[id]}
+                        </button>
+                    ))}
+                </div>
+            )}
 
             {/* HUD */}
             <div style={{

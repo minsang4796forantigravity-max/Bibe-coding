@@ -47,6 +47,22 @@ const userSchema = new mongoose.Schema({
             createdAt: { type: Date, default: Date.now }
         }],
         default: []
+    },
+    inventory: {
+        type: [String], // List of item IDs (e.g. 'emote_laugh', 'buff_rating_2x')
+        default: []
+    },
+    activeBuffs: {
+        type: [{
+            type: { type: String, required: true }, // 'rating_2x', 'attendance_auto'
+            expiresAt: { type: Date, default: null }, // Null for single-use items like attendance ticket
+            count: { type: Number, default: 1 } // For consumable stacks
+        }],
+        default: []
+    },
+    equippedEmotes: {
+        type: [String],
+        default: ['emote_thumbsup', 'emote_angry', 'emote_crying', 'emote_laugh'] // Default basic emotes
     }
 });
 
