@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Leaderboard from './Leaderboard';
 import { API_URL } from '../socket';
-import Shop from './Shop';
 
 export function Lobby({
     user,
@@ -12,8 +11,7 @@ export function Lobby({
     onJoinClick,
     onSinglePlayerClick,
     onProfileClick,
-    onLogout,
-    setUser
+    onLogout
 }) {
     const [notices, setNotices] = useState([]);
     const [selectedNotice, setSelectedNotice] = useState(null);
@@ -23,7 +21,6 @@ export function Lobby({
     const [isAdminMode, setIsAdminMode] = useState(false);
     const [showAttendance, setShowAttendance] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
-    const [showShop, setShowShop] = useState(false);
 
     const isAdmin = user?.username === 'Grand Warden';
 
@@ -183,27 +180,6 @@ export function Lobby({
                 </div>
 
                 <div className="header-controls" style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                    <button
-                        onClick={() => setShowShop(true)}
-                        style={{
-                            backgroundColor: 'transparent',
-                            border: '1px solid rgba(241,196,15,0.5)',
-                            color: '#f1c40f',
-                            padding: '8px 14px',
-                            borderRadius: '20px',
-                            cursor: 'pointer',
-                            fontSize: '0.85rem',
-                            fontWeight: 'bold',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            transition: 'all 0.3s ease',
-                            background: 'rgba(241,196,15,0.05)'
-                        }}
-                    >
-                        <span style={{ fontSize: '1.1rem' }}>🛒</span> 상점
-                    </button>
-
                     <button
                         onClick={() => setShowAttendance(true)}
                         style={{
@@ -708,13 +684,6 @@ export function Lobby({
             <footer style={{ marginTop: '50px', opacity: 0.3, fontSize: '0.7rem', paddingBottom: '30px' }}>
                 © 2025 BIEROYALE ENGINE • PROUDLY DEVELOPED BY ANTIGRAVITY
             </footer>
-            {showShop && (
-                <Shop
-                    user={user}
-                    setUser={setUser}
-                    onClose={() => setShowShop(false)}
-                />
-            )}
         </div>
     );
 }

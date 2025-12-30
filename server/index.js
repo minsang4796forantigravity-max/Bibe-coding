@@ -11,7 +11,6 @@ const GameEngine = require('./GameEngine');
 const BotAI = require('./BotAI');
 const authRoutes = require('./routes/auth');
 const gameRoutes = require('./routes/game');
-const shopRoutes = require('./routes/shop');
 const bcrypt = require('bcryptjs');
 const User = require('./models/User');
 const Notice = require('./models/Notice');
@@ -58,7 +57,6 @@ app.use(express.json());
 // 클라이언트에서 POST /api/auth/signup, /api/auth/login 호출
 app.use('/api/auth', authRoutes);
 app.use('/api/game', gameRoutes);
-app.use('/api/shop', shopRoutes);
 // 만약 /api/auth로도 쓰고 싶으면 아래 줄 추가해도 됨
 // app.use('/api/auth', authRoutes);
 
@@ -116,16 +114,6 @@ io.on('connection', (socket) => {
 
         const playerRole = game.joinGame(socket.id, username);
 
-        // Fetch and set inventory
-        if (playerRole && username && username !== 'Guest') {
-            User.findOne({ username }).then(u => {
-                if (u && u.inventory) {
-                    game.setPlayerInventory(playerRole, u.inventory);
-                    console.log(`[Inventory] Set inventory for ${username} (${playerRole})`);
-                }
-            }).catch(err => console.error("Error fetching inventory for join_game:", err));
-        }
-
         // Set player deck if provided
         if (playerRole && deck) {
             game.setPlayerDeck(playerRole, deck);
@@ -181,16 +169,6 @@ io.on('connection', (socket) => {
         const playerRole = game.joinGame(socket.id, username);
         if (deck) {
             game.setPlayerDeck(playerRole, deck);
-        }
-
-        // Fetch and set inventory for single player
-        if (playerRole && username && username !== 'Guest') {
-            User.findOne({ username }).then(u => {
-                if (u && u.inventory) {
-                    game.setPlayerInventory(playerRole, u.inventory);
-                    console.log(`[Inventory] Set single-player inventory for ${username}`);
-                }
-            }).catch(err => console.error("Error fetching inventory for start_single_player:", err));
         }
         console.log('[DEBUG] Player role:', playerRole);
 

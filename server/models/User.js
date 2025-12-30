@@ -47,20 +47,6 @@ const userSchema = new mongoose.Schema({
             createdAt: { type: Date, default: Date.now }
         }],
         default: []
-    },
-    inventory: {
-        unlockedCards: {
-            type: [String],
-            default: ['knight', 'archer', 'giant', 'wizard', 'fireball', 'cannon', 'goblin', 'skeletons']
-        },
-        ownedEmotes: {
-            type: [String],
-            default: ['smile', 'angry', 'thumbsup'] // Default basic emotes
-        },
-        boosters: {
-            coinBoost: { type: Number, default: 0 }, // Number of coin boost matches remaining
-            eggBoost: { type: Number, default: 0 }   // Number of egg boost matches remaining
-        }
     }
 });
 

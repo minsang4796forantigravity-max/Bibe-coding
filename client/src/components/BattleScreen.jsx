@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GAME_CONFIG, UNITS, EMOTES } from '../game/constants';
+import { GAME_CONFIG, UNITS } from '../game/constants';
 import knightImg from '../assets/knight_card.png';
 import archerImg from '../assets/archer_card.png';
 import giantImg from '../assets/giant_card.png';
@@ -73,11 +73,9 @@ const CARD_IMAGES = {
     side_tower: towerImg,
 };
 
-export function BattleScreen({ gameState, playerId, socket, user }) {
+export function BattleScreen({ gameState, playerId, socket }) {
     const [dragCard, setDragCard] = useState(null);
     const [dragPos, setDragPos] = useState(null); // { x, y } screen coords
-    const [activeEmote, setActiveEmote] = useState(null); // { id, playerId }
-    const [showEmotePicker, setShowEmotePicker] = useState(false);
     const fieldRef = useRef(null);
 
     const myState = gameState[playerId];
@@ -91,24 +89,7 @@ export function BattleScreen({ gameState, playerId, socket, user }) {
             console.log('Socket disconnected in BattleScreen, reconnecting...');
             socket.connect();
         }
-
-        const handleEmote = (data) => {
-            setActiveEmote(data);
-            setTimeout(() => setActiveEmote(null), 2500);
-        };
-
-        if (socket) {
-            socket.on('emote_used', handleEmote);
-            return () => socket.off('emote_used', handleEmote);
-        }
     }, [socket]);
-
-    const sendEmote = (emoteId) => {
-        if (socket) {
-            socket.emit('use_emote', { emoteId });
-            setShowEmotePicker(false);
-        }
-    };
 
     const getClientCoords = (e) => {
         if (e.touches && e.touches[0]) {
@@ -278,35 +259,6 @@ export function BattleScreen({ gameState, playerId, socket, user }) {
                     outline: '2px solid #5d4037'
                 }}
             >
-                {/* Emote Display Overlay */}
-                {activeEmote && (
-                    <div style={{
-                        position: 'absolute',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        ...(activeEmote.playerId === playerId ? { bottom: '15%' } : { top: '15%' }),
-                        zIndex: 1000,
-                        backgroundColor: 'white',
-                        padding: '12px',
-                        borderRadius: '20px',
-                        boxShadow: '0 8px 16px rgba(0,0,0,0.3)',
-                        animation: 'popEmote 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-                    }}>
-                        <div style={{ fontSize: '3rem' }}>{EMOTES[activeEmote.emoteId]?.emoji}</div>
-                        {/* Speech bubble tail */}
-                        <div style={{
-                            position: 'absolute',
-                            ...(activeEmote.playerId === playerId ? { bottom: -10 } : { top: -10 }),
-                            left: '50%',
-                            transform: 'translateX(-50%)' + (activeEmote.playerId === playerId ? '' : ' rotate(180deg)'),
-                            width: 0,
-                            height: 0,
-                            borderLeft: '10px solid transparent',
-                            borderRight: '10px solid transparent',
-                            borderTop: '10px solid white'
-                        }} />
-                    </div>
-                )}
                 {/* Double Elixir Announcement Overlay */}
                 {gameState.matchTime <= 30 && gameState.matchTime > 27 && (
                     <div style={{
@@ -469,9 +421,9 @@ export function BattleScreen({ gameState, playerId, socket, user }) {
                         spellEffectStyle.boxShadow = '0 0 15px #f1c40f';
                     }
 
-                    let unitSize = unit.type === 'building' ? '32px' : '24px';
-                    if (unit.cardId === 'king_tower') unitSize = '48px';
-                    if (unit.cardId === 'side_tower') unitSize = '32px';
+                    let unitSize = unit.type === 'building' ? '40px' : '30px';
+                    if (unit.cardId === 'king_tower') unitSize = '55px';
+                    if (unit.cardId === 'side_tower') unitSize = '38px';
 
                     const isKing = unit.cardId === 'king_tower';
                     // Check if unit is on the opponent's side (top part of the field)
@@ -524,6 +476,17 @@ export function BattleScreen({ gameState, playerId, socket, user }) {
                                     pointerEvents: 'none'
                                 }} />
                             )}
+                            <div style={{
+                                position: 'absolute',
+                                bottom: -5,
+                                right: -5,
+                                backgroundColor: '#000',
+                                color: '#fff',
+                                fontSize: '8px',
+                                padding: '1px 3px',
+                                borderRadius: '4px',
+                                border: '1px solid #fff',
+                            }}>Lv.1</div>
 
                             <div style={{
                                 position: 'absolute',
@@ -756,29 +719,6 @@ export function BattleScreen({ gameState, playerId, socket, user }) {
                             boxShadow: '0 0 15px rgba(243,156,18,0.8), inset 0 1px 0 rgba(255,255,255,0.3)',
                         }} />
                     </div>
-                    {/* Emote Button */}
-                    <button
-                        onClick={() => setShowEmotePicker(!showEmotePicker)}
-                        style={{
-                            background: 'rgba(255,255,255,0.1)',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            borderRadius: '50%',
-                            width: '45px',
-                            height: '45px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '1.5rem',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            pointerEvents: 'auto',
-                            boxShadow: '0 4px 8px rgba(0,0,0,0.3)'
-                        }}
-                        onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.2)'}
-                        onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.1)'}
-                    >
-                        💬
-                    </button>
                 </div>
 
                 {/* Hand */}
@@ -830,66 +770,6 @@ export function BattleScreen({ gameState, playerId, socket, user }) {
                     })}
                 </div>
             </div>
-
-            {/* Emote Picker */}
-            {showEmotePicker && (
-                <div style={{
-                    position: 'fixed',
-                    bottom: '180px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    background: 'rgba(0,0,0,0.85)',
-                    backdropFilter: 'blur(10px)',
-                    padding: '15px',
-                    borderRadius: '25px',
-                    border: '2px solid #f1c40f',
-                    zIndex: 200,
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(4, 1fr)',
-                    gap: '12px',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-                    animation: 'popIn 0.3s ease-out'
-                }}>
-                    {(user?.inventory?.ownedEmotes || []).map(id => (
-                        <button
-                            key={id}
-                            onClick={() => sendEmote(id)}
-                            style={{
-                                background: 'rgba(255,255,255,0.05)',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                borderRadius: '15px',
-                                width: '60px',
-                                height: '60px',
-                                fontSize: '2.5rem',
-                                cursor: 'pointer',
-                                transition: 'transform 0.2s',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}
-                            onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
-                            onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-                        >
-                            {EMOTES[id]?.emoji}
-                        </button>
-                    ))}
-                    {(!user?.inventory?.ownedEmotes || user.inventory.ownedEmotes.length === 0) && (
-                        <div style={{ color: '#95a5a6', fontSize: '0.9rem', padding: '10px' }}>보유한 이모티콘이 없습니다.</div>
-                    )}
-                </div>
-            )}
-
-            <style>{`
-                @keyframes popEmote {
-                    0% { transform: translate(-50%, 20px) scale(0.5); opacity: 0; }
-                    50% { transform: translate(-50%, -10px) scale(1.1); }
-                    100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
-                }
-                @keyframes popIn {
-                    0% { transform: translate(-50%, 20px) scale(0.9); opacity: 0; }
-                    100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
-                }
-            `}</style>
         </div>
     );
 }

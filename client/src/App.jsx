@@ -168,13 +168,12 @@ function App() {
         gameState={gameState}
         playerId={playerId}
         socket={socket}
-        user={user}
       />
     );
   }
 
   if (status === 'deck_select') {
-    return <DeckSelector onDeckSelected={handleDeckSelected} user={user} />;
+    return <DeckSelector onDeckSelected={handleDeckSelected} username={user ? user.username : null} />;
   }
 
   if (status === 'lobby') {
@@ -189,7 +188,6 @@ function App() {
         onSinglePlayerClick={handleSinglePlayerClick}
         onProfileClick={() => setStatus('profile')}
         onLogout={handleLogout}
-        setUser={setUser}
       />
     );
   }
