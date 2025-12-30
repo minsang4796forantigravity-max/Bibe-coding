@@ -28,6 +28,18 @@ const DECKS = {
     SNIPER_ELITE: {
         cards: ['sniper', 'knight', 'electro_wizard', 'air_defense', 'log', 'fireball'],
         evolutions: ['giant', 'valkyrie']
+    },
+    CONTROL_MIX: {
+        cards: ['knight', 'archer', 'bomber', 'fireball', 'log', 'baby_dragon'],
+        evolutions: ['wizard', 'valkyrie']
+    },
+    BRIDGE_SPAM: {
+        cards: ['hog_rider', 'knight', 'barbarians', 'goblin_barrel', 'log', 'electro_wizard'],
+        evolutions: ['valkyrie', 'giant']
+    },
+    GIANT_BEATDOWN: {
+        cards: ['giant', 'witch', 'wizard', 'baby_dragon', 'fireball', 'log'],
+        evolutions: ['knight', 'barbarians']
     }
 };
 

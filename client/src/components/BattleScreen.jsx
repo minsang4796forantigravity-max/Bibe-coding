@@ -212,6 +212,13 @@ export function BattleScreen({ gameState, playerId, socket }) {
                 right: 0,
                 pointerEvents: 'none'
             }}>
+                <style>{`
+                @keyframes pulse-grow {
+                    0% { transform: scale(1); opacity: 0; }
+                    50% { transform: scale(1.1); opacity: 1; }
+                    100% { transform: scale(1); opacity: 0; }
+                }
+            `}</style>
                 <div style={{
                     backgroundColor: 'rgba(0,0,0,0.7)',
                     padding: '4px 12px',
@@ -252,6 +259,28 @@ export function BattleScreen({ gameState, playerId, socket }) {
                     outline: '2px solid #5d4037'
                 }}
             >
+                {/* Double Elixir Announcement Overlay */}
+                {gameState.matchTime <= 30 && gameState.matchTime > 27 && (
+                    <div style={{
+                        position: 'absolute',
+                        top: '45%',
+                        left: '0',
+                        right: '0',
+                        textAlign: 'center',
+                        zIndex: 100,
+                        color: '#f1c40f',
+                        fontSize: '2.5rem',
+                        fontWeight: '900',
+                        textShadow: '0 0 15px rgba(0,0,0,1), 0 0 5px #000',
+                        animation: 'pulse-grow 2s ease-in-out infinite',
+                        pointerEvents: 'none',
+                        letterSpacing: '2px',
+                        fontFamily: 'Impact, sans-serif'
+                    }}>
+                        DOUBLE ELIXIR!
+                    </div>
+                )}
+
                 {/* Arena Grid Decor */}
                 <div style={{
                     position: 'absolute',

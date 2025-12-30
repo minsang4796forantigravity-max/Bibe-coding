@@ -725,10 +725,11 @@ class GameEngine {
 
             u1.target = findTarget(u1, p2Units, GAME_CONFIG.FIELD_HEIGHT, 'tower_p2');
             if (u1.target) {
-                // King Tower wake-up logic: only attack if a side tower is down
+                // King Tower wake-up logic: attack if a side tower is down OR if it has taken damage
                 if (u1.cardId === 'king_tower') {
                     const enemySideTowers = p2Units.filter(u => u.cardId === 'side_tower').length;
-                    if (enemySideTowers >= 2) return; // Wait until at least one side tower is gone
+                    const hasTakenDamage = u1.hp < u1.maxHp;
+                    if (enemySideTowers >= 2 && !hasTakenDamage) return; // Stay sleepy
                 }
 
                 u1.attackTimer = (u1.attackTimer || 0) + dt;
@@ -745,10 +746,11 @@ class GameEngine {
 
             u2.target = findTarget(u2, p1Units, 0, 'tower_p1');
             if (u2.target) {
-                // King Tower wake-up logic
+                // King Tower wake-up logic: attack if a side tower is down OR taken damage
                 if (u2.cardId === 'king_tower') {
                     const enemySideTowers = p1Units.filter(u => u.cardId === 'side_tower').length;
-                    if (enemySideTowers >= 2) return; // Wait
+                    const hasTakenDamage = u2.hp < u2.maxHp;
+                    if (enemySideTowers >= 2 && !hasTakenDamage) return; // Stay sleepy
                 }
 
                 u2.attackTimer = (u2.attackTimer || 0) + dt;

@@ -6,7 +6,7 @@ const UNITS = {
         cost: 1,
         hp: 80,
         damage: 67,
-        speed: 2.5,
+        speed: 2.0, // 2.5 * 0.8
         range: 1,
         attackSpeed: 1.0,
         type: 'ground',
@@ -21,7 +21,7 @@ const UNITS = {
         cost: 4,
         hp: 140, // 160 -> 140
         damage: 100,
-        speed: 3.0,
+        speed: 2.4, // 3.0 * 0.8
         range: 1.0,
         attackSpeed: 1.1,
         type: 'ground',
@@ -36,7 +36,7 @@ const UNITS = {
         cost: 0,
         hp: 110,
         damage: 50,
-        speed: 3.0,
+        speed: 2.4, // 3.0 * 0.8
         range: 5.0,
         attackSpeed: 1.3,
         type: 'ground',
@@ -63,7 +63,7 @@ const UNITS = {
         knockback: 2.0,
         width: 2.0,
         range: 10,
-        speed: 12,
+        speed: 9.6, // 12 * 0.8
     },
 
     // === 3 코스트: 기본 전투 유닛 & 스펠 ===
@@ -73,7 +73,7 @@ const UNITS = {
         cost: 4, // 3 -> 4
         hp: 1400,
         damage: 145,
-        speed: 1.2,
+        speed: 1.0, // 1.2 * 0.8
         range: 1,
         attackSpeed: 1.2,
         type: 'ground',
@@ -87,7 +87,7 @@ const UNITS = {
         cost: 3,
         hp: 250,
         damage: 90,
-        speed: 1.4,
+        speed: 1.1, // 1.4 * 0.8
         range: 5.5, // 5.0 -> 5.5
         attackSpeed: 1.0, // 1.2 -> 1.0
         type: 'ground',
@@ -100,7 +100,7 @@ const UNITS = {
         cost: 3,
         hp: 300,
         damage: 200,
-        speed: 1.6,
+        speed: 1.3, // 1.6 * 0.8
         range: 4.5,
         attackSpeed: 1.8,
         type: 'ground',
@@ -167,7 +167,7 @@ const UNITS = {
         cost: 3, // 4 -> 3
         hp: 1200, // 1600 -> 1200
         damage: 150, // 180 -> 150
-        speed: 1.5,
+        speed: 1.2, // 1.5 * 0.8
         range: 1,
         attackSpeed: 1.5,
         type: 'ground',
@@ -181,7 +181,7 @@ const UNITS = {
         cost: 4,
         hp: 1250, // 1400 -> 1250
         damage: 240, // 260 -> 240
-        speed: 2.3, // 2.5 -> 2.3
+        speed: 1.8, // 2.3 * 0.8
         range: 1,
         attackSpeed: 1.6,
         type: 'ground',
@@ -196,7 +196,7 @@ const UNITS = {
         cost: 4,
         hp: 1000,
         damage: 130,
-        speed: 1.8,
+        speed: 1.4, // 1.8 * 0.8
         range: 3.5,
         attackSpeed: 1.5,
         type: 'flying',
@@ -212,7 +212,7 @@ const UNITS = {
         cost: 4,
         hp: 350,
         damage: 265, // 300 -> 265
-        speed: 1.0,
+        speed: 0.8, // 1.0 * 0.8
         range: 7.0,
         attackSpeed: 2.5,
         type: 'ground',
@@ -280,7 +280,7 @@ const UNITS = {
         cost: 7, // 5 -> 7
         hp: 4500, // 2800 -> 4500
         damage: 210,
-        speed: 0.9,
+        speed: 0.7, // 0.9 * 0.8
         range: 1.5,
         attackSpeed: 1.5,
         type: 'ground',
@@ -293,7 +293,7 @@ const UNITS = {
         cost: 4, // 5 -> 4
         hp: 600,
         damage: 200, // 230 -> 200
-        speed: 1.4,
+        speed: 1.1, // 1.4 * 0.8
         range: 5.5,
         attackSpeed: 1.4,
         type: 'ground',
@@ -311,7 +311,7 @@ const UNITS = {
         cost: 5,
         hp: 700,
         damage: 100,
-        speed: 1.2,
+        speed: 1.0, // 1.2 * 0.8
         range: 5,
         attackSpeed: 0.7,
         type: 'ground',
@@ -333,7 +333,7 @@ const UNITS = {
         cost: 5,
         hp: 550,
         damage: 150,
-        speed: 1.5,
+        speed: 1.2, // 1.5 * 0.8
         range: 1,
         attackSpeed: 1.4,
         type: 'ground',
@@ -347,7 +347,7 @@ const UNITS = {
         cost: 5,
         hp: 1400,
         damage: 800,
-        speed: 1.3, // 1.5 -> 1.3
+        speed: 1.0, // 1.3 * 0.8
         range: 1.5, // Increased slightly to allow projectile to fall
         attackSpeed: 3.0,
         type: 'flying',
@@ -458,7 +458,7 @@ const UNITS = {
     KING_TOWER: {
         id: 'king_tower',
         name: 'King Tower',
-        hp: 5500, // 4000 -> 5500
+        hp: 8000, // 5500 -> 8000
         damage: 220, // 150 -> 220
         range: 6.5,
         attackSpeed: 1.5, // 1.0 -> 1.5 (Slower)
@@ -512,7 +512,7 @@ const EVOLVED_STATS = {
     KNIGHT: {
         hp: 1800,
         damage: 180,
-        speed: 1.3,
+        speed: 1.0, // 1.3 * 0.8
     },
     ARCHER: {
         hp: 300,
@@ -550,12 +550,12 @@ const EVOLVED_STATS = {
         hp: 2000,
         damage: 260,
         splash: 2.0,
-        speed: 1.6,
+        speed: 1.28, // 1.6 * 0.8
     },
     HOG_RIDER: {
         hp: 1600,
         damage: 300,
-        speed: 2.7,
+        speed: 1.84, // 2.3 * 0.8
     },
     BABY_DRAGON: {
         hp: 1300,
@@ -631,7 +631,7 @@ const EVOLVED_STATS = {
 };
 
 const GAME_CONFIG = {
-    MANA_REGEN_RATE: 0.35, // 0.5 -> 0.35 (Slower)
+    MANA_REGEN_RATE: 0.45, // 0.35 -> 0.45 (Faster)
     MAX_MANA: 20,
     FIELD_WIDTH: 10,
     FIELD_HEIGHT: 18,
