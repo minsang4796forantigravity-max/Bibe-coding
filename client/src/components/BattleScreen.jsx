@@ -201,30 +201,31 @@ export function BattleScreen({ gameState, playerId, socket }) {
         }}>
             {/* Header / Timer Overlay */}
             <div style={{
-                padding: '10px 20px',
-                background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)',
+                padding: '10px',
                 display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
+                justifyContent: 'flex-end',
+                alignItems: 'flex-start',
                 zIndex: 40,
                 position: 'absolute',
                 top: 0,
                 left: 0,
                 right: 0,
+                pointerEvents: 'none'
             }}>
                 <div style={{
-                    backgroundColor: 'rgba(0,0,0,0.6)',
-                    padding: '8px 30px',
-                    borderRadius: '30px',
-                    border: '2px solid #f1c40f',
+                    backgroundColor: 'rgba(0,0,0,0.7)',
+                    padding: '4px 12px',
+                    borderRadius: '10px',
+                    border: '1px solid #f1c40f',
                     color: '#f1c40f',
                     fontWeight: 'bold',
-                    fontSize: '1.4rem',
+                    fontSize: '0.9rem',
                     textAlign: 'center',
-                    boxShadow: '0 0 20px rgba(241,196,15,0.4)',
+                    boxShadow: '0 0 10px rgba(0,0,0,0.5)',
+                    pointerEvents: 'auto'
                 }}>
                     {formatTime(gameState.matchTime)}
-                    {gameState.isOvertime && <div style={{ fontSize: '0.7rem', color: '#e74c3c', letterSpacing: '1px' }}>OVERTIME (2x Mana)</div>}
+                    {gameState.isOvertime && <div style={{ fontSize: '0.5rem', color: '#e74c3c' }}>OT</div>}
                 </div>
             </div>
             {/* Game Field */}

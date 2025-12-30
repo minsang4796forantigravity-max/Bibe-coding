@@ -115,15 +115,15 @@ class GameEngine {
 
     initTowers(playerId) {
         const isP1 = playerId === 'p1';
-        const yBase = isP1 ? 0.5 : 17.5;
-        const kingY = isP1 ? 0 : 18;
+        const yBase = isP1 ? 1.5 : 16.5; // Moved princess towers forward
+        const kingY = isP1 ? 0.5 : 17.5; // Moved king tower slightly forward
 
         // King Tower
         this.spawnUnit(this.state[playerId], 'king_tower', 5, kingY);
 
-        // Princess Towers
-        this.spawnUnit(this.state[playerId], 'side_tower', 2.5, yBase);
-        this.spawnUnit(this.state[playerId], 'side_tower', 7.5, yBase);
+        // Princess Towers (Wider spacing)
+        this.spawnUnit(this.state[playerId], 'side_tower', 1.5, yBase);
+        this.spawnUnit(this.state[playerId], 'side_tower', 8.5, yBase);
     }
 
     stop() {
@@ -157,6 +157,8 @@ class GameEngine {
             },
             projectiles: this.state.projectiles,
             activeSpells: this.state.activeSpells,
+            matchTime: this.state.matchTime,
+            isOvertime: this.state.isOvertime,
             gameOver: this.state.gameOver,
             winner: this.state.winner,
         };
@@ -222,12 +224,8 @@ class GameEngine {
         // Combat
         this.handleCombat(dt, now);
 
-        // Check Win
-        if (this.state.p1.hp <= 0) {
-            this.endGame('p2');
-        } else if (this.state.p2.hp <= 0) {
-            this.endGame('p1');
-        }
+        // Note: King Tower destruction checked in dealDamage
+        // Match Timer check already handled above
 
         this.io.to(this.roomId).emit('game_update', this.getSerializableState());
     }
@@ -537,11 +535,26 @@ class GameEngine {
             }
 
             if (!unit.target) {
-                const targetTowerX = 5;
-                const targetTowerY = direction > 0 ? GAME_CONFIG.FIELD_HEIGHT : 0;
+                // Bridge logic: Units must cross the river via bridges
+                const riverY = GAME_CONFIG.FIELD_HEIGHT / 2;
+                const isAcross = direction > 0 ? (unit.y > riverY) : (unit.y < riverY);
 
-                const dx = targetTowerX - unit.x;
-                const dy = targetTowerY - unit.y;
+                let targetX = 5;
+                let targetY = direction > 0 ? GAME_CONFIG.FIELD_HEIGHT : 0;
+
+                // If not yet across the river, target the nearest bridge
+                if (!isAcross) {
+                    const riverTargetY = riverY + (direction * 0.5);
+                    if (direction > 0 ? (unit.y < riverY - 0.5) : (unit.y > riverY + 0.5)) {
+                        // Find nearest bridge visual center
+                        const bridgeX = unit.x < 5 ? 2.0 : 8.0;
+                        targetX = bridgeX;
+                        targetY = riverTargetY;
+                    }
+                }
+
+                const dx = targetX - unit.x;
+                const dy = targetY - unit.y;
                 const distance = Math.hypot(dx, dy);
 
                 if (distance > 0.1) {
@@ -703,6 +716,12 @@ class GameEngine {
 
             u1.target = findTarget(u1, p2Units, GAME_CONFIG.FIELD_HEIGHT, 'tower_p2');
             if (u1.target) {
+                // King Tower wake-up logic: only attack if a side tower is down
+                if (u1.cardId === 'king_tower') {
+                    const enemySideTowers = p2Units.filter(u => u.cardId === 'side_tower').length;
+                    if (enemySideTowers >= 2) return; // Wait until at least one side tower is gone
+                }
+
                 u1.attackTimer = (u1.attackTimer || 0) + dt;
                 const attackSpeed = u1.currentAttackSpeed || u1.attackSpeed;
                 if (u1.attackTimer >= attackSpeed) {
@@ -717,6 +736,12 @@ class GameEngine {
 
             u2.target = findTarget(u2, p1Units, 0, 'tower_p1');
             if (u2.target) {
+                // King Tower wake-up logic
+                if (u2.cardId === 'king_tower') {
+                    const enemySideTowers = p1Units.filter(u => u.cardId === 'side_tower').length;
+                    if (enemySideTowers >= 2) return; // Wait
+                }
+
                 u2.attackTimer = (u2.attackTimer || 0) + dt;
                 const attackSpeed = u2.currentAttackSpeed || u2.attackSpeed;
                 if (u2.attackTimer >= attackSpeed) {

@@ -451,13 +451,23 @@ export const UNITS = {
   },
 
   // === 타워 ===
-  TOWER: {
-    id: 'tower',
+  KING_TOWER: {
+    id: 'king_tower',
     name: 'King Tower',
     hp: 4000,
-    damage: 110,
-    range: 7,
-    attackSpeed: 0.8,
+    damage: 150,
+    range: 6.5,
+    attackSpeed: 1.0,
+    type: 'building',
+    targets: 'both',
+  },
+  SIDE_TOWER: {
+    id: 'side_tower',
+    name: 'Princess Tower',
+    hp: 1800,
+    damage: 65,
+    range: 6.5,
+    attackSpeed: 1.2,
     type: 'building',
     targets: 'both',
   }

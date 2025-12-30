@@ -459,8 +459,8 @@ const UNITS = {
         id: 'king_tower',
         name: 'King Tower',
         hp: 4000,
-        damage: 120,
-        range: 7,
+        damage: 150, // Slightly buffed damage
+        range: 6.5, // Reduced range to prevent overlap
         attackSpeed: 1.0,
         type: 'building',
         targets: 'both',
@@ -470,10 +470,10 @@ const UNITS = {
     SIDE_TOWER: {
         id: 'side_tower',
         name: 'Princess Tower',
-        hp: 2800,
-        damage: 100,
-        range: 7.5,
-        attackSpeed: 0.8,
+        hp: 1800, // 2800 -> 1800 (Nerfed HP)
+        damage: 65, // 100 -> 65 (Nerfed Damage)
+        range: 6.5, // 7.5 -> 6.5 (Reduced Range)
+        attackSpeed: 1.2, // 0.8 -> 1.2 (Slower speed)
         type: 'building',
         targets: 'both',
         projectile: 'arrow',
@@ -632,9 +632,13 @@ const EVOLVED_STATS = {
 
 const GAME_CONFIG = {
     MANA_REGEN_RATE: 0.5,
-    MAX_MANA: 20, // 20 -> 10 (Standard) -> 20 (User Request)
+    MAX_MANA: 20,
     FIELD_WIDTH: 10,
     FIELD_HEIGHT: 18,
+    BRIDGE_ZONES: [
+        { xStart: 1.5, xEnd: 2.5 },
+        { xStart: 7.5, xEnd: 8.5 }
+    ],
     FPS: 30,
 };
 
