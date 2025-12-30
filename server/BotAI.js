@@ -16,6 +16,18 @@ const DECKS = {
     SPAWNER: {
         cards: ['goblin_hut', 'barbarians', 'bomber', 'fireball', 'log', 'archer'],
         evolutions: ['witch', 'knight']
+    },
+    EGG_RANDOM: {
+        cards: ['egg_1', 'egg_2', 'egg_3', 'egg_4', 'egg_5', 'log'],
+        evolutions: ['valkyrie', 'wizard']
+    },
+    CHICKEN_FARM: {
+        cards: ['chicken', 'egg_2', 'egg_3', 'baby_dragon', 'fireball', 'log'],
+        evolutions: ['knight', 'witch']
+    },
+    SNIPER_ELITE: {
+        cards: ['sniper', 'knight', 'electro_wizard', 'air_defense', 'log', 'fireball'],
+        evolutions: ['giant', 'valkyrie']
     }
 };
 

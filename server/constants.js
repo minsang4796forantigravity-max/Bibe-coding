@@ -368,7 +368,7 @@ const UNITS = {
         targets: 'ground',
         lifetime: 40, // 50 -> 40
         spawnUnit: 'goblin',
-        spawnInterval: 4.5,
+        spawnInterval: 8.0, // 4.5 -> 8.0 (Nerfed spawn speed)
         spawnCount: 3,
     },
 
@@ -459,9 +459,9 @@ const UNITS = {
         id: 'king_tower',
         name: 'King Tower',
         hp: 4000,
-        damage: 150, // Slightly buffed damage
-        range: 6.5, // Reduced range to prevent overlap
-        attackSpeed: 1.0,
+        damage: 150,
+        range: 6.5,
+        attackSpeed: 1.5, // 1.0 -> 1.5 (Slower)
         type: 'building',
         targets: 'both',
         projectile: 'cannonball',
@@ -470,10 +470,10 @@ const UNITS = {
     SIDE_TOWER: {
         id: 'side_tower',
         name: 'Princess Tower',
-        hp: 1800, // 2800 -> 1800 (Nerfed HP)
-        damage: 65, // 100 -> 65 (Nerfed Damage)
-        range: 6.5, // 7.5 -> 6.5 (Reduced Range)
-        attackSpeed: 1.2, // 0.8 -> 1.2 (Slower speed)
+        hp: 1800,
+        damage: 65,
+        range: 6.5,
+        attackSpeed: 1.8, // 1.2 -> 1.8 (Slower)
         type: 'building',
         targets: 'both',
         projectile: 'arrow',
@@ -611,7 +611,7 @@ const EVOLVED_STATS = {
     GOBLIN_HUT: {
         hp: 1500,
         lifetime: 50, // 60 -> 50
-        spawnInterval: 4.0,
+        spawnInterval: 7.0, // 4.0 -> 7.0
     },
 
     // === 6 코스트 ===
@@ -631,7 +631,7 @@ const EVOLVED_STATS = {
 };
 
 const GAME_CONFIG = {
-    MANA_REGEN_RATE: 0.5,
+    MANA_REGEN_RATE: 0.35, // 0.5 -> 0.35 (Slower)
     MAX_MANA: 20,
     FIELD_WIDTH: 10,
     FIELD_HEIGHT: 18,

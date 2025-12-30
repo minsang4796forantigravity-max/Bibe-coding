@@ -224,7 +224,7 @@ export function BattleScreen({ gameState, playerId, socket }) {
                     boxShadow: '0 0 10px rgba(0,0,0,0.5)',
                     pointerEvents: 'auto'
                 }}>
-                    {formatTime(gameState.matchTime)}
+                    {formatTime(gameState.matchTime ?? 180)}
                     {gameState.isOvertime && <div style={{ fontSize: '0.5rem', color: '#e74c3c' }}>OT</div>}
                 </div>
             </div>
@@ -383,6 +383,16 @@ export function BattleScreen({ gameState, playerId, socket }) {
                         spellEffectStyle.boxShadow = '0 0 15px #f1c40f';
                     }
 
+                    let unitSize = unit.type === 'building' ? '50px' : '40px';
+                    if (unit.cardId === 'king_tower') unitSize = '70px';
+                    if (unit.cardId === 'side_tower') unitSize = '48px';
+
+                    const isKing = unit.cardId === 'king_tower';
+                    // Check if unit is on the opponent's side (top part of the field)
+                    // P1 is bottom (y=0 to 9), P2 is top (y=9 to 18)
+                    // isOpponentTop means it's on the side away from the player
+                    const isOpponentTop = isP1 ? unit.y > GAME_CONFIG.FIELD_HEIGHT * 0.8 : unit.y < GAME_CONFIG.FIELD_HEIGHT * 0.2;
+
                     return (
                         <div
                             key={unit.id}
@@ -390,16 +400,16 @@ export function BattleScreen({ gameState, playerId, socket }) {
                                 position: 'absolute',
                                 left: `${left}%`,
                                 bottom: `${bottom}%`,
-                                width: unit.type === 'building' ? '50px' : '40px',
-                                height: unit.type === 'building' ? '50px' : '40px',
+                                width: unitSize,
+                                height: unitSize,
                                 transform: 'translate(-50%, 50%)',
                                 backgroundImage: `url(${CARD_IMAGES[unit.cardId] || CARD_IMAGES[unit.id.split('_')[0]] || knightImg})`,
                                 backgroundSize: 'cover',
                                 borderRadius: unit.type === 'building' ? '5px' : '50%',
-                                border: `3px solid ${isMine ? '#3498db' : '#e74c3c'}`,
+                                border: isKing ? `4px solid gold` : `3px solid ${isMine ? '#3498db' : '#e74c3c'}`,
                                 transition: 'left 0.1s linear, bottom 0.1s linear',
-                                zIndex: 5,
-                                boxShadow: '0 4px 6px rgba(0,0,0,0.5)',
+                                zIndex: isKing ? 10 : 5,
+                                boxShadow: isKing ? '0 0 20px rgba(241, 196, 15, 0.6), 0 4px 6px rgba(0,0,0,0.5)' : '0 4px 6px rgba(0,0,0,0.5)',
                                 ...spellEffectStyle
                             }}
                         >
@@ -443,12 +453,13 @@ export function BattleScreen({ gameState, playerId, socket }) {
 
                             <div style={{
                                 position: 'absolute',
-                                top: -8,
+                                ...(isOpponentTop ? { bottom: -12 } : { top: -8 }),
                                 left: 0,
                                 width: '100%',
                                 height: '4px',
                                 backgroundColor: 'red',
                                 borderRadius: '2px',
+                                zIndex: 11
                             }}>
                                 <div style={{
                                     width: `${(unit.hp / unit.maxHp) * 100}%`,
@@ -462,7 +473,7 @@ export function BattleScreen({ gameState, playerId, socket }) {
                             {unit.shield > 0 && (
                                 <div style={{
                                     position: 'absolute',
-                                    top: -14,
+                                    ...(isOpponentTop ? { bottom: -18 } : { top: -14 }),
                                     left: 0,
                                     width: '100%',
                                     height: '4px',

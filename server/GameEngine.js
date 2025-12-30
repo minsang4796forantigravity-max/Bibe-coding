@@ -691,8 +691,14 @@ class GameEngine {
 
             targetsToCheck.forEach(e => {
                 const dist = Math.hypot(u.x - e.x, u.y - e.y);
-                if (dist <= u.range && dist < minDist) {
-                    minDist = dist;
+                // Target prioritization logic: subtract weight from side towers to make them "appear" closer
+                let weight = dist;
+                if (e.cardId === 'side_tower') {
+                    weight -= 100; // Large negative weight ensures side towers are prioritized over King Tower
+                }
+
+                if (dist <= u.range && weight < minDist) {
+                    minDist = weight;
                     target = e;
                 }
             });
@@ -858,8 +864,8 @@ class GameEngine {
 
         // Check if King Tower was destroyed
         if (target.hp <= 0 && target.cardId === 'king_tower') {
-            this.state.gameOver = true;
-            this.state.winner = targetPlayerId === 'p1' ? 'p2' : 'p1';
+            const winnerId = targetPlayerId === 'p1' ? 'p2' : 'p1';
+            this.endGame(winnerId);
         }
     }
 

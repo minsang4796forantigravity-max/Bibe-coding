@@ -366,7 +366,7 @@ export const UNITS = {
     targets: 'ground',
     lifetime: 40, // 50 -> 40
     spawnUnit: 'goblin',
-    spawnInterval: 4.5,
+    spawnInterval: 8.0,
     spawnCount: 3,
   },
 
@@ -457,7 +457,7 @@ export const UNITS = {
     hp: 4000,
     damage: 150,
     range: 6.5,
-    attackSpeed: 1.0,
+    attackSpeed: 1.5,
     type: 'building',
     targets: 'both',
   },
@@ -467,7 +467,7 @@ export const UNITS = {
     hp: 1800,
     damage: 65,
     range: 6.5,
-    attackSpeed: 1.2,
+    attackSpeed: 1.8,
     type: 'building',
     targets: 'both',
   }
@@ -603,7 +603,7 @@ export const EVOLVED_STATS = {
   GOBLIN_HUT: {
     hp: 1500,
     lifetime: 50, // 60 -> 50
-    spawnInterval: 4.0,
+    spawnInterval: 7.0,
   },
 
   // === 6 코스트 ===
