@@ -215,8 +215,15 @@ export function DeckSelector({ onDeckSelected, user }) {
         }
     };
 
-    // Sort cards by cost
-    const sortedCards = [...ALL_CARDS].sort((a, b) => {
+    // Starter cards if user or inventory is missing
+    const STARTER_CARDS = ['knight', 'archer', 'giant', 'wizard', 'fireball', 'cannon', 'goblin', 'skeletons', 'egg_1', 'egg_2', 'egg_3', 'egg_4', 'egg_5', 'chicken'];
+
+    // Determine available cards based on user inventory
+    const unlockedCards = user?.inventory?.unlockedCards || STARTER_CARDS;
+    const availableCards = ALL_CARDS.filter(cardId => unlockedCards.includes(cardId));
+
+    // Sort available cards by cost
+    const sortedCards = availableCards.sort((a, b) => {
         const costA = UNITS[a.toUpperCase()]?.cost || 0;
         const costB = UNITS[b.toUpperCase()]?.cost || 0;
         return costA - costB;

@@ -168,6 +168,7 @@ function App() {
         gameState={gameState}
         playerId={playerId}
         socket={socket}
+        user={user}
       />
     );
   }

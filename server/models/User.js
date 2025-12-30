@@ -49,21 +49,18 @@ const userSchema = new mongoose.Schema({
         default: []
     },
     inventory: {
-        type: [{
-            cardId: String,
-            shards: { type: Number, default: 0 },
-            level: { type: Number, default: 1 }
-        }],
-        default: [
-            { cardId: 'knight', shards: 0, level: 1 },
-            { cardId: 'archer', shards: 0, level: 1 },
-            { cardId: 'giant', shards: 0, level: 1 },
-            { cardId: 'wizard', shards: 0, level: 1 },
-            { cardId: 'fireball', shards: 0, level: 1 },
-            { cardId: 'cannon', shards: 0, level: 1 },
-            { cardId: 'goblin', shards: 0, level: 1 },
-            { cardId: 'skeletons', shards: 0, level: 1 }
-        ]
+        unlockedCards: {
+            type: [String],
+            default: ['knight', 'archer', 'giant', 'wizard', 'fireball', 'cannon', 'goblin', 'skeletons']
+        },
+        ownedEmotes: {
+            type: [String],
+            default: ['smile', 'angry', 'thumbsup'] // Default basic emotes
+        },
+        boosters: {
+            coinBoost: { type: Number, default: 0 }, // Number of coin boost matches remaining
+            eggBoost: { type: Number, default: 0 }   // Number of egg boost matches remaining
+        }
     }
 });
 

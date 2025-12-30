@@ -1,4 +1,4 @@
-const { UNITS, EVOLVED_STATS, GAME_CONFIG } = require('./constants');
+const { UNITS, EVOLVED_STATS, GAME_CONFIG, BOOSTERS } = require('./constants');
 const User = require('./models/User');
 
 class GameEngine {
@@ -184,6 +184,11 @@ class GameEngine {
         };
     }
 
+    handleEmote(playerId, emoteId) {
+        if (!this.state[playerId]) return;
+        this.io.to(this.roomId).emit('emote_used', { playerId, emoteId });
+    }
+
     update(dt) {
         if (this.state.gameOver) return;
 
@@ -338,12 +343,26 @@ class GameEngine {
                     p1Games < 20 // isNewPlayer
                 );
 
+                // Booster Logic
+                let coinReward = result === 'win' ? 50 : 10;
+                let boostersToUpdate = {};
+
+                const p1User = await User.findOne({ username: p1.username });
+                if (p1User && p1User.inventory.boosters.coinBoost > 0) {
+                    coinReward *= 2;
+                    boostersToUpdate['inventory.boosters.coinBoost'] = -1;
+                }
+                if (p1User && p1User.inventory.boosters.eggBoost > 0) {
+                    boostersToUpdate['inventory.boosters.eggBoost'] = -1;
+                }
+
                 await User.findOneAndUpdate(
                     { username: p1.username },
                     {
                         $inc: {
                             rating: ratingChange,
-                            coins: result === 'win' ? 50 : 10
+                            coins: coinReward,
+                            ...boostersToUpdate
                         },
                         $push: {
                             matchHistory: {
@@ -379,12 +398,26 @@ class GameEngine {
                     p2Games < 20 // isNewPlayer
                 );
 
+                // Booster Logic
+                let coinReward = result === 'win' ? 50 : 10;
+                let boostersToUpdate = {};
+
+                const p2User = await User.findOne({ username: p2.username });
+                if (p2User && p2User.inventory.boosters.coinBoost > 0) {
+                    coinReward *= 2;
+                    boostersToUpdate['inventory.boosters.coinBoost'] = -1;
+                }
+                if (p2User && p2User.inventory.boosters.eggBoost > 0) {
+                    boostersToUpdate['inventory.boosters.eggBoost'] = -1;
+                }
+
                 await User.findOneAndUpdate(
                     { username: p2.username },
                     {
                         $inc: {
                             rating: ratingChange,
-                            coins: result === 'win' ? 50 : 10
+                            coins: coinReward,
+                            ...boostersToUpdate
                         },
                         $push: {
                             matchHistory: {
@@ -915,20 +948,6 @@ class GameEngine {
             };
         }
 
-        // Apply Level Multiplier from inventory
-        const invItem = playerState.inventory?.find(item => item.cardId === cardId);
-        if (invItem && invItem.level > 1) {
-            const levelMultipliers = { 2: 1.1, 3: 1.25, 4: 1.5, 5: 2.0 };
-            const multiplier = levelMultipliers[invItem.level] || 1.0;
-
-            unitStats = {
-                ...unitStats,
-                hp: Math.floor(unitStats.hp * multiplier),
-                damage: Math.floor(unitStats.damage * (unitStats.type === 'spell' ? multiplier : (1 + (multiplier - 1) * 0.5))), // Spells get full buff, units get half damage buff for balance
-                name: `${unitStats.name} (Lv.${invItem.level})`
-            };
-        }
-
         if (cardId === 'mana_collector') {
             const collectorCount = playerState.units.filter(u => u.cardId === 'mana_collector').length;
             if (collectorCount >= 3) return;
@@ -997,7 +1016,7 @@ class GameEngine {
                 // Handle Goblin split (3 Melee, 2 Spear)
                 if (cardId === 'goblin') {
                     if (i >= unitStats.meleeCount) {
-                        finalStats = { ...UNITS.SPEAR_GOBLIN, level: unitStats.level };
+                        finalStats = { ...UNITS.SPEAR_GOBLIN };
                     }
                 }
 
@@ -1098,7 +1117,6 @@ class GameEngine {
             y: y,
             hp: unitStats.hp,
             maxHp: unitStats.hp,
-            level: unitStats.level || 1,
             shield: unitStats.shield || 0,
             maxShield: unitStats.shield || 0,
             attackTimer: 0,
@@ -1107,23 +1125,40 @@ class GameEngine {
         });
     }
 
-    hatchEgg(playerState, egg) {
-        const targetTier = egg.hatchTier;
+    async hatchEgg(playerState, egg) {
+        let targetTier = egg.hatchTier;
         const rand = Math.random() * 100;
+
+        // Check for Egg Booster
+        let hasEggBoost = false;
+        if (playerState.username && playerState.username !== 'Guest') {
+            const user = await User.findOne({ username: playerState.username });
+            if (user && user.inventory.boosters.eggBoost > 0) {
+                hasEggBoost = true;
+                // Decrement booster match count only once per game (handled in start or end)
+            }
+        }
+
         let finalTier = targetTier;
+        if (hasEggBoost) {
+            // Lucky Egg + Booster Distribution (Skewed higher)
+            if (rand < 20) finalTier = targetTier;
+            else if (rand < 60) finalTier = targetTier + 1;
+            else if (rand < 85) finalTier = targetTier + 2;
+            else if (rand < 95) finalTier = targetTier + 3;
+            else finalTier = targetTier - 1;
+        } else {
+            // Normal Lucky Egg Distribution
+            if (rand < 30) finalTier = targetTier;
+            else if (rand < 70) finalTier = targetTier + 1;
+            else if (rand < 85) finalTier = targetTier + 2;
+            else if (rand < 90) finalTier = targetTier + 3;
+            else if (rand < 97) finalTier = targetTier - 1;
+            else finalTier = targetTier - 2;
+        }
 
-        // "Lucky" Egg Distribution
-        if (rand < 30) finalTier = targetTier;
-        else if (rand < 70) finalTier = targetTier + 1; // +1 Tier (40% chance)
-        else if (rand < 85) finalTier = targetTier + 2; // +2 Tier (15% chance)
-        else if (rand < 90) finalTier = targetTier + 3; // +3 Tier (5% chance)
-        else if (rand < 97) finalTier = targetTier - 1; // -1 Tier (7% chance)
-        else finalTier = targetTier - 2; // -2 Tier (3% chance)
-
-        // Clamp tier 1-7
         finalTier = Math.max(1, Math.min(7, finalTier));
 
-        // Find all non-spell units with this cost
         const candidates = Object.keys(UNITS).filter(key => {
             const u = UNITS[key];
             return u.cost === finalTier && u.type !== 'spell' && u.type !== 'egg' && u.id !== 'spear_goblin';
@@ -1131,7 +1166,6 @@ class GameEngine {
 
         if (candidates.length > 0) {
             const selectedKey = candidates[Math.floor(Math.random() * candidates.length)];
-            const selectedId = selectedKey.toLowerCase();
             const unitStats = UNITS[selectedKey];
             const count = unitStats.count || 1;
 
@@ -1140,9 +1174,7 @@ class GameEngine {
                 const offsetY = count > 1 ? (Math.random() - 0.5) * 1.5 : 0;
                 this.spawnUnit(playerState, unitStats, egg.x + offsetX, egg.y + offsetY);
             }
-            console.log(`Egg hatched into ${count}x ${selectedId} (Tier ${finalTier}) - Lucky!`);
         } else {
-            // Fallback to Skeletons (now spawns the whole squad)
             const unitStats = UNITS.SKELETONS;
             const count = unitStats.count || 4;
             for (let i = 0; i < count; i++) {
