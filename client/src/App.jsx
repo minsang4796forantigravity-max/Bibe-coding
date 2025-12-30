@@ -5,6 +5,7 @@ import Login from './components/Login';
 import Signup from './components/Signup';
 import Profile from './components/Profile';
 import Leaderboard from './components/Leaderboard';
+import { Lobby } from './components/Lobby';
 import { socket } from './socket';
 import './App.css';
 
@@ -197,79 +198,17 @@ function App() {
       </div>
 
       {status === 'lobby' && (
-        <div className="lobby">
-          <h1>Clash Royale Web</h1>
-          <div className="join-form">
-            <input
-              type="text"
-              placeholder="방 번호 입력 (예: 123)"
-              value={roomId}
-              onChange={e => setRoomId(e.target.value)}
-              style={{ padding: '10px', fontSize: '16px', width: '250px' }}
-            />
-            <button
-              onClick={handleJoinClick}
-              disabled={!roomId.trim()}
-              style={{
-                padding: '10px',
-                fontSize: '16px',
-                cursor: roomId.trim() ? 'pointer' : 'not-allowed',
-                backgroundColor: roomId.trim() ? '#3498db' : '#95a5a6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                fontWeight: 'bold',
-              }}
-            >
-              멀티플레이 참가
-            </button>
-          </div>
-
-          <div className="single-player-section" style={{ marginTop: '30px', borderTop: '1px solid #eee', paddingTop: '20px', width: '100%', maxWidth: '400px' }}>
-            <h2 style={{ color: '#333', marginBottom: '15px' }}>싱글 플레이 (AI 대전)</h2>
-
-            <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-              <label style={{ fontWeight: 'bold', color: '#555' }}>난이도:</label>
-              <select
-                value={difficulty}
-                onChange={(e) => setDifficulty(e.target.value)}
-                style={{
-                  padding: '8px',
-                  borderRadius: '5px',
-                  border: '1px solid #ccc',
-                  fontSize: '14px'
-                }}
-              >
-                <option value="easy">쉬움 (Easy)</option>
-                <option value="medium">보통 (Medium)</option>
-                <option value="hard">어려움 (Hard)</option>
-                <option value="impossible">불가능 (Impossible)</option>
-              </select>
-            </div>
-
-            <button
-              onClick={handleSinglePlayerClick}
-              style={{
-                backgroundColor: '#2ecc71',
-                color: 'white',
-                padding: '12px 24px',
-                fontSize: '16px',
-                border: 'none',
-                borderRadius: '5px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                width: '100%',
-                boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
-              }}
-            >
-              게임 시작
-            </button>
-          </div>
-
-          <div style={{ marginTop: '30px', width: '100%', maxWidth: '400px' }}>
-            <Leaderboard currentUsername={user ? user.username : ''} limit={5} compact={true} />
-          </div>
-        </div>
+        <Lobby
+          user={user}
+          roomId={roomId}
+          setRoomId={setRoomId}
+          difficulty={difficulty}
+          setDifficulty={setDifficulty}
+          onJoinClick={handleJoinClick}
+          onSinglePlayerClick={handleSinglePlayerClick}
+          onProfileClick={() => setStatus('profile')}
+          onLogout={handleLogout}
+        />
       )}
     </div>
   );

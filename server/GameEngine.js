@@ -180,8 +180,8 @@ class GameEngine {
                     this.state.isOvertime = true;
                     this.state.matchTime = GAME_CONFIG.OVERTIME_DURATION || 30;
                 } else {
-                    this.state.gameOver = true;
-                    this.state.winner = p1Towers > p2Towers ? 'p1' : 'p2';
+                    const winnerId = p1Towers > p2Towers ? 'p1' : 'p2';
+                    this.endGame(winnerId);
                 }
             } else {
                 this.handleSuddenDeath();
@@ -1055,8 +1055,8 @@ class GameEngine {
         lowest.hp = 0;
 
         const loserId = p1Towers.includes(lowest) ? 'p1' : 'p2';
-        this.state.gameOver = true;
-        this.state.winner = loserId === 'p1' ? 'p2' : 'p1';
+        const winnerId = loserId === 'p1' ? 'p2' : 'p1';
+        this.endGame(winnerId);
     }
 
     spawnUnit(playerState, unitId, x, y) {
