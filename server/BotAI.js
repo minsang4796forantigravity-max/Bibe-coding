@@ -6,7 +6,7 @@ const DECKS = {
         evolutions: ['wizard', 'valkyrie']
     },
     HOG_CYCLE: {
-        cards: ['hog_rider', 'cannon', 'skeletons', 'goblin', 'fireball', 'log'],
+        cards: ['hog_rider', 'air_defense', 'skeletons', 'goblin', 'fireball', 'log'],
         evolutions: ['knight', 'archer']
     },
     AIR_ASSAULT: {
@@ -119,8 +119,11 @@ class BotAI {
         }
 
         // Building Defense
-        if (threatStats.target === 'building' || threatStats.hp > 1000) {
-            const buildingCard = this.pickCard(myState.hand, ['cannon', 'inferno_tower', 'goblin_hut', 'bomb_tower']);
+        if (threatStats.target === 'building' || threatStats.hp > 1000 || threatStats.type === 'flying') {
+            const buildingCards = ['cannon', 'air_defense', 'goblin_hut'];
+            const preferredBuilding = threatStats.type === 'flying' ? 'air_defense' : 'cannon';
+            const buildingCard = this.pickCard(myState.hand, [preferredBuilding, ...buildingCards]);
+
             if (buildingCard) {
                 // Place in center kill zone
                 const deployX = centerX;
@@ -220,9 +223,9 @@ class BotAI {
     findCounterCard(hand, type) {
         const counters = {
             'splash': ['valkyrie', 'wizard', 'witch', 'baby_dragon', 'bomber', 'log', 'fireball', 'tornado'],
-            'anti_air': ['wizard', 'witch', 'baby_dragon', 'archer', 'musketeer', 'minions'],
-            'tank_killer': ['skeletons', 'barbarians', 'minion_horde', 'inferno_tower', 'cannon', 'pekka'],
-            'dps': ['knight', 'valkyrie', 'baby_dragon', 'skeletons', 'goblin', 'archer', 'mini_pekka']
+            'anti_air': ['air_defense', 'wizard', 'witch', 'baby_dragon', 'archer', 'musketeer', 'sniper'],
+            'tank_killer': ['skeletons', 'barbarians', 'barbarian_hut', 'cannon', 'pekka'],
+            'dps': ['knight', 'valkyrie', 'baby_dragon', 'skeletons', 'goblin', 'archer', 'sniper']
         };
 
         const preferred = counters[type] || [];

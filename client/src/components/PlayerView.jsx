@@ -3,6 +3,30 @@ import { GAME_CONFIG, UNITS } from '../game/constants';
 import knightImg from '../assets/knight_card.png';
 import archerImg from '../assets/archer_card.png';
 import giantImg from '../assets/giant_card.png';
+import wizardImg from '../assets/wizard_card.png';
+import skeletonImg from '../assets/skeleton_card.png';
+import cannonImg from '../assets/cannon_card.png';
+import bomberImg from '../assets/bomber_card.png';
+import kamikazeImg from '../assets/kamikaze_card.png';
+import fireballImg from '../assets/fireball_card.png';
+import manaCollectorImg from '../assets/mana_collector_card.png';
+import sniperImg from '../assets/sniper_card.png';
+import goblinHutImg from '../assets/goblin_hut_card.png';
+import goblinImg from '../assets/goblin_card.png';
+import valkyrieImg from '../assets/valkyrie_card.png';
+import hogRiderImg from '../assets/hog_rider_card.png';
+import witchImg from '../assets/witch_card.png';
+import babyDragonImg from '../assets/baby_dragon_card.png';
+import barbariansImg from '../assets/barbarians_card.png';
+import tornadoImg from '../assets/tornado_card.png';
+import rageImg from '../assets/rage_card.png';
+import healImg from '../assets/heal_card.png';
+import balloonImg from '../assets/balloon_card.png';
+import logImg from '../assets/log_card.png';
+import freezeImg from '../assets/freeze_card.png';
+import electroWizardImg from '../assets/electro_wizard_card.png';
+import goblinBarrelImg from '../assets/goblin_barrel_card.png';
+import airDefenseImg from '../assets/air_defense_card.png';
 import towerImg from '../assets/tower_asset.png';
 import '../styles/evolution-effects.css';
 
@@ -10,6 +34,30 @@ const CARD_IMAGES = {
     knight: knightImg,
     archer: archerImg,
     giant: giantImg,
+    wizard: wizardImg,
+    skeletons: skeletonImg,
+    cannon: cannonImg,
+    bomber: bomberImg,
+    kamikaze: kamikazeImg,
+    fireball: fireballImg,
+    mana_collector: manaCollectorImg,
+    sniper: sniperImg,
+    goblin_hut: goblinHutImg,
+    goblin: goblinImg,
+    valkyrie: valkyrieImg,
+    hog_rider: hogRiderImg,
+    witch: witchImg,
+    baby_dragon: babyDragonImg,
+    barbarians: barbariansImg,
+    tornado: tornadoImg,
+    rage: rageImg,
+    heal: healImg,
+    balloon: balloonImg,
+    log: logImg,
+    freeze: freezeImg,
+    electro_wizard: electroWizardImg,
+    goblin_barrel: goblinBarrelImg,
+    air_defense: airDefenseImg,
 };
 
 export function PlayerView({ playerId, gameState, onDeploy, isRotated }) {

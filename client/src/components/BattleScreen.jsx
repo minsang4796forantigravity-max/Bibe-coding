@@ -27,6 +27,7 @@ import logImg from '../assets/log_card.png';
 import freezeImg from '../assets/freeze_card.png';
 import electroWizardImg from '../assets/electro_wizard_card.png';
 import goblinBarrelImg from '../assets/goblin_barrel_card.png';
+import airDefenseImg from '../assets/air_defense_card.png';
 
 const CARD_IMAGES = {
     knight: knightImg,
@@ -55,6 +56,7 @@ const CARD_IMAGES = {
     freeze: freezeImg,
     electro_wizard: electroWizardImg,
     goblin_barrel: goblinBarrelImg,
+    air_defense: airDefenseImg,
 };
 
 export function BattleScreen({ gameState, playerId, socket }) {
@@ -314,8 +316,27 @@ export function BattleScreen({ gameState, playerId, socket }) {
                                     }
                                 }
                             }
-
                         });
+                    }
+
+                    // New Status Effects (Burn/Curse)
+                    if (unit.statusEffects) {
+                        unit.statusEffects.forEach(effect => {
+                            if (effect.type === 'burn') {
+                                spellEffectStyle.filter = (spellEffectStyle.filter || '') + ' brightness(1.2) sepia(0.5) hue-rotate(-20deg) saturate(3)';
+                                spellEffectStyle.boxShadow = '0 0 10px #e67e22';
+                            } else if (effect.type === 'curse') {
+                                spellEffectStyle.filter = (spellEffectStyle.filter || '') + ' grayscale(0.5) sepia(0.5) hue-rotate(220deg)';
+                                spellEffectStyle.boxShadow = '0 0 10px #9b59b6';
+                            }
+                        });
+                    }
+
+                    // Charge Effect
+                    if (unit.isCharging) {
+                        spellEffectStyle.transform = 'translate(-50%, 50%) scale(1.15)';
+                        spellEffectStyle.boxShadow = '0 0 25px #f1c40f, 0 0 10px #e67e22';
+                        spellEffectStyle.borderColor = '#f1c40f';
                     }
 
                     // Status Effects (Frozen/Stunned)
@@ -382,6 +403,27 @@ export function BattleScreen({ gameState, playerId, socket }) {
                                     borderRadius: '2px',
                                 }} />
                             </div>
+
+                            {/* Shield Bar */}
+                            {unit.shield > 0 && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: -14,
+                                    left: 0,
+                                    width: '100%',
+                                    height: '4px',
+                                    backgroundColor: 'rgba(0,0,0,0.5)',
+                                    borderRadius: '2px',
+                                    border: '1px solid #3498db'
+                                }}>
+                                    <div style={{
+                                        width: `${(unit.shield / unit.maxShield) * 100}%`,
+                                        height: '100%',
+                                        backgroundColor: '#3498db',
+                                        borderRadius: '2px',
+                                    }} />
+                                </div>
+                            )}
                         </div>
                     );
                 })}

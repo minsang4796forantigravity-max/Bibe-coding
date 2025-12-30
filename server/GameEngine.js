@@ -358,7 +358,8 @@ class GameEngine {
                         u.x = Math.max(0, Math.min(GAME_CONFIG.FIELD_WIDTH, u.x));
                         u.y = Math.max(0, Math.min(GAME_CONFIG.FIELD_HEIGHT, u.y));
 
-                        u.hp -= spell.damagePerSecond * dt;
+                        // Use dealDamage to handle shield
+                        this.dealDamage(spell.damagePerSecond * dt, u, enemyId);
                     }
                 });
             } else if (spell.id === 'heal') {
@@ -394,8 +395,26 @@ class GameEngine {
 
             if (isFrozen || isStunned) return;
 
+            // Process Status Effects (Burn/Curse)
+            if (unit.statusEffects) {
+                unit.statusEffects.forEach(effect => {
+                    effect.duration -= dt;
+                    if (effect.type === 'burn') {
+                        this.dealDamage(effect.dps * dt, unit, playerState.id);
+                    }
+                });
+                unit.statusEffects = unit.statusEffects.filter(e => e.duration > 0);
+            }
+
             let currentSpeed = unit.speed;
             let currentAttackSpeed = unit.attackSpeed;
+
+            // Apply Curse Slow
+            const curse = unit.statusEffects?.find(e => e.type === 'curse');
+            if (curse) {
+                currentSpeed *= (1 - curse.slow);
+                currentAttackSpeed *= (1 + curse.slow);
+            }
 
             const rageSpell = this.state.activeSpells.find(s =>
                 s.id === 'rage' &&
@@ -412,6 +431,7 @@ class GameEngine {
                 if (unit.lifetime !== undefined) {
                     unit.lifetime -= dt;
                     const decayAmount = (unit.maxHp / UNITS[unit.cardId.toUpperCase()].lifetime) * dt;
+                    // Decay doesn't affect shield, only HP
                     unit.hp -= decayAmount;
                     if (unit.lifetime <= 0) unit.hp = 0;
                 }
@@ -437,6 +457,19 @@ class GameEngine {
                     }
                 }
                 return;
+            }
+
+            // Charge Logic
+            if (unit.canCharge) {
+                if (!unit.target) {
+                    unit.chargeTimer = (unit.chargeTimer || 0) + dt;
+                    if (unit.chargeTimer >= 2.0) {
+                        unit.isCharging = true;
+                        currentSpeed *= 1.5;
+                    }
+                } else {
+                    // Stop charging when target acquired (handled in performAttack)
+                }
             }
 
             if (!unit.target) {
@@ -473,7 +506,7 @@ class GameEngine {
                     const distY = Math.abs(u.y - p.y);
 
                     if (distX <= p.width / 2 && distY <= p.width / 2) {
-                        u.hp -= p.damage;
+                        this.dealDamage(p.damage, u, enemyId);
                         if (!u.hitByLogIds) u.hitByLogIds = new Set();
                         u.hitByLogIds.add(p.logId);
                         u.y += p.direction * p.knockback;
@@ -565,14 +598,17 @@ class GameEngine {
             let target = null;
             let minDist = Infinity;
 
-            const potentialTargets = enemies.filter(e => {
-                if (e.type === 'flying' && u.type === 'ground' && u.range < 2) return false;
-                if (u.favoriteTarget && u.favoriteTarget !== e.type) return false;
-                return true;
-            });
+            const targetsToCheck = enemies.filter(e => {
+                // 1. Targeting system check (Air/Ground)
+                if (u.targets === 'ground' && e.type === 'flying') return false;
+                if (u.targets === 'air' && e.type !== 'flying') return false;
 
-            const targetsToCheck = u.favoriteTarget ? potentialTargets : enemies.filter(e => {
-                if (e.type === 'flying' && u.type === 'ground' && u.range < 2) return false;
+                // 2. Favorite target check
+                if (u.favoriteTarget && u.favoriteTarget !== e.type) return false;
+
+                // 3. Range check (legacy fallback)
+                if (e.type === 'flying' && u.type === 'ground' && u.range < 2 && u.targets !== 'both') return false;
+
                 return true;
             });
 
@@ -586,9 +622,12 @@ class GameEngine {
 
             if (!target && u.type !== 'building') {
                 if (!u.favoriteTarget || u.favoriteTarget === 'building') {
-                    const distToTowerCenter = Math.hypot(u.x - 5, u.y - enemyTowerY);
-                    if (distToTowerCenter <= u.range) {
-                        target = { type: 'tower', y: enemyTowerY, x: 5, id: enemyTowerId };
+                    // Towers are buildings
+                    if (u.targets === 'ground' || u.targets === 'both') {
+                        const distToTowerCenter = Math.hypot(u.x - 5, u.y - enemyTowerY);
+                        if (distToTowerCenter <= u.range) {
+                            target = { type: 'tower', y: enemyTowerY, x: 5, id: enemyTowerId };
+                        }
                     }
                 }
             }
@@ -643,6 +682,15 @@ class GameEngine {
     }
 
     performAttack(attacker, target, targetPlayerId, enemyUnits) {
+        let finalDamage = attacker.damage;
+
+        // Charge damage multiplier
+        if (attacker.isCharging) {
+            finalDamage *= 2;
+            attacker.isCharging = false;
+            attacker.chargeTimer = 0;
+        }
+
         if (attacker.projectile) {
             this.state.projectiles.push({
                 x: attacker.x,
@@ -650,34 +698,62 @@ class GameEngine {
                 targetId: target.id || (target.type === 'tower' ? (target.y === 0 ? 'tower_p1' : 'tower_p2') : null),
                 targetX: target.x,
                 targetY: target.y,
-                damage: attacker.damage,
+                damage: finalDamage,
                 speed: attacker.projectileSpeed,
                 type: attacker.projectile,
                 targetPlayerId: targetPlayerId,
                 ownerId: attacker.ownerId,
                 stunDuration: attacker.stunDuration || 0,
+                statusEffects: this.getAttackerStatusEffects(attacker),
             });
         } else if (attacker.selfDestruct) {
             attacker.hp = 0;
-            this.dealSplashDamage(attacker.x, attacker.y, attacker.splash, attacker.damage, targetPlayerId, enemyUnits);
+            this.dealSplashDamage(attacker.x, attacker.y, attacker.splash, finalDamage, targetPlayerId, enemyUnits);
         } else if (attacker.splash) {
-            this.dealSplashDamage(target.x, target.y, attacker.splash, attacker.damage, targetPlayerId, enemyUnits);
+            this.dealSplashDamage(target.x, target.y, attacker.splash, finalDamage, targetPlayerId, enemyUnits, true, this.getAttackerStatusEffects(attacker));
         } else {
-            this.dealDamage(attacker.damage, target, targetPlayerId);
+            this.dealDamage(finalDamage, target, targetPlayerId);
+            this.applyStatusEffects(target, this.getAttackerStatusEffects(attacker));
         }
     }
 
-    dealSplashDamage(x, y, radius, damage, targetPlayerId, enemyUnits, canHitTower = true) {
+    getAttackerStatusEffects(attacker) {
+        const effects = [];
+        if (attacker.burnDps) {
+            effects.push({ type: 'burn', dps: attacker.burnDps, duration: attacker.burnDuration });
+        }
+        if (attacker.curseSlow) {
+            effects.push({ type: 'curse', slow: attacker.curseSlow, duration: attacker.curseDuration });
+        }
+        return effects;
+    }
+
+    applyStatusEffects(target, effects) {
+        if (!effects || effects.length === 0 || target.type === 'tower') return;
+        if (!target.statusEffects) target.statusEffects = [];
+
+        effects.forEach(newEff => {
+            const existing = target.statusEffects.find(e => e.type === newEff.type);
+            if (existing) {
+                existing.duration = Math.max(existing.duration, newEff.duration);
+            } else {
+                target.statusEffects.push({ ...newEff });
+            }
+        });
+    }
+
+    dealSplashDamage(x, y, radius, damage, targetPlayerId, enemyUnits, canHitTower = true, statusEffects = null) {
         enemyUnits.forEach(u => {
             if (Math.hypot(u.x - x, u.y - y) <= radius) {
-                u.hp -= damage;
+                this.dealDamage(damage, u, targetPlayerId);
+                this.applyStatusEffects(u, statusEffects);
             }
         });
 
         if (canHitTower) {
             const towerY = targetPlayerId === 'p1' ? 0 : GAME_CONFIG.FIELD_HEIGHT;
             if (Math.hypot(5 - x, towerY - y) <= radius) {
-                this.state[targetPlayerId].hp -= damage;
+                this.dealDamage(damage, { type: 'tower', id: `tower_${targetPlayerId}` }, targetPlayerId);
             }
         }
     }
@@ -721,7 +797,17 @@ class GameEngine {
         if (target.type === 'tower') {
             this.state[targetPlayerId].hp -= damage;
         } else {
-            target.hp -= damage;
+            if (target.shield && target.shield > 0) {
+                if (target.shield >= damage) {
+                    target.shield -= damage;
+                } else {
+                    const remaining = damage - target.shield;
+                    target.shield = 0;
+                    target.hp -= remaining;
+                }
+            } else {
+                target.hp -= damage;
+            }
         }
     }
 
@@ -812,9 +898,12 @@ class GameEngine {
                     y: Math.max(0, Math.min(GAME_CONFIG.FIELD_HEIGHT, y + offsetY)),
                     hp: unitStats.hp,
                     maxHp: unitStats.hp,
+                    shield: unitStats.shield || 0,
+                    maxShield: unitStats.shield || 0,
                     attackTimer: 0,
                     ownerId: playerId,
                     isEvolved: isEvolved,
+                    statusEffects: [],
                 });
             }
         }
@@ -893,8 +982,11 @@ class GameEngine {
             y: y,
             hp: unitStats.hp,
             maxHp: unitStats.hp,
+            shield: unitStats.shield || 0,
+            maxShield: unitStats.shield || 0,
             attackTimer: 0,
             ownerId: playerState.id,
+            statusEffects: [],
         });
     }
 }

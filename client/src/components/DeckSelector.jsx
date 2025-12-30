@@ -30,13 +30,14 @@ import logImg from '../assets/log_card.png';
 import freezeImg from '../assets/freeze_card.png';
 import electroWizardImg from '../assets/electro_wizard_card.png';
 import goblinBarrelImg from '../assets/goblin_barrel_card.png';
+import airDefenseImg from '../assets/air_defense_card.png';
 
 const ALL_CARDS = [
     'skeletons', 'goblin', 'knight', 'archer', 'bomber', 'kamikaze',
     'cannon', 'sniper', 'fireball', 'giant', 'wizard', 'goblin_hut', 'mana_collector',
     'valkyrie', 'hog_rider', 'witch', 'baby_dragon', 'barbarians',
     'tornado', 'rage', 'heal', 'balloon',
-    'log', 'freeze', 'electro_wizard', 'goblin_barrel'
+    'log', 'freeze', 'electro_wizard', 'goblin_barrel', 'air_defense'
 ];
 
 const CARD_IMAGES = {
@@ -66,6 +67,7 @@ const CARD_IMAGES = {
     freeze: freezeImg,
     electro_wizard: electroWizardImg,
     goblin_barrel: goblinBarrelImg,
+    air_defense: airDefenseImg,
 };
 
 export function DeckSelector({ onDeckSelected, username }) {
