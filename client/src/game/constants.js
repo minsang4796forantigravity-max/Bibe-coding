@@ -19,7 +19,7 @@ export const UNITS = {
     id: 'goblin',
     name: 'Goblins',
     cost: 4,
-    hp: 160,
+    hp: 140,
     damage: 100,
     speed: 3.0,
     range: 1.0,
@@ -151,7 +151,7 @@ export const UNITS = {
   GOBLIN_BARREL: {
     id: 'goblin_barrel',
     name: 'Goblin Barrel',
-    cost: 3,
+    cost: 4,
     type: 'spell',
     spawnUnit: 'goblin',
     spawnCount: 3,
@@ -454,8 +454,8 @@ export const UNITS = {
   KING_TOWER: {
     id: 'king_tower',
     name: 'King Tower',
-    hp: 4000,
-    damage: 150,
+    hp: 5500,
+    damage: 220,
     range: 6.5,
     attackSpeed: 1.5,
     type: 'building',
@@ -464,7 +464,7 @@ export const UNITS = {
   SIDE_TOWER: {
     id: 'side_tower',
     name: 'Princess Tower',
-    hp: 1800,
+    hp: 3200,
     damage: 65,
     range: 6.5,
     attackSpeed: 1.8,
@@ -627,5 +627,7 @@ export const GAME_CONFIG = {
   MAX_MANA: 20,
   FIELD_WIDTH: 10,
   FIELD_HEIGHT: 18,
+  MATCH_DURATION: 90,
+  DOUBLE_ELIXIR_TIME: 30,
   FPS: 30,
 };

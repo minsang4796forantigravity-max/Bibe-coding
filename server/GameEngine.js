@@ -31,7 +31,7 @@ class GameEngine {
             },
             projectiles: [],
             activeSpells: [],
-            matchTime: 180, // 3 Minutes
+            matchTime: GAME_CONFIG.MATCH_DURATION || 90,
             isOvertime: false,
             gameOver: false,
             winner: null,
@@ -178,7 +178,7 @@ class GameEngine {
 
                 if (p1Towers === p2Towers) {
                     this.state.isOvertime = true;
-                    this.state.matchTime = 120;
+                    this.state.matchTime = GAME_CONFIG.OVERTIME_DURATION || 30;
                 } else {
                     this.state.gameOver = true;
                     this.state.winner = p1Towers > p2Towers ? 'p1' : 'p2';
@@ -204,7 +204,8 @@ class GameEngine {
             default: botMultiplier = 1.0;
         }
 
-        const otMultiplier = this.state.isOvertime ? 2.0 : 1.0;
+        const isDoubleElixir = this.state.isOvertime || this.state.matchTime <= (GAME_CONFIG.DOUBLE_ELIXIR_TIME || 30);
+        const otMultiplier = isDoubleElixir ? 2.0 : 1.0;
         const p1Regen = (this.botPlayerId === 'p1' ? botMultiplier : 1.0) * GAME_CONFIG.MANA_REGEN_RATE * otMultiplier * dt;
         const p2Regen = (this.botPlayerId === 'p2' ? botMultiplier : 1.0) * GAME_CONFIG.MANA_REGEN_RATE * otMultiplier * dt;
 
