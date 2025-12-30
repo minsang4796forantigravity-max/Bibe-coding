@@ -179,77 +179,46 @@ function App() {
   if (status === 'waiting') {
     return (
       <div className="lobby">
-        <h1>Waiting for opponent...</h1>
-      </div>
-    );
-  }
+        return (
+        <div className="App" style={{ width: '100vw', height: '100vh', overflow: 'hidden' }}>
+          {status === 'lobby' && (
+            <Lobby
+              user={user}
+              roomId={roomId}
+              setRoomId={setRoomId}
+              difficulty={difficulty}
+              setDifficulty={setDifficulty}
+              onJoinClick={handleJoinClick}
+              onSinglePlayerClick={handleSinglePlayerClick}
+              onProfileClick={() => setStatus('profile')}
+              onLogout={handleLogout}
+            />
+          )}
 
-  return (
-    <div className="App">
-      {status === 'lobby' && user && (
-        <div style={{
-          position: 'fixed',
-          top: '70px',
-          right: '20px',
-          zIndex: 1000,
-          display: 'flex',
-          gap: '10px'
-        }}>
-          <button
-            onClick={() => setStatus('profile')}
-            style={{
-              background: 'rgba(255,255,255,0.1)',
-              border: 'none',
-              color: 'white',
-              padding: '5px 12px',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontSize: '0.75rem'
-            }}
-          >My Records</button>
-          <button
-            onClick={handleLogout}
-            style={{
-              background: 'rgba(231, 76, 60, 0.4)',
-              border: 'none',
-              color: 'white',
-              padding: '5px 12px',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontSize: '0.75rem'
-            }}
-          >Logout</button>
-        </div>
-      )}
-
-      {status !== 'lobby' && (
-        <div className="status-bar">
-          Status: {isConnected ? 'Connected' : 'Disconnected'}
-          {user && (
-            <div className="user-info">
-              <span>환영합니다, {user.username}님!</span>
-              <button onClick={() => setStatus('profile')}>내 전적</button>
-              <button onClick={handleLogout}>로그아웃</button>
+          {status === 'waiting' && (
+            <div style={{
+              height: '100vh',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'linear-gradient(135deg, #1a1c2c 0%, #4a192c 100%)',
+              color: 'white'
+            }}>
+              <div className="spinner" style={{ marginBottom: '20px' }}></div>
+              <h1>Searching for opponent...</h1>
+              <button onClick={() => setStatus('lobby')} style={{
+                marginTop: '20px',
+                padding: '10px 20px',
+                background: 'rgba(255,255,255,0.1)',
+                border: 'none',
+                color: 'white',
+                borderRadius: '5px'
+              }}>Cancel</button>
             </div>
           )}
         </div>
-      )}
-
-      {status === 'lobby' && (
-        <Lobby
-          user={user}
-          roomId={roomId}
-          setRoomId={setRoomId}
-          difficulty={difficulty}
-          setDifficulty={setDifficulty}
-          onJoinClick={handleJoinClick}
-          onSinglePlayerClick={handleSinglePlayerClick}
-          onProfileClick={() => setStatus('profile')}
-          onLogout={handleLogout}
-        />
-      )}
-    </div>
-  );
+        );
 }
 
-export default App;
+        export default App;

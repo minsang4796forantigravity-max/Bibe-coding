@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Leaderboard from './Leaderboard';
+import { API_URL } from '../socket';
 
 export function Lobby({
     user,
@@ -18,14 +19,15 @@ export function Lobby({
     const [adminTitle, setAdminTitle] = useState('');
     const [adminContent, setAdminContent] = useState('');
     const [isAdminMode, setIsAdminMode] = useState(false);
+    const [showAttendance, setShowAttendance] = useState(false);
+    const [showProfileMenu, setShowProfileMenu] = useState(false);
 
     const isAdmin = user?.username === 'Grand Warden';
 
     useEffect(() => {
         fetchNotices();
-        // Update local coins from user prop
         if (user?.username) {
-            fetch(`/api/auth/profile/${user.username}`)
+            fetch(`${API_URL}/api/auth/profile/${user.username}`)
                 .then(res => res.json())
                 .then(data => setCoins(data.coins))
                 .catch(err => console.error("Error fetching coins:", err));
@@ -34,7 +36,7 @@ export function Lobby({
 
     const fetchNotices = async () => {
         try {
-            const res = await fetch('/api/game/notices');
+            const res = await fetch(`${API_URL}/api/game/notices`);
             const data = await res.json();
             setNotices(data);
         } catch (err) {
@@ -48,7 +50,7 @@ export function Lobby({
             return;
         }
         try {
-            const res = await fetch('/api/game/daily-reward', {
+            const res = await fetch(`${API_URL}/api/game/daily-reward`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: user.username })
@@ -57,19 +59,24 @@ export function Lobby({
             if (res.ok) {
                 alert(data.message);
                 setCoins(data.coins);
+                setShowAttendance(false); // Close modal on success
             } else {
                 alert(data.message || "보상 획득에 실패했습니다.");
             }
         } catch (err) {
             console.error("Daily reward error:", err);
-            alert("서버와 통신 중 오류가 발생했습니다.");
+            alert("서버 통신 오류: " + (err.message || "Unknown error"));
         }
     };
 
     const postNotice = async () => {
-        if (!adminTitle || !adminContent) return;
+        console.log("Post Notice Clicked:", { adminTitle, adminContent });
+        if (!adminTitle || !adminContent) {
+            alert("제목과 내용을 모두 입력해 주세요.");
+            return;
+        }
         try {
-            const res = await fetch('/api/game/notices', {
+            const res = await fetch(`${API_URL}/api/game/notices`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -83,10 +90,15 @@ export function Lobby({
                 alert("공지사항 등록 완료!");
                 setAdminTitle('');
                 setAdminContent('');
+                setIsAdminMode(false);
                 fetchNotices();
+            } else {
+                const errData = await res.json();
+                alert("등록 실패: " + errData.message);
             }
         } catch (err) {
-            alert("Error posting notice");
+            console.error("Error posting notice:", err);
+            alert("서버 통신 오류");
         }
     };
 
@@ -167,70 +179,130 @@ export function Lobby({
                     </div>
                 </div>
 
-                <div className="header-controls" style={{ display: 'flex', gap: '10px' }}>
+                <div className="header-controls" style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
                     <button
-                        onClick={claimDailyReward}
+                        onClick={() => setShowAttendance(true)}
                         style={{
-                            backgroundColor: '#27ae60',
-                            border: 'none',
-                            color: 'white',
-                            padding: '8px 16px',
-                            borderRadius: '8px',
+                            backgroundColor: 'transparent',
+                            border: '1px solid rgba(255,184,0,0.5)',
+                            color: '#ffb800',
+                            padding: '8px 14px',
+                            borderRadius: '20px',
                             cursor: 'pointer',
                             fontSize: '0.85rem',
                             fontWeight: 'bold',
-                            transition: 'transform 0.2s'
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'all 0.3s ease',
+                            background: 'rgba(255,184,0,0.05)'
                         }}
-                        onMouseDown={e => e.target.style.transform = 'scale(0.9)'}
-                        onMouseUp={e => e.target.style.transform = 'scale(1)'}
-                    >📅 출석체크</button>
+                    >
+                        <span style={{ fontSize: '1.1rem' }}>📅</span> 출석보상
+                    </button>
 
                     {isAdmin && (
                         <button
-                            onClick={() => setIsAdminMode(!isAdminMode)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsAdminMode(!isAdminMode);
+                            }}
                             style={{
                                 backgroundColor: isAdminMode ? '#e74c3c' : '#8e44ad',
                                 border: 'none',
                                 color: 'white',
-                                padding: '8px 16px',
-                                borderRadius: '8px',
+                                padding: '8px 14px',
+                                borderRadius: '20px',
                                 cursor: 'pointer',
                                 fontSize: '0.85rem',
                                 fontWeight: 'bold'
                             }}
-                        >{isAdminMode ? 'Close Admin' : 'Admin Panel'}</button>
+                        >{isAdminMode ? '✕ 닫기' : '👑 관리자'}</button>
                     )}
+
+                    <div style={{ position: 'relative' }}>
+                        <div
+                            onClick={() => setShowProfileMenu(!showProfileMenu)}
+                            style={{
+                                cursor: 'pointer',
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '50%',
+                                background: 'rgba(255,255,255,0.1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '1.2rem',
+                                border: '1px solid rgba(255,255,255,0.2)'
+                            }}
+                        >
+                            ⚙️
+                        </div>
+                        {showProfileMenu && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '45px',
+                                right: 0,
+                                width: '150px',
+                                background: '#222',
+                                borderRadius: '12px',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                                overflow: 'hidden',
+                                zIndex: 200
+                            }}>
+                                <button onClick={onProfileClick} style={{ width: '100%', padding: '12px', background: 'transparent', border: 'none', color: 'white', textAlign: 'left', cursor: 'pointer', fontSize: '0.9rem' }}>📊 내 전적</button>
+                                <button onClick={onLogout} style={{ width: '100%', padding: '12px', background: 'rgba(231,76,60,0.2)', border: 'none', color: '#e74c3c', textAlign: 'left', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold' }}>🚪 로그아웃</button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </header>
 
             {/* Admin Panel */}
             {isAdminMode && (
-                <section style={{
+                <div style={{
+                    position: 'fixed',
+                    top: '80px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
                     width: '90%',
-                    maxWidth: '800px',
-                    marginTop: '20px',
-                    background: 'rgba(142, 68, 173, 0.2)',
-                    padding: '20px',
-                    borderRadius: '20px',
-                    border: '1px solid #8e44ad',
-                    zIndex: 10
+                    maxWidth: '600px',
+                    background: 'rgba(30, 30, 45, 0.95)',
+                    backdropFilter: 'blur(20px)',
+                    padding: '25px',
+                    borderRadius: '24px',
+                    border: '2px solid #8e44ad',
+                    zIndex: 1000,
+                    boxShadow: '0 20px 50px rgba(0,0,0,0.8)'
                 }}>
-                    <h3>👑 Admin: Post Announcement</h3>
+                    <h3 style={{ marginTop: 0, color: '#8e44ad', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span>👑</span> 관리자 공지 등록
+                    </h3>
                     <input
                         type="text"
-                        placeholder="제목"
+                        placeholder="공지 제목을 입력하세요"
                         value={adminTitle}
                         onChange={e => setAdminTitle(e.target.value)}
-                        style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '5px', border: 'none', color: '#111' }}
+                        style={{ width: '100%', padding: '12px', marginBottom: '15px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)', color: 'white', boxSizing: 'border-box' }}
                     />
                     <textarea
-                        placeholder="내용"
+                        placeholder="상세 내용을 입력하세요..."
                         value={adminContent}
                         onChange={e => setAdminContent(e.target.value)}
-                        style={{ width: '100%', height: '100px', padding: '10px', marginBottom: '10px', borderRadius: '5px', border: 'none', color: '#111' }}
+                        style={{ width: '100%', height: '120px', padding: '12px', marginBottom: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)', color: 'white', boxSizing: 'border-box', resize: 'none' }}
                     />
-                    <button onClick={postNotice} style={{ padding: '10px 20px', backgroundColor: '#8e44ad', border: 'none', color: 'white', borderRadius: '5px', fontWeight: 'bold' }}>등록하기</button>
-                </section>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <button
+                            onClick={postNotice}
+                            style={{ flex: 1, padding: '14px', backgroundColor: '#8e44ad', border: 'none', color: 'white', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}
+                        >등록하기</button>
+                        <button
+                            onClick={() => setIsAdminMode(false)}
+                            style={{ padding: '0 20px', backgroundColor: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: '12px', cursor: 'pointer' }}
+                        >취소</button>
+                    </div>
+                </div>
             )}
 
             {/* Hero Banner Section (Now Clickable) */}
@@ -468,6 +540,89 @@ export function Lobby({
                     </div>
                 </section>
             </div>
+
+            {/* Attendance Modal */}
+            {showAttendance && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.85)',
+                    backdropFilter: 'blur(15px)',
+                    zIndex: 2000,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '20px'
+                }} onClick={() => setShowAttendance(false)}>
+                    <div style={{
+                        background: 'linear-gradient(180deg, #2c3e50 0%, #1a1c2c 100%)',
+                        maxWidth: '450px',
+                        width: '100%',
+                        borderRadius: '28px',
+                        padding: '40px 30px',
+                        boxSizing: 'border-box',
+                        border: '2px solid rgba(255,184,0,0.3)',
+                        boxShadow: '0 30px 60px rgba(0,0,0,0.8), 0 0 20px rgba(255,184,0,0.1)',
+                        textAlign: 'center'
+                    }} onClick={e => e.stopPropagation()}>
+                        <div style={{ fontSize: '4rem', marginBottom: '10px' }}>🎁</div>
+                        <h2 style={{ fontSize: '2rem', fontWeight: '900', margin: '0 0 10px', color: '#ffb800' }}>DAILY REWARDS</h2>
+                        <p style={{ color: '#95a5a6', marginBottom: '30px' }}>매일 접속하고 50 코인을 받아가세요!</p>
+
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(4, 1fr)',
+                            gap: '10px',
+                            marginBottom: '35px'
+                        }}>
+                            {[1, 2, 3, 4, 5, 6, 7].map(day => (
+                                <div key={day} style={{
+                                    background: 'rgba(255,255,255,0.05)',
+                                    padding: '12px 5px',
+                                    borderRadius: '15px',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    opacity: day === 1 ? 1 : 0.5
+                                }}>
+                                    <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>DAY {day}</div>
+                                    <div style={{ fontSize: '1.2rem', margin: '4px 0' }}>💰</div>
+                                    <div style={{ fontWeight: 'bold', fontSize: '0.8rem' }}>+50</div>
+                                </div>
+                            ))}
+                            <div style={{
+                                background: 'linear-gradient(135deg, #f1c40f 0%, #e67e22 100%)',
+                                padding: '12px 5px',
+                                borderRadius: '15px',
+                                color: '#000',
+                                fontWeight: 'bold'
+                            }}>
+                                <div style={{ fontSize: '0.7rem' }}>FINAL</div>
+                                <div style={{ fontSize: '1.2rem', margin: '4px 0' }}>💎</div>
+                                <div style={{ fontSize: '0.8rem' }}>+200</div>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={claimDailyReward}
+                            style={{
+                                width: '100%',
+                                padding: '18px',
+                                borderRadius: '16px',
+                                border: 'none',
+                                background: 'linear-gradient(90deg, #27ae60, #2ecc71)',
+                                color: '#fff',
+                                fontWeight: '900',
+                                fontSize: '1.2rem',
+                                cursor: 'pointer',
+                                boxShadow: '0 8px 20px rgba(39,174,96,0.3)',
+                                transition: 'transform 0.2s'
+                            }}
+                            onMouseEnter={e => e.target.style.transform = 'translateY(-2px)'}
+                            onMouseLeave={e => e.target.style.transform = 'translateY(0)'}
+                        >보상 받기</button>
+                        <p onClick={() => setShowAttendance(false)} style={{ marginTop: '20px', color: '#7f8c8d', fontSize: '0.9rem', cursor: 'pointer' }}>나중에 받기</p>
+                    </div>
+                </div>
+            )}
 
             {/* Notice Details Modal */}
             {selectedNotice && (
