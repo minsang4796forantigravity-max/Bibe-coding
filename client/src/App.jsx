@@ -80,7 +80,8 @@ function App() {
       socket.off('game_start', onGameStart);
       socket.off('game_update', onGameUpdate);
       socket.off('game_over', onGameOver);
-      socket.disconnect();
+      // Note: Don't disconnect here - it causes issues during gameplay
+      // Socket will disconnect naturally when needed (e.g., game_over handler)
     };
   }, []);
 
