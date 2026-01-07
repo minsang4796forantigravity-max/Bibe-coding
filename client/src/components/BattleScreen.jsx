@@ -77,19 +77,15 @@ const CARD_IMAGES = {
 };
 
 export function BattleScreen({ gameState, playerId, socket }) {
-    console.log('[BattleScreen] Rendering with state:', !!gameState, 'player:', playerId);
     const [dragCard, setDragCard] = useState(null);
     const [dragPos, setDragPos] = useState(null); // { x, y } screen coords
     const fieldRef = useRef(null);
 
     if (!gameState || !playerId || !gameState[playerId]) {
-        console.warn('[BattleScreen] Missing state or player ID');
         return <div className="auth-page"><div className="auth-container">SYNCHRONIZING BATTLE...</div></div>;
     }
 
-    // Lenient start check (fallback for older servers without isStarted flag)
-    const isActuallyStarted = gameState.isStarted !== false;
-    if (!isActuallyStarted) {
+    if (!gameState.isStarted) {
         return <div className="auth-page"><div className="auth-container">WAITING FOR OPPONENT...</div></div>;
     }
 
@@ -459,54 +455,33 @@ export function BattleScreen({ gameState, playerId, socket }) {
                     if (unit.cardId === 'king_tower') unitSize = '55px';
                     if (unit.cardId === 'side_tower') unitSize = '38px';
 
-                    const unitCardId = unit.cardId || (unit.id ? unit.id.split('_')[0] : 'knight');
-                    const isKing = unitCardId === 'king_tower';
-
+                    const isKing = unit.cardId === 'king_tower';
                     // Check if unit is on the opponent's side (top part of the field)
                     // P1 is bottom (y=0 to 9), P2 is top (y=9 to 18)
-                    const isOpponentTop = isP1 ? unit.y > (GAME_CONFIG.FIELD_HEIGHT || 18) * 0.8 : unit.y < (GAME_CONFIG.FIELD_HEIGHT || 18) * 0.2;
+                    // isOpponentTop means it's on the side away from the player
+                    const isOpponentTop = isP1 ? unit.y > GAME_CONFIG.FIELD_HEIGHT * 0.8 : unit.y < GAME_CONFIG.FIELD_HEIGHT * 0.2;
 
                     return (
                         <div
                             key={unit.id}
                             style={{
                                 position: 'absolute',
-                                left: `${left || 0}%`,
-                                bottom: `${bottom || 0}%`,
+                                left: `${left}%`,
+                                bottom: `${bottom}%`,
                                 width: unitSize,
                                 height: unitSize,
                                 transform: 'translate(-50%, 50%)',
-                                backgroundImage: `url(${CARD_IMAGES[unitCardId] || knightImg})`,
+                                backgroundImage: `url(${CARD_IMAGES[unit.cardId] || CARD_IMAGES[unit.id.split('_')[0]] || knightImg})`,
                                 backgroundSize: 'contain',
                                 backgroundPosition: 'center bottom',
                                 backgroundRepeat: 'no-repeat',
-                                borderRadius: '0',
-                                border: 'none',
+                                borderRadius: unit.type === 'building' ? '0' : '50%',
+                                border: isKing ? 'none' : (unit.cardId === 'side_tower' ? 'none' : `3px solid ${isMine ? '#3498db' : '#e74c3c'}`),
                                 zIndex: isKing ? 10 : 5,
-                                filter: isKing || unitCardId === 'side_tower'
-                                    ? 'drop-shadow(0 10px 10px rgba(0,0,0,0.5))'
-                                    : 'drop-shadow(0 4px 6px rgba(0,0,0,0.4))',
-                                animation: (unit.type !== 'building' && !isKing && unit.type !== 'spell')
-                                    ? 'unit-wobble 0.6s infinite alternate ease-in-out'
-                                    : 'none',
+                                filter: isKing || unit.cardId === 'side_tower' ? 'drop-shadow(0 10px 10px rgba(0,0,0,0.5))' : 'none',
                                 ...spellEffectStyle
                             }}
                         >
-                            {/* Unit Shadow */}
-                            {unit.type !== 'building' && !isKing && (
-                                <div style={{
-                                    position: 'absolute',
-                                    bottom: '-2px',
-                                    left: '50%',
-                                    width: '60%',
-                                    height: '20%',
-                                    backgroundColor: 'rgba(0,0,0,0.4)',
-                                    borderRadius: '50%',
-                                    transform: 'translateX(-50%)',
-                                    filter: 'blur(3px)',
-                                    zIndex: -1
-                                }} />
-                            )}
                             {/* Special Visual Effects */}
                             {unit.type === 'egg' && (
                                 <div style={{
@@ -915,24 +890,13 @@ export function BattleScreen({ gameState, playerId, socket }) {
                                     border: '1px solid var(--color-accent)',
                                     fontFamily: 'var(--font-title)'
                                 }}>
-                                    {cardStats?.cost || 0}
+                                    {cardStats.cost}
                                 </div>
                             </div>
                         );
                     })}
                 </div>
             </div>
-            {/* Simple CSS Animations */}
-            <style>{`
-                @keyframes unit-wobble {
-                    0% { transform: translate(-50%, 50%) rotate(-3deg) translateY(0); }
-                    100% { transform: translate(-50%, 50%) rotate(3deg) translateY(-2px); }
-                }
-                @keyframes pulse-glow {
-                    0% { box-shadow: 0 0 10px var(--color-accent); }
-                    100% { box-shadow: 0 0 30px var(--color-accent); }
-                }
-            `}</style>
         </div>
     );
 }
