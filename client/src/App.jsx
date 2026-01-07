@@ -121,21 +121,21 @@ function App() {
     }
     const deckToUse = activeDeck || ['knight', 'archer', 'giant', 'wizard', 'fireball', 'cannon', 'goblin', 'skeletons'];
     setIsSinglePlayer(false);
-    handleDeckSelected(deckToUse);
+    handleDeckSelected(deckToUse, false);
   };
 
   const handleSinglePlayerClick = () => {
     const deckToUse = activeDeck || ['knight', 'archer', 'giant', 'wizard', 'fireball', 'cannon', 'goblin', 'skeletons'];
     setIsSinglePlayer(true);
-    handleDeckSelected(deckToUse);
+    handleDeckSelected(deckToUse, true);
   };
 
-  const handleDeckSelected = (deck) => {
+  const handleDeckSelected = (deck, isSingle = false) => {
     setSelectedDeck(deck);
     setStatus('waiting');
 
     const sendDeckSelection = () => {
-      if (isSinglePlayer) {
+      if (isSingle) {
         console.log("start_single_player emit with deck:", deck, "difficulty:", difficulty);
         socket.emit("start_single_player", {
           deck,

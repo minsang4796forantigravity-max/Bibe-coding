@@ -82,6 +82,10 @@ export function BattleScreen({ gameState, playerId, socket }) {
         return <div className="auth-page"><div className="auth-container">SYNCHRONIZING BATTLE...</div></div>;
     }
 
+    if (!gameState.isStarted) {
+        return <div className="auth-page"><div className="auth-container">WAITING FOR OPPONENT...</div></div>;
+    }
+
     const myState = gameState[playerId];
     const opponentId = playerId === 'p1' ? 'p2' : 'p1';
     const opponentState = gameState[opponentId];

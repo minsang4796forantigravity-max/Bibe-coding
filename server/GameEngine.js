@@ -181,6 +181,7 @@ class GameEngine {
             isOvertime: this.state.isOvertime,
             gameOver: this.state.gameOver,
             winner: this.state.winner,
+            isStarted: !!this.interval,
         };
     }
 
