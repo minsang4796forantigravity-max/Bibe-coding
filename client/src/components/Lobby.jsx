@@ -130,7 +130,9 @@ export function Lobby({
             minHeight: '100vh',
             width: '100vw',
             overflowX: 'hidden',
-            boxSizing: 'border-box'
+            overflowY: 'auto',
+            boxSizing: 'border-box',
+            WebkitOverflowScrolling: 'touch'
         }}>
             <div style={{
                 position: 'fixed',
@@ -279,6 +281,7 @@ export function Lobby({
                                         <option value="easy">EASY</option>
                                         <option value="medium">NORMAL</option>
                                         <option value="hard">HARD</option>
+                                        <option value="impossible">IMPOSSIBLE</option>
                                     </select>
                                     <button onClick={onSinglePlayerClick} className="premium-button" style={{ background: 'var(--color-secondary)', padding: '0 35px', fontWeight: '900' }}>BATTLE</button>
                                 </div>

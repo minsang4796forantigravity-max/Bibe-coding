@@ -68,11 +68,14 @@ class BotAI {
                 this.decisionInterval = 0.8;
                 break;
             case 'impossible':
-                this.decisionInterval = 0.5;
+                this.decisionInterval = 0.4;
                 break;
             default:
                 this.decisionInterval = 1.2;
         }
+
+        this.emoteTimer = 0;
+        this.nextEmoteTime = 10 + Math.random() * 20; // First emote after 10-30s
     }
 
     getDeck() {
@@ -80,8 +83,12 @@ class BotAI {
         return [...this.selectedDeck.cards, ...this.selectedDeck.evolutions];
     }
 
-    update(dt, gameState, myPlayerId, deployCallback) {
+    update(dt, gameState, myPlayerId, deployCallback, emoteCallback) {
         this.decisionTimer += dt;
+
+        // Emote Logic
+        this.handleEmotes(dt, gameState, myPlayerId, emoteCallback);
+
         if (this.decisionTimer < this.decisionInterval) return;
         this.decisionTimer = 0;
 
@@ -100,6 +107,23 @@ class BotAI {
 
         // 3. Offense / Cycle
         this.handleOffense(myState, myPlayerId, deployCallback);
+    }
+
+    handleEmotes(dt, gameState, myPlayerId, emoteCallback) {
+        if (!emoteCallback) return;
+
+        this.emoteTimer += dt;
+        if (this.emoteTimer >= this.nextEmoteTime) {
+            this.emoteTimer = 0;
+            this.nextEmoteTime = 20 + Math.random() * 40; // Next emote in 20-60s
+
+            const botEmotes = ['emote_thumbsup', 'emote_angry', 'emote_crying', 'emote_laugh', 'emote_gg'];
+            const randomEmote = botEmotes[Math.floor(Math.random() * botEmotes.length)];
+            emoteCallback(randomEmote);
+        }
+
+        // Event-based emotes (Tower destroyed etc.)
+        // This is simplified, real logic would track previous state to detect events
     }
 
     analyzeThreats(enemyUnits, myPlayerId) {

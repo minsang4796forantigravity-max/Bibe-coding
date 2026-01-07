@@ -55,11 +55,17 @@ function App() {
     }
 
     function onGameOver({ winner }) {
+      console.log('[App] Game Over received, winner:', winner);
       setWinner(winner);
       setGameState(null);
       setPlayerId(null);
       setSelectedDeck(null);
       setIsSinglePlayer(false);
+      setStatus('lobby'); // Return to lobby state so winner modal shows
+      // Disconnect socket to prevent any lingering game updates
+      if (socket.connected) {
+        socket.disconnect();
+      }
     }
 
     socket.on('connect', onConnect);
@@ -205,7 +211,11 @@ function App() {
             {isWinner ? 'YOU HAVE DOMINATED THE ARENA!' : 'TRAIN HARDER FOR THE NEXT BATTLE.'}
           </p>
           <button
-            onClick={() => { setWinner(null); setStatus('lobby'); }}
+            onClick={() => {
+              console.log('[App] Return to Lobby clicked');
+              setWinner(null);
+              setStatus('lobby');
+            }}
             className="premium-button"
             style={{ width: '100%', padding: '20px', fontSize: '1.2rem' }}
           >

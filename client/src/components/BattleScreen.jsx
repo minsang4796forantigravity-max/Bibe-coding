@@ -35,7 +35,7 @@ import egg2Img from '../assets/egg_tier_2.png';
 import egg3Img from '../assets/egg_tier_3.png';
 import egg4Img from '../assets/egg_tier_4.png';
 import egg5Img from '../assets/egg_tier_5.png';
-import battleBg from '../assets/battle_bg.png';
+import battleBg from '../assets/battle_arena_two_bridges.png';
 
 const CARD_IMAGES = {
     knight: knightImg,
@@ -242,34 +242,33 @@ export function BattleScreen({ gameState, playerId, socket }) {
             overflow: 'hidden',
             touchAction: 'none'
         }}>
-            {/* Header / Timer Overlay */}
+            {/* Timer Overlay - Positioned Left */}
             <div style={{
-                padding: '20px',
+                padding: '15px',
                 display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
+                justifyContent: 'flex-start',
+                alignItems: 'flex-start',
                 zIndex: 40,
                 position: 'absolute',
                 top: 0,
                 left: 0,
-                right: 0,
                 pointerEvents: 'none'
             }}>
                 <div className="glass-panel" style={{
-                    padding: '8px 40px',
-                    borderRadius: '50px',
+                    padding: '8px 20px',
+                    borderRadius: '30px',
                     border: '2px solid var(--color-accent)',
                     color: 'var(--color-accent)',
                     fontFamily: 'var(--font-title)',
-                    fontSize: 'clamp(1rem, 4vw, 1.5rem)',
+                    fontSize: 'clamp(0.9rem, 3.5vw, 1.3rem)',
                     textAlign: 'center',
                     boxShadow: 'var(--shadow-glow-accent)',
                     pointerEvents: 'auto',
-                    background: 'rgba(0,0,0,0.8)',
-                    minWidth: '150px'
+                    background: 'rgba(0,0,0,0.85)',
+                    minWidth: '100px'
                 }}>
                     {formatTime(gameState.matchTime ?? 180)}
-                    {gameState.isOvertime && <div style={{ fontSize: '0.6rem', color: 'var(--color-danger)', marginTop: '-5px' }}>OVERTIME</div>}
+                    {gameState.isOvertime && <div style={{ fontSize: '0.6rem', color: 'var(--color-danger)', marginTop: '-3px' }}>⚡OT</div>}
                 </div>
             </div>
             {/* Game Field */}
@@ -768,19 +767,22 @@ export function BattleScreen({ gameState, playerId, socket }) {
             {showEmoteSelector && (
                 <div style={{
                     position: 'absolute',
-                    bottom: '240px',
-                    right: '20px',
+                    bottom: 'clamp(170px, 30vh, 240px)',
+                    right: 'clamp(10px, 2vw, 20px)',
                     background: 'rgba(20, 30, 40, 0.95)',
                     backdropFilter: 'blur(10px)',
                     padding: '15px',
                     borderRadius: '16px',
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.2)',
                     display: 'grid',
                     gridTemplateColumns: 'repeat(4, 1fr)',
                     gap: '10px',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.8)',
                     zIndex: 200,
-                    animation: 'fadeIn 0.2s ease-out'
+                    animation: 'fadeIn 0.2s ease-out',
+                    maxHeight: '40vh',
+                    overflowY: 'auto',
+                    WebkitOverflowScrolling: 'touch'
                 }}>
                     {AVAILABLE_EMOTES.map(id => (
                         <button
@@ -790,9 +792,9 @@ export function BattleScreen({ gameState, playerId, socket }) {
                                 background: 'rgba(255,255,255,0.05)',
                                 border: '1px solid rgba(255,255,255,0.05)',
                                 borderRadius: '8px',
-                                width: '50px',
-                                height: '50px',
-                                fontSize: '1.8rem',
+                                width: 'clamp(40px, 12vw, 50px)',
+                                height: 'clamp(40px, 12vw, 50px)',
+                                fontSize: 'clamp(1.2rem, 5vw, 1.8rem)',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center'

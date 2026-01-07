@@ -214,6 +214,9 @@ class GameEngine {
         if (this.bot && this.botPlayerId && !this.state.gameOver) {
             this.bot.update(dt, this.state, this.botPlayerId, (cardId, x, y) => {
                 this.deployCard(this.botPlayerId, cardId, x, y);
+            }, (emoteId) => {
+                // Emit emote from bot
+                this.io.to(this.roomId).emit('emote_received', { playerId: this.botPlayerId, emoteId });
             });
         }
 

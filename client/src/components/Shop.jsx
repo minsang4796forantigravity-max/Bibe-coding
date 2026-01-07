@@ -50,8 +50,14 @@ export default function Shop({ user, onClose, onPurchase }) {
             <style>{`
                 .shop-tab-btn { flex: 1; padding: 15px; border: none; background: rgba(255,255,255,0.05); color: #fff; cursor: pointer; border-radius: 15px; font-weight: 900; transition: var(--transition-smooth); }
                 .shop-tab-btn.active { background: var(--color-gold); color: #fff; transform: scale(1.05); box-shadow: var(--shadow-glow-accent); }
-                .item-card { background: var(--color-glass); border: 1px solid var(--color-glass-border); border-radius: 25px; padding: 30px; display: flex; flexDirection: column; alignItems: center; textAlign: center; transition: var(--transition-bouncy); }
+                .item-card { background: var(--color-glass); border: 1px solid var(--color-glass-border); border-radius: 25px; padding: clamp(15px, 4vw, 30px); display: flex; flex-direction: column; align-items: center; text-align: center; transition: var(--transition-bouncy); }
                 .item-card:hover { transform: translateY(-10px); background: rgba(255,255,255,0.1); }
+                @media (max-width: 600px) {
+                    .shop-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important; gap: 12px !important; }
+                    .item-card { padding: 15px !important; }
+                    .item-icon { font-size: 3rem !important; }
+                    .shop-tab-btn { padding: 10px !important; font-size: 0.8rem !important; }
+                }
             `}</style>
 
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -65,12 +71,12 @@ export default function Shop({ user, onClose, onPurchase }) {
                 <button onClick={() => setTab('emotes')} className={`shop-tab-btn ${tab === 'emotes' ? 'active' : ''}`}>😀 EMOTES</button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '25px' }}>
+            <div className="shop-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '25px' }}>
                 {displayedItems.map(item => {
                     const isOwned = user?.inventory?.includes(item.id);
                     return (
                         <div key={item.id} className="item-card">
-                            <div style={{ fontSize: '4.5rem', marginBottom: '20px', filter: 'drop-shadow(0 10px 10px rgba(0,0,0,0.5))' }}>{item.icon}</div>
+                            <div className="item-icon" style={{ fontSize: '4.5rem', marginBottom: '20px', filter: 'drop-shadow(0 10px 10px rgba(0,0,0,0.5))' }}>{item.icon}</div>
                             <h3 style={{ margin: '0 0 10px', fontSize: '1.3rem', color: '#fff' }}>{item.name}</h3>
                             <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', marginBottom: '25px', minHeight: '40px' }}>{item.desc}</p>
 
