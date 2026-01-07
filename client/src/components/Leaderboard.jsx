@@ -24,13 +24,13 @@ const Leaderboard = ({ currentUsername, limit = 5, compact = false }) => {
         fetchLeaderboard();
     }, []);
 
-    if (loading) return <div className="leaderboard-loading">랭킹 로딩 중...</div>;
+    if (loading) return <div className="leaderboard-loading">FETCHING RANKS...</div>;
 
     const displayData = limit ? leaderboard.slice(0, limit) : leaderboard;
 
     return (
         <div className={`leaderboard-container ${compact ? 'compact' : ''}`}>
-            <h3 className="leaderboard-title">🏆 랭킹 Top {limit}</h3>
+            <h3 className="leaderboard-title">🏆 TOP {limit} ARENA LORDS</h3>
             <ul className="leaderboard-list">
                 {displayData.map((user, index) => (
                     <li key={user._id} className={`leaderboard-item ${user.username === currentUsername ? 'me' : ''}`}>
@@ -42,7 +42,7 @@ const Leaderboard = ({ currentUsername, limit = 5, compact = false }) => {
                     </li>
                 ))}
             </ul>
-            {leaderboard.length === 0 && <div className="no-data">데이터가 없습니다.</div>}
+            {leaderboard.length === 0 && <div className="no-data">NO DATA FOUND</div>}
         </div>
     );
 };

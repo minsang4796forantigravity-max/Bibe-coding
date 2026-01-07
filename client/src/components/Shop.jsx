@@ -30,7 +30,7 @@ export default function Shop({ user, onClose, onPurchase }) {
             const data = await res.json();
             if (res.ok) {
                 alert(data.message);
-                if (onPurchase) onPurchase(data.coins); // Update coins in parent
+                if (onPurchase) onPurchase(data.coins);
             } else {
                 alert(data.message);
             }
@@ -46,123 +46,56 @@ export default function Shop({ user, onClose, onPurchase }) {
     );
 
     return (
-        <div style={{
-            position: 'fixed',
-            top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.85)',
-            backdropFilter: 'blur(10px)',
-            zIndex: 2000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px'
-        }} onClick={onClose}>
-            <div style={{
-                width: '100%',
-                maxWidth: '800px',
-                height: '80vh',
-                background: 'linear-gradient(180deg, #1a1c2c 0%, #2c3e50 100%)',
-                borderRadius: '24px',
-                boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden'
-            }} onClick={e => e.stopPropagation()}>
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '25px' }}>
+            <style>{`
+                .shop-tab-btn { flex: 1; padding: 15px; border: none; background: rgba(255,255,255,0.05); color: #fff; cursor: pointer; border-radius: 15px; font-weight: 900; transition: var(--transition-smooth); }
+                .shop-tab-btn.active { background: var(--color-gold); color: #fff; transform: scale(1.05); box-shadow: var(--shadow-glow-accent); }
+                .item-card { background: var(--color-glass); border: 1px solid var(--color-glass-border); border-radius: 25px; padding: 30px; display: flex; flexDirection: column; alignItems: center; textAlign: center; transition: var(--transition-bouncy); }
+                .item-card:hover { transform: translateY(-10px); background: rgba(255,255,255,0.1); }
+            `}</style>
 
-                {/* Header */}
-                <div style={{
-                    padding: '20px',
-                    borderBottom: '1px solid rgba(255,255,255,0.1)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    background: 'rgba(0,0,0,0.2)'
-                }}>
-                    <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        🛒 <span style={{ background: 'linear-gradient(90deg, #f1c40f, #e67e22)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: '900' }}>PREMIUM SHOP</span>
-                    </h2>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
-                </div>
+            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h2 style={{ fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <span style={{ fontSize: '2.5rem' }}>🛒</span> <span style={{ background: 'var(--color-gold)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>TRADER'S OUTPOST</span>
+                </h2>
+            </header>
 
-                {/* Tabs */}
-                <div style={{ display: 'flex', padding: '10px 20px', gap: '10px' }}>
-                    <button
-                        onClick={() => setTab('items')}
-                        style={{
-                            flex: 1,
-                            padding: '12px',
-                            background: tab === 'items' ? 'rgba(255,255,255,0.1)' : 'transparent',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            borderRadius: '12px',
-                            color: 'white',
-                            cursor: 'pointer',
-                            fontWeight: 'bold',
-                            transition: 'all 0.2s'
-                        }}
-                    >💎 Items & Buffs</button>
-                    <button
-                        onClick={() => setTab('emotes')}
-                        style={{
-                            flex: 1,
-                            padding: '12px',
-                            background: tab === 'emotes' ? 'rgba(255,255,255,0.1)' : 'transparent',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            borderRadius: '12px',
-                            color: 'white',
-                            cursor: 'pointer',
-                            fontWeight: 'bold',
-                            transition: 'all 0.2s'
-                        }}
-                    >😀 Emotes</button>
-                </div>
+            <div style={{ display: 'flex', gap: '15px' }}>
+                <button onClick={() => setTab('items')} className={`shop-tab-btn ${tab === 'items' ? 'active' : ''}`}>💎 TREASURES</button>
+                <button onClick={() => setTab('emotes')} className={`shop-tab-btn ${tab === 'emotes' ? 'active' : ''}`}>😀 EMOTES</button>
+            </div>
 
-                {/* Content */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '20px' }}>
-                        {displayedItems.map(item => {
-                            const isOwned = user?.inventory?.includes(item.id);
-                            return (
-                                <div key={item.id} style={{
-                                    background: 'rgba(255,255,255,0.05)',
-                                    borderRadius: '16px',
-                                    padding: '20px',
-                                    border: '1px solid rgba(255,255,255,0.05)',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    textAlign: 'center',
-                                    position: 'relative',
-                                    transition: 'transform 0.2s'
-                                }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
-                                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '25px' }}>
+                {displayedItems.map(item => {
+                    const isOwned = user?.inventory?.includes(item.id);
+                    return (
+                        <div key={item.id} className="item-card">
+                            <div style={{ fontSize: '4.5rem', marginBottom: '20px', filter: 'drop-shadow(0 10px 10px rgba(0,0,0,0.5))' }}>{item.icon}</div>
+                            <h3 style={{ margin: '0 0 10px', fontSize: '1.3rem', color: '#fff' }}>{item.name}</h3>
+                            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', marginBottom: '25px', minHeight: '40px' }}>{item.desc}</p>
 
-                                    <div style={{ fontSize: '3rem', marginBottom: '10px' }}>{item.icon}</div>
-                                    <h3 style={{ margin: '0 0 5px', fontSize: '1.1rem' }}>{item.name}</h3>
-                                    <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '0 0 15px', flex: 1 }}>{item.desc}</p>
+                            <button
+                                onClick={() => handleBuy(item)}
+                                disabled={loading || (item.type === 'emote' && isOwned)}
+                                className="premium-button"
+                                style={{
+                                    width: '100%',
+                                    padding: '15px',
+                                    background: (item.type === 'emote' && isOwned) ? '#444' : 'var(--color-gold)',
+                                    opacity: (item.type === 'emote' && isOwned) ? 0.5 : 1
+                                }}
+                            >
+                                {item.type === 'emote' && isOwned ? 'OWNED' : `💰 ${item.price}`}
+                            </button>
+                        </div>
+                    );
+                })}
+                {displayedItems.length === 0 && <p style={{ textAlign: 'center', width: '100%', opacity: 0.5 }}>Currently out of stock. Check back later!</p>}
+            </div>
 
-                                    <button
-                                        onClick={() => handleBuy(item)}
-                                        disabled={loading || (item.type === 'emote' && isOwned)}
-                                        style={{
-                                            width: '100%',
-                                            padding: '10px',
-                                            borderRadius: '8px',
-                                            border: 'none',
-                                            background: (item.type === 'emote' && isOwned) ? '#555' : 'linear-gradient(90deg, #f1c40f, #e67e22)',
-                                            color: (item.type === 'emote' && isOwned) ? '#888' : 'white',
-                                            fontWeight: 'bold',
-                                            cursor: (item.type === 'emote' && isOwned) ? 'default' : 'pointer',
-                                            boxShadow: (item.type === 'emote' && isOwned) ? 'none' : '0 4px 10px rgba(241,196,15,0.3)'
-                                        }}
-                                    >
-                                        {item.type === 'emote' && isOwned ? 'OWNED' : `💰 ${item.price}`}
-                                    </button>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
+            <div style={{ marginTop: '50px', padding: '30px', background: 'rgba(241, 196, 15, 0.05)', borderRadius: '25px', border: '1px dashed rgba(241, 196, 15, 0.2)', textAlign: 'center' }}>
+                <h4 style={{ color: 'var(--color-accent)', margin: '0 0 10px' }}>SPECIAL OFFER</h4>
+                <p style={{ margin: 0, opacity: 0.8 }}>Login every day to collect free gold at the Attendance reward!</p>
             </div>
         </div>
     );

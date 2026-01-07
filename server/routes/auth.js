@@ -36,7 +36,7 @@ router.post('/login', async (req, res) => {
 
         res.json({
             message: '로그인 성공!',
-            user: { username: user.username, id: user._id, coins: user.coins }
+            user: { username: user.username, id: user._id, coins: user.coins, activeDeck: user.activeDeck }
         });
     } catch (error) {
         res.status(500).json({ message: '서버 오류가 발생했습니다.' });
@@ -128,6 +128,19 @@ router.delete('/decks/:username/:deckId', async (req, res) => {
         res.json(user.savedDecks);
     } catch (error) {
         res.status(500).json({ message: 'Error deleting deck' });
+    }
+});
+
+router.post('/active-deck', async (req, res) => {
+    try {
+        const { username, deck } = req.body;
+        const user = await User.findOne({ username });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        user.activeDeck = deck;
+        await user.save();
+        res.json({ message: 'Active deck updated', activeDeck: user.activeDeck });
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating active deck' });
     }
 });
 

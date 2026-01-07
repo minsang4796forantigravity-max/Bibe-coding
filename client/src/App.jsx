@@ -8,6 +8,7 @@ import Leaderboard from './components/Leaderboard';
 import { Lobby } from './components/Lobby';
 import { socket } from './socket';
 import './App.css';
+import './styles/design-system.css';
 
 const ACCESS_PASSWORD = "000";
 
@@ -27,10 +28,12 @@ function App() {
   const [playerId, setPlayerId] = useState(null);
   const [roomId, setRoomId] = useState('');
   const [selectedDeck, setSelectedDeck] = useState(null);
+  const [activeDeck, setActiveDeck] = useState(null); // The deck currently in use in the lobby
   const [status, setStatus] = useState('login'); // login, signup, lobby, deck_select, waiting, playing, profile
   const [isSinglePlayer, setIsSinglePlayer] = useState(false);
   const [difficulty, setDifficulty] = useState('medium');
   const [user, setUser] = useState(null); // Logged in user info
+  const [winner, setWinner] = useState(null); // High-level game result
 
   useEffect(() => {
     function onConnect() {
@@ -52,11 +55,9 @@ function App() {
     }
 
     function onGameOver({ winner }) {
-      alert(`${winner} Wins!`);
-      // Return to lobby instead of reloading to keep login state
+      setWinner(winner);
       setGameState(null);
       setPlayerId(null);
-      setStatus('lobby');
       setSelectedDeck(null);
       setIsSinglePlayer(false);
     }
@@ -84,6 +85,7 @@ function App() {
       try {
         const parsedUser = JSON.parse(savedUser);
         setUser(parsedUser);
+        setActiveDeck(parsedUser.activeDeck || null);
         setStatus('lobby');
       } catch (e) {
         console.error('Failed to parse saved user:', e);
@@ -92,9 +94,18 @@ function App() {
     }
   }, []);
 
+  useEffect(() => {
+    if (user && activeDeck) {
+      const updatedUser = { ...user, activeDeck };
+      localStorage.setItem('bibeGameUser', JSON.stringify(updatedUser));
+    }
+  }, [activeDeck, user]);
+
   const handleLogin = (loggedInUser) => {
     setUser(loggedInUser);
+    setActiveDeck(loggedInUser.activeDeck || null);
     setStatus('lobby');
+    localStorage.setItem('bibeGameUser', JSON.stringify(loggedInUser));
   };
 
   const handleLogout = () => {
@@ -108,13 +119,15 @@ function App() {
       alert('방 번호를 입력해주세요!');
       return;
     }
+    const deckToUse = activeDeck || ['knight', 'archer', 'giant', 'wizard', 'fireball', 'cannon', 'goblin', 'skeletons'];
     setIsSinglePlayer(false);
-    setStatus('deck_select');
+    handleDeckSelected(deckToUse);
   };
 
   const handleSinglePlayerClick = () => {
+    const deckToUse = activeDeck || ['knight', 'archer', 'giant', 'wizard', 'fireball', 'cannon', 'goblin', 'skeletons'];
     setIsSinglePlayer(true);
-    setStatus('deck_select');
+    handleDeckSelected(deckToUse);
   };
 
   const handleDeckSelected = (deck) => {
@@ -188,31 +201,46 @@ function App() {
         onSinglePlayerClick={handleSinglePlayerClick}
         onProfileClick={() => setStatus('profile')}
         onLogout={handleLogout}
+        activeDeck={activeDeck}
+        setActiveDeck={setActiveDeck}
       />
     );
   }
 
   if (status === 'waiting') {
     return (
-      <div style={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #1a1c2c 0%, #4a192c 100%)',
-        color: 'white'
-      }}>
-        <div className="spinner" style={{ marginBottom: '20px' }}></div>
-        <h1>Searching for opponent...</h1>
-        <button onClick={() => setStatus('lobby')} style={{
-          marginTop: '20px',
-          padding: '10px 20px',
-          background: 'rgba(255,255,255,0.1)',
-          border: 'none',
-          color: 'white',
-          borderRadius: '5px'
-        }}>Cancel</button>
+      <div className="auth-page">
+        <div className="auth-container">
+          <div style={{ fontSize: '4rem', marginBottom: '20px', animation: 'pulse 1s infinite' }}>⚔️</div>
+          <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem' }}>SEARCHING FOR OPPONENT...</h2>
+          <p style={{ opacity: 0.5, fontWeight: 'bold' }}>Arena is preparing for your arrival</p>
+          <button onClick={() => setStatus('lobby')} className="premium-button" style={{ marginTop: '30px', background: 'var(--color-danger)' }}>CANCEL</button>
+        </div>
+      </div>
+    );
+  }
+
+  // Final Game Over Modal
+  if (winner) {
+    const isWinner = (winner === 'p1' && playerId === 'p1') || (winner === 'p2' && playerId === 'p2');
+    return (
+      <div className="auth-page">
+        <div className="auth-container" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '5rem', marginBottom: '20px' }}>{isWinner ? '🏆' : '💀'}</div>
+          <h1 style={{ fontFamily: 'var(--font-title)', fontSize: '3rem', color: isWinner ? 'var(--color-accent)' : 'var(--color-danger)' }}>
+            {isWinner ? 'VICTORY' : 'DEFEAT'}
+          </h1>
+          <p style={{ fontSize: '1.2rem', fontWeight: '900', margin: '20px 0', opacity: 0.8 }}>
+            {isWinner ? 'YOU HAVE DOMINATED THE ARENA!' : 'TRAIN HARDER FOR THE NEXT BATTLE.'}
+          </p>
+          <button
+            onClick={() => { setWinner(null); setStatus('lobby'); }}
+            className="premium-button"
+            style={{ width: '100%', padding: '20px', fontSize: '1.2rem' }}
+          >
+            RETURN TO LOBBY
+          </button>
+        </div>
       </div>
     );
   }

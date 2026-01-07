@@ -5,7 +5,6 @@ import './Profile.css';
 
 const Profile = ({ username, onBack }) => {
     const [userData, setUserData] = useState(null);
-    const [leaderboard, setLeaderboard] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedOpponent, setSelectedOpponent] = useState(null);
     const [opponentStats, setOpponentStats] = useState(null);
@@ -13,18 +12,10 @@ const Profile = ({ username, onBack }) => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [profileRes, leaderboardRes] = await Promise.all([
-                    fetch(`${API_URL}/api/auth/profile/${username}`),
-                    fetch(`${API_URL}/api/auth/leaderboard`)
-                ]);
-
+                const profileRes = await fetch(`${API_URL}/api/auth/profile/${username}`);
                 if (profileRes.ok) {
                     const data = await profileRes.json();
                     setUserData(data);
-                }
-                if (leaderboardRes.ok) {
-                    const lbData = await leaderboardRes.json();
-                    setLeaderboard(lbData);
                 }
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -32,12 +23,11 @@ const Profile = ({ username, onBack }) => {
                 setLoading(false);
             }
         };
-
         fetchData();
     }, [username]);
 
     const handleOpponentClick = async (opponentName) => {
-        if (opponentName === 'AI') return; // AI stats are not tracked individually per se
+        if (opponentName === 'AI') return;
         try {
             const response = await fetch(`${API_URL}/api/auth/stats/${username}/${opponentName}`);
             if (response.ok) {
@@ -50,144 +40,94 @@ const Profile = ({ username, onBack }) => {
         }
     };
 
-    const closeStatsModal = () => {
-        setSelectedOpponent(null);
-        setOpponentStats(null);
-    };
+    if (loading) return <div className="profile-page"><div className="profile-container"><h2>LOADING PROFILE...</h2></div></div>;
+    if (!userData) return <div className="profile-page"><div className="profile-container"><h2>USER NOT FOUND</h2><button onClick={onBack} className="premium-button">BACK</button></div></div>;
 
-    // Card data for the info section
-    const cards = [
-        { name: '기사', cost: 3, desc: '균형 잡힌 근접 유닛' },
-        { name: '아처', cost: 3, desc: '원거리 공격 유닛' },
-        { name: '자이언트', cost: 5, desc: '건물만 공격하는 탱커' },
-        { name: '미니 P.E.K.K.A', cost: 4, desc: '강력한 한 방 공격' },
-        { name: '파이어볼', cost: 4, desc: '범위 마법 피해' },
-        { name: '머스킷병', cost: 4, desc: '강력한 원거리 딜러' },
-        { name: '베이비 드래곤', cost: 4, desc: '범위 공격 공중 유닛' },
-        { name: '스켈레톤 군대', cost: 3, desc: '다수의 해골 소환' }
-    ];
-
-    if (loading) return <div className="profile-container">로딩 중...</div>;
-    if (!userData) return <div className="profile-container">사용자 정보를 불러올 수 없습니다.</div>;
+    const winCount = userData.matchHistory.filter(m => m.result === 'win').length;
+    const lossCount = userData.matchHistory.filter(m => m.result === 'lose').length;
+    const winRate = userData.matchHistory.length > 0 ? Math.round((winCount / userData.matchHistory.length) * 100) : 0;
 
     return (
         <div className="profile-page">
             <div className="profile-container">
                 <div className="profile-header-section">
-                    <button className="back-btn" onClick={onBack}>뒤로 가기</button>
+                    <button className="glass-panel" onClick={onBack} style={{ width: 'fit-content', border: 'none', color: '#fff', padding: '12px 25px', borderRadius: '15px', cursor: 'pointer', fontWeight: '900', fontSize: '0.9rem' }}>← BACK TO LOBBY</button>
                     <div className="header-content">
-                        <h2>{userData.username}님의 전적</h2>
+                        <div>
+                            <h2>{userData.username.toUpperCase()}</h2>
+                            <p style={{ margin: '8px 0 0', opacity: 0.5, fontWeight: 'bold' }}>Active since {new Date(userData.createdAt).toLocaleDateString()}</p>
+                        </div>
                         <div className="rating-badge">
-                            <span className="rating-label">Rating</span>
-                            <span className="rating-value">{userData.rating || 1000}</span>
+                            <span className="rating-label">Global Rank</span>
+                            <span className="rating-value">🏆 {userData.rating || 1000}</span>
                         </div>
                     </div>
                 </div>
 
-                <div className="scrollable-content">
-                    <div className="content-grid">
-                        <div className="left-panel">
-                            <div className="stats-summary card">
-                                <h3>내 정보</h3>
-                                <div className="info-row">
-                                    <span className="label">가입일</span>
-                                    <span className="value">{new Date(userData.createdAt).toLocaleDateString()}</span>
-                                </div>
-                                <div className="info-row">
-                                    <span className="label">총 게임</span>
-                                    <span className="value">{userData.matchHistory.length}</span>
-                                </div>
-                            </div>
-
-                            <div className="leaderboard-wrapper">
-                                <Leaderboard currentUsername={username} limit={5} />
-                            </div>
-
-                            <div className="rating-rules card">
-                                <h3>ℹ️ 레이팅 규칙</h3>
-                                <ul className="rules-list">
-                                    <li><span className="rule-label">승리</span> <span className="rule-value win">+30 (기본)</span></li>
-                                    <li><span className="rule-label">패배</span> <span className="rule-value lose">-10 (기본)</span></li>
-                                    <li><span className="rule-desc">* 상대와의 점수 차이에 따라 변동폭이 달라집니다.</span></li>
-                                    <li><span className="rule-desc">* AI 난이도에 따라 추가 보정이 적용됩니다.</span></li>
-                                </ul>
-                            </div>
+                <div className="content-grid">
+                    <div className="left-panel">
+                        <div className="card">
+                            <h3>📊 CAREER STATS</h3>
+                            <div className="info-row"><span className="label">Win Rate</span><span className="value">{winRate}%</span></div>
+                            <div className="info-row"><span className="label">Battles Won</span><span className="value" style={{ color: 'var(--color-secondary)' }}>{winCount}</span></div>
+                            <div className="info-row"><span className="label">Battles Lost</span><span className="value" style={{ color: 'var(--color-danger)' }}>{lossCount}</span></div>
+                            <div className="info-row"><span className="label">Total Matches</span><span className="value">{userData.matchHistory.length}</span></div>
                         </div>
 
-                        <div className="right-panel">
-                            <div className="match-history card">
-                                <h3>최근 전적</h3>
-                                {userData.matchHistory.length === 0 ? (
-                                    <p className="no-data">전적이 없습니다.</p>
-                                ) : (
-                                    <ul className="history-list">
-                                        {userData.matchHistory.slice().reverse().map((match, index) => (
-                                            <li key={index} className={`match-item ${match.result}`}>
-                                                <div className="match-info">
-                                                    <span className="result-badge">{match.result === 'win' ? 'WIN' : 'LOSE'}</span>
-                                                    <div className="opponent-info">
-                                                        <span className="vs">vs</span>
-                                                        <span
-                                                            className={`opponent-name ${match.opponent !== 'AI' ? 'clickable' : ''}`}
-                                                            onClick={() => handleOpponentClick(match.opponent)}
-                                                        >
+                        <div className="card">
+                            <h3>🏆 TOP PLAYERS</h3>
+                            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                <Leaderboard currentUsername={username} limit={10} compact={true} />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="right-panel">
+                        <div className="card">
+                            <h3>⚔️ BATTLE LOG</h3>
+                            {userData.matchHistory.length === 0 ? (
+                                <p style={{ opacity: 0.3, textAlign: 'center', padding: '40px' }}>No battle history found. Go out there and fight!</p>
+                            ) : (
+                                <ul className="history-list">
+                                    {userData.matchHistory.slice().reverse().map((match, index) => (
+                                        <li key={index} className={`match-item ${match.result}`}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                                <span className="result-badge">{match.result.toUpperCase()}</span>
+                                                <div>
+                                                    <div style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '2px' }}>{new Date(match.date).toLocaleDateString()}</div>
+                                                    <div style={{ fontWeight: '900' }}>
+                                                        <span style={{ opacity: 0.4, marginRight: '10px' }}>VS</span>
+                                                        <span className={`opponent-name ${match.opponent !== 'AI' ? 'clickable' : ''}`} onClick={() => handleOpponentClick(match.opponent)}>
                                                             {match.opponent}
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <div className="match-meta">
-                                                    <span className={`rating-change ${match.ratingChange >= 0 ? 'positive' : 'negative'}`}>
-                                                        {match.ratingChange > 0 ? '+' : ''}{match.ratingChange}
-                                                    </span>
-                                                    <span className="date">{new Date(match.date).toLocaleDateString()}</span>
-                                                </div>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </div>
-
-                            <div className="card-info-section card">
-                                <h3>🃏 카드 정보</h3>
-                                <div className="card-grid">
-                                    {cards.map((card, idx) => (
-                                        <div key={idx} className="card-item">
-                                            <div className="card-header">
-                                                <span className="card-name">{card.name}</span>
-                                                <span className="card-cost">{card.cost}</span>
                                             </div>
-                                            <p className="card-desc">{card.desc}</p>
-                                        </div>
+                                            <div style={{ textAlign: 'right' }}>
+                                                <div className={`rating-change ${match.ratingChange >= 0 ? 'positive' : 'negative'}`}>
+                                                    {match.ratingChange >= 0 ? '+' : ''}{match.ratingChange}
+                                                </div>
+                                                <div style={{ fontSize: '0.7rem', opacity: 0.3 }}>Rating</div>
+                                            </div>
+                                        </li>
                                     ))}
-                                </div>
-                            </div>
+                                </ul>
+                            )}
                         </div>
                     </div>
                 </div>
 
                 {selectedOpponent && opponentStats && (
-                    <div className="modal-overlay" onClick={closeStatsModal}>
+                    <div className="modal-overlay" onClick={() => setSelectedOpponent(null)}>
                         <div className="modal-content" onClick={e => e.stopPropagation()}>
-                            <h3>vs {selectedOpponent} 전적</h3>
-                            <div className="modal-stats">
-                                <div className="stat-box">
-                                    <span className="label">승률</span>
-                                    <span className="value">{opponentStats.winRate}%</span>
-                                </div>
-                                <div className="stat-box">
-                                    <span className="label">승</span>
-                                    <span className="value win">{opponentStats.wins}</span>
-                                </div>
-                                <div className="stat-box">
-                                    <span className="label">패</span>
-                                    <span className="value lose">{opponentStats.losses}</span>
-                                </div>
-                                <div className="stat-box">
-                                    <span className="label">총 게임</span>
-                                    <span className="value">{opponentStats.totalGames}</span>
-                                </div>
+                            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', marginBottom: '30px' }}>VS {selectedOpponent.toUpperCase()}</h2>
+                            <div className="modal-stats" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
+                                <div className="stat-box"><div className="rating-label">WIN RATE</div><div className="rating-value" style={{ color: 'var(--color-primary)' }}>{opponentStats.winRate}%</div></div>
+                                <div className="stat-box"><div className="rating-label">TOTAL</div><div className="rating-value">{opponentStats.totalGames}</div></div>
+                                <div className="stat-box"><div className="rating-label">WINS</div><div className="rating-value" style={{ color: 'var(--color-secondary)' }}>{opponentStats.wins}</div></div>
+                                <div className="stat-box"><div className="rating-label">LOSSES</div><div className="rating-value" style={{ color: 'var(--color-danger)' }}>{opponentStats.losses}</div></div>
                             </div>
-                            <button className="close-btn" onClick={closeStatsModal}>닫기</button>
+                            <button className="premium-button" style={{ width: '100%', padding: '15px' }} onClick={() => setSelectedOpponent(null)}>CLOSE</button>
                         </div>
                     </div>
                 )}

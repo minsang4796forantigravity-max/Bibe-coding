@@ -59,42 +59,47 @@ const Signup = ({ onNavigate }) => {
     };
 
     return (
-        <div className="auth-container">
-            <h2>회원가입</h2>
-            <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                    <label>아이디</label>
-                    <input
-                        type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        required
-                    />
-                </div>
-                <div className="form-group">
-                    <label>비밀번호</label>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
-                </div>
-                <div className="form-group">
-                    <label>비밀번호 확인</label>
-                    <input
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
-                    />
-                </div>
-                {error && <p className="error-message">{error}</p>}
-                <button type="submit" className="auth-btn">가입하기</button>
-            </form>
-            <p className="auth-link">
-                이미 계정이 있으신가요? <span onClick={() => onNavigate('login')}>로그인</span>
-            </p>
+        <div className="auth-page">
+            <div className="auth-container">
+                <h2>SIGN UP</h2>
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <label>Username</label>
+                        <input
+                            type="text"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            placeholder="Choose your handle"
+                            required
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Password</label>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Min 6 characters"
+                            required
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Confirm Password</label>
+                        <input
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="Re-type password"
+                            required
+                        />
+                    </div>
+                    {error && <p className="error-message">{error}</p>}
+                    <button type="submit" className="auth-btn">JOIN GUILD</button>
+                </form>
+                <p className="auth-link">
+                    Already a member? <span onClick={() => onNavigate('login')}>Login</span>
+                </p>
+            </div>
         </div>
     );
 };

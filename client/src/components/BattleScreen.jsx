@@ -230,10 +230,10 @@ export function BattleScreen({ gameState, playerId, socket }) {
         }}>
             {/* Header / Timer Overlay */}
             <div style={{
-                padding: '10px',
+                padding: '20px',
                 display: 'flex',
-                justifyContent: 'flex-end',
-                alignItems: 'flex-start',
+                justifyContent: 'center',
+                alignItems: 'center',
                 zIndex: 40,
                 position: 'absolute',
                 top: 0,
@@ -241,27 +241,20 @@ export function BattleScreen({ gameState, playerId, socket }) {
                 right: 0,
                 pointerEvents: 'none'
             }}>
-                <style>{`
-                @keyframes pulse-grow {
-                    0% { transform: scale(1); opacity: 0; }
-                    50% { transform: scale(1.1); opacity: 1; }
-                    100% { transform: scale(1); opacity: 0; }
-                }
-            `}</style>
-                <div style={{
-                    backgroundColor: 'rgba(0,0,0,0.7)',
-                    padding: '4px 12px',
-                    borderRadius: '10px',
-                    border: '1px solid #f1c40f',
-                    color: '#f1c40f',
-                    fontWeight: 'bold',
-                    fontSize: '0.9rem',
+                <div className="glass-panel" style={{
+                    padding: '8px 40px',
+                    borderRadius: '50px',
+                    border: '2px solid var(--color-accent)',
+                    color: 'var(--color-accent)',
+                    fontFamily: 'var(--font-title)',
+                    fontSize: '1.5rem',
                     textAlign: 'center',
-                    boxShadow: '0 0 10px rgba(0,0,0,0.5)',
-                    pointerEvents: 'auto'
+                    boxShadow: 'var(--shadow-glow-accent)',
+                    pointerEvents: 'auto',
+                    background: 'rgba(0,0,0,0.8)'
                 }}>
                     {formatTime(gameState.matchTime ?? 180)}
-                    {gameState.isOvertime && <div style={{ fontSize: '0.5rem', color: '#e74c3c' }}>OT</div>}
+                    {gameState.isOvertime && <div style={{ fontSize: '0.6rem', color: 'var(--color-danger)', marginTop: '-5px' }}>OVERTIME</div>}
                 </div>
             </div>
             {/* Game Field */}
@@ -289,22 +282,20 @@ export function BattleScreen({ gameState, playerId, socket }) {
                 }}
             >
                 {/* Double Elixir Announcement Overlay */}
-                {gameState.matchTime <= 30 && gameState.matchTime > 27 && (
+                {gameState.matchTime <= 60 && gameState.matchTime > 57 && (
                     <div style={{
                         position: 'absolute',
-                        top: '45%',
+                        top: '40%',
                         left: '0',
                         right: '0',
                         textAlign: 'center',
                         zIndex: 100,
-                        color: '#f1c40f',
-                        fontSize: '2.5rem',
-                        fontWeight: '900',
-                        textShadow: '0 0 15px rgba(0,0,0,1), 0 0 5px #000',
-                        animation: 'pulse-grow 2s ease-in-out infinite',
+                        color: 'var(--color-accent)',
+                        fontSize: '3rem',
+                        fontFamily: 'var(--font-title)',
+                        textShadow: '0 10px 30px rgba(0,0,0,0.8)',
+                        animation: 'pulse-grow 1s ease-in-out infinite',
                         pointerEvents: 'none',
-                        letterSpacing: '2px',
-                        fontFamily: 'Impact, sans-serif'
                     }}>
                         DOUBLE ELIXIR!
                     </div>
@@ -812,38 +803,38 @@ export function BattleScreen({ gameState, playerId, socket }) {
                 borderTop: '2px solid rgba(52,152,219,0.3)',
             }}>
                 {/* Mana Bar */}
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px', gap: '20px' }}>
                     <div style={{
-                        color: '#f39c12',
-                        fontWeight: 'bold',
-                        fontSize: '20px',
-                        minWidth: '100px',
-                        textShadow: '0 0 10px rgba(243,156,18,0.5), 2px 2px 4px rgba(0,0,0,0.8)',
+                        color: 'var(--color-accent)',
+                        fontFamily: 'var(--font-title)',
+                        fontSize: '1.2rem',
+                        minWidth: '120px',
+                        textShadow: 'var(--shadow-glow-accent)',
                     }}>
-                        마나: {Math.floor(myState.mana)}/{GAME_CONFIG.MAX_MANA}
+                        ELIXIR: {Math.floor(myState.mana)}
                     </div>
                     <div style={{
                         flex: 1,
-                        height: '24px',
-                        background: 'linear-gradient(180deg, #1a252f 0%, #0f1419 100%)',
-                        borderRadius: '12px',
-                        border: '2px solid rgba(243,156,18,0.3)',
+                        height: '20px',
+                        background: 'rgba(0,0,0,0.5)',
+                        borderRadius: '10px',
+                        border: '2px solid rgba(255,255,255,0.1)',
                         overflow: 'hidden',
-                        boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.8)',
+                        padding: '2px'
                     }}>
                         <div style={{
                             height: '100%',
                             width: `${(myState.mana / GAME_CONFIG.MAX_MANA) * 100}%`,
-                            background: 'linear-gradient(90deg, #e67e22 0%, #f39c12 50%, #f1c40f 100%)',
-                            transition: 'width 0.3s ease',
-                            borderRadius: '10px',
-                            boxShadow: '0 0 15px rgba(243,156,18,0.8), inset 0 1px 0 rgba(255,255,255,0.3)',
+                            background: 'var(--color-gold)',
+                            transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            borderRadius: '8px',
+                            boxShadow: '0 0 20px rgba(241, 196, 15, 0.5)',
                         }} />
                     </div>
                 </div>
 
                 {/* Hand */}
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
                     {myState.hand.map((cardId, idx) => {
                         const cardStats = UNITS[cardId.toUpperCase()];
                         const canAfford = myState.mana >= cardStats.cost;
@@ -854,35 +845,38 @@ export function BattleScreen({ gameState, playerId, socket }) {
                                 key={idx}
                                 onMouseDown={(e) => canAfford && handleDragStart(e, cardId)}
                                 onTouchStart={(e) => canAfford && handleDragStart(e, cardId)}
+                                className="game-card"
                                 style={{
                                     width: '85px',
-                                    height: '105px',
+                                    height: '115px',
                                     backgroundImage: `url(${CARD_IMAGES[cardId]})`,
                                     backgroundSize: 'cover',
-                                    borderRadius: '10px',
-                                    border: isDragging ? '3px solid #f1c40f' : canAfford ? '3px solid #2ecc71' : '3px solid #7f8c8d',
+                                    backgroundPosition: 'center',
+                                    borderRadius: '15px',
+                                    border: isDragging ? '3px solid var(--color-accent)' : canAfford ? '2px solid rgba(255,255,255,0.2)' : '2px solid rgba(0,0,0,0.5)',
                                     cursor: canAfford ? 'grab' : 'not-allowed',
-                                    opacity: isDragging ? 0.6 : (canAfford ? 1 : 0.5),
+                                    opacity: canAfford ? 1 : 0.4,
                                     position: 'relative',
-                                    transition: 'all 0.2s ease',
-                                    transform: isDragging ? 'scale(0.95)' : 'scale(1)',
-                                    boxShadow: canAfford ? '0 6px 12px rgba(0,0,0,0.4), 0 0 20px rgba(46,204,113,0.4)' : '0 4px 8px rgba(0,0,0,0.3)',
-                                    touchAction: 'none',
-                                    filter: canAfford ? 'brightness(1.1)' : 'brightness(0.7)',
+                                    transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                    transform: isDragging ? 'translateY(-20px) scale(1.1)' : 'none',
+                                    boxShadow: canAfford ? 'var(--shadow-soft)' : 'none',
+                                    filter: canAfford ? 'none' : 'grayscale(100%) brightness(0.5)',
+                                    touchAction: 'none'
                                 }}
                             >
                                 <div style={{
                                     position: 'absolute',
-                                    top: '6px',
-                                    left: '6px',
-                                    background: canAfford ? 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)' : 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
-                                    color: '#fff',
-                                    fontWeight: 'bold',
+                                    top: '8px',
+                                    left: '8px',
+                                    background: 'rgba(0,0,0,0.8)',
+                                    color: 'var(--color-accent)',
+                                    fontWeight: '900',
                                     padding: '4px 8px',
-                                    borderRadius: '6px',
-                                    fontSize: '15px',
-                                    boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
-                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    borderRadius: '8px',
+                                    fontSize: '0.9rem',
+                                    boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+                                    border: '1px solid var(--color-accent)',
+                                    fontFamily: 'var(--font-title)'
                                 }}>
                                     {cardStats.cost}
                                 </div>

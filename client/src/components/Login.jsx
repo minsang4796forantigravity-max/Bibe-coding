@@ -33,33 +33,37 @@ const Login = ({ onLogin, onNavigate }) => {
     };
 
     return (
-        <div className="auth-container">
-            <h2>로그인</h2>
-            <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                    <label>아이디</label>
-                    <input
-                        type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        required
-                    />
-                </div>
-                <div className="form-group">
-                    <label>비밀번호</label>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
-                </div>
-                {error && <p className="error-message">{error}</p>}
-                <button type="submit" className="auth-btn">로그인</button>
-            </form>
-            <p className="auth-link">
-                계정이 없으신가요? <span onClick={() => onNavigate('signup')}>회원가입</span>
-            </p>
+        <div className="auth-page">
+            <div className="auth-container">
+                <h2>LOGIN</h2>
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <label>Username</label>
+                        <input
+                            type="text"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            placeholder="Enter your hero name"
+                            required
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Password</label>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="••••••••"
+                            required
+                        />
+                    </div>
+                    {error && <p className="error-message">{error}</p>}
+                    <button type="submit" className="auth-btn">ENTER ARENA</button>
+                </form>
+                <p className="auth-link">
+                    New warrior? <span onClick={() => onNavigate('signup')}>Create Account</span>
+                </p>
+            </div>
         </div>
     );
 };

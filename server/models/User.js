@@ -63,6 +63,10 @@ const userSchema = new mongoose.Schema({
     equippedEmotes: {
         type: [String],
         default: ['emote_thumbsup', 'emote_angry', 'emote_crying', 'emote_laugh'] // Default basic emotes
+    },
+    activeDeck: {
+        type: [String],
+        default: ['knight', 'archer', 'giant', 'wizard', 'fireball', 'cannon', 'goblin', 'skeletons']
     }
 });
 
