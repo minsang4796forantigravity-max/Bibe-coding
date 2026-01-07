@@ -25,10 +25,10 @@ const Login = ({ onLogin, onNavigate }) => {
                 localStorage.setItem('bibeGameUser', JSON.stringify(data.user));
                 onLogin(data.user);
             } else {
-                setError(data.message || '로그인 실패');
+                setError(data.message || 'Login failed');
             }
         } catch (err) {
-            setError('서버 연결 오류');
+            setError('Server connection error');
         }
     };
 

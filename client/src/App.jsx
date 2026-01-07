@@ -13,9 +13,9 @@ import './styles/design-system.css';
 const ACCESS_PASSWORD = "000";
 
 function checkAccessPassword() {
-  const input = prompt("입장 비밀번호를 입력하세요:");
+  const input = prompt("Enter access password:");
   if (input !== ACCESS_PASSWORD) {
-    alert("비밀번호가 틀렸습니다.");
+    alert("Incorrect password.");
     window.location.href = "https://www.google.com";
   }
 }

@@ -214,6 +214,7 @@ io.on('connection', (socket) => {
 
         if (playerRole && botRole) {
             socket.join(roomId);
+            game.start(); // Start BEFORE emitting state so isStarted is true
             const gameState = game.getSerializableState();
             socket.emit('game_start', {
                 state: gameState,
@@ -221,7 +222,6 @@ io.on('connection', (socket) => {
                 gameId: roomId
             });
             console.log(`✅ Single player game started for ${socket.id} in room ${roomId} with difficulty ${difficulty}`);
-            game.start();
         } else {
             console.log('[ERROR] Failed to create game. playerRole:', playerRole, 'botRole:', botRole);
             socket.emit('error', 'Failed to start single player game');

@@ -13,7 +13,7 @@ const Signup = ({ onNavigate }) => {
         setError('');
 
         if (password !== confirmPassword) {
-            setError('비밀번호가 일치하지 않습니다.');
+            setError('Passwords do not match.');
             return;
         }
 
@@ -39,22 +39,22 @@ const Signup = ({ onNavigate }) => {
                     if (loginResponse.ok) {
                         // Save to localStorage for auto-login
                         localStorage.setItem('bibeGameUser', JSON.stringify(loginData.user));
-                        alert('회원가입 성공! 자동 로그인됩니다.');
+                        alert('Signup successful! Auto-logging in...');
                         // Reload page to trigger auto-login
                         window.location.reload();
                     } else {
-                        alert('회원가입 성공! 로그인해주세요.');
+                        alert('Signup successful! Please login.');
                         onNavigate('login');
                     }
                 } catch (loginErr) {
-                    alert('회원가입 성공! 로그인해주세요.');
+                    alert('Signup successful! Please login.');
                     onNavigate('login');
                 }
             } else {
-                setError(data.message || '회원가입 실패');
+                setError(data.message || 'Signup failed');
             }
         } catch (err) {
-            setError('서버 연결 오류');
+            setError('Server connection error');
         }
     };
 

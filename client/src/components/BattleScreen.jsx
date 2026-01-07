@@ -85,14 +85,17 @@ export function BattleScreen({ gameState, playerId, socket }) {
         return <div className="auth-page"><div className="auth-container">SYNCHRONIZING BATTLE...</div></div>;
     }
 
-    if (!gameState.isStarted) {
-        return <div className="auth-page"><div className="auth-container">WAITING FOR OPPONENT...</div></div>;
-    }
-
     const myState = gameState[playerId];
     const opponentId = playerId === 'p1' ? 'p2' : 'p1';
     const opponentState = gameState[opponentId];
     const isP1 = playerId === 'p1';
+
+    // ONLY show waiting screen if game hasn't officially started AND we don't have units yet
+    // This handles the transition and potential missing isStarted flag from old server versions
+    const hasTowers = (gameState.p1.units.length > 0 || gameState.p2.units.length > 0);
+    if (gameState.isStarted === false && !hasTowers) {
+        return <div className="auth-page"><div className="auth-container">WAITING FOR OPPONENT...</div></div>;
+    }
 
     const [activeEmotes, setActiveEmotes] = useState([]); // Array of { playerId, emoteId, id, timestamp }
     const [showEmoteSelector, setShowEmoteSelector] = useState(false);

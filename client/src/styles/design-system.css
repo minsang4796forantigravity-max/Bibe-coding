@@ -155,3 +155,28 @@ body {
         font-size: 1.6rem !important;
     }
 }
+
+/* Auth Pages & Global Loading States */
+.auth-page {
+    min-height: 100vh;
+    width: 100vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at center, #1e3c72 0%, #0f101a 100%);
+    font-family: var(--font-main);
+    z-index: 1000;
+}
+
+.auth-container {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(25px);
+    padding: 3rem;
+    border-radius: 30px;
+    color: white;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+}
