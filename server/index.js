@@ -274,7 +274,41 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
-        // TODO: 방 정리 로직 필요하면 여기서
+
+        // Find which game this player was in
+        for (const [gameId, game] of games.entries()) {
+            const wasP1 = game.state.p1.id === socket.id;
+            const wasP2 = game.state.p2.id === socket.id;
+
+            if (wasP1 || wasP2) {
+                console.log(`Player ${socket.id} was in game ${gameId} as ${wasP1 ? 'p1' : 'p2'}`);
+
+                // For single player games, always clean up when the human player disconnects
+                if (gameId.startsWith('single_')) {
+                    console.log(`[Server] Single player disconnected from ${gameId}, cleaning up`);
+                    game.stop();
+                    games.delete(gameId);
+                    break;
+                }
+
+                // For multiplayer games, check if the room is now empty
+                // Get all sockets in this room
+                const room = io.sockets.adapter.rooms.get(gameId);
+                const playerCount = room ? room.size : 0;
+
+                console.log(`[Server] Room ${gameId} now has ${playerCount} connected player(s)`);
+
+                // If no players are connected, clean up the game
+                if (playerCount === 0) {
+                    console.log(`[Server] Room ${gameId} is empty, stopping game and cleaning up`);
+                    game.stop();
+                    games.delete(gameId);
+                } else {
+                    console.log(`[Server] Room ${gameId} still has ${playerCount} player(s), keeping game active for reconnection`);
+                }
+                break;
+            }
+        }
     });
 
     // Emote System
