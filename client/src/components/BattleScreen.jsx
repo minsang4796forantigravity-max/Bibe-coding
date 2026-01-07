@@ -77,15 +77,19 @@ const CARD_IMAGES = {
 };
 
 export function BattleScreen({ gameState, playerId, socket }) {
+    console.log('[BattleScreen] Rendering with state:', !!gameState, 'player:', playerId);
     const [dragCard, setDragCard] = useState(null);
     const [dragPos, setDragPos] = useState(null); // { x, y } screen coords
     const fieldRef = useRef(null);
 
     if (!gameState || !playerId || !gameState[playerId]) {
+        console.warn('[BattleScreen] Missing state or player ID');
         return <div className="auth-page"><div className="auth-container">SYNCHRONIZING BATTLE...</div></div>;
     }
 
-    if (!gameState.isStarted) {
+    // Lenient start check (fallback for older servers without isStarted flag)
+    const isActuallyStarted = gameState.isStarted !== false;
+    if (!isActuallyStarted) {
         return <div className="auth-page"><div className="auth-container">WAITING FOR OPPONENT...</div></div>;
     }
 
@@ -455,33 +459,34 @@ export function BattleScreen({ gameState, playerId, socket }) {
                     if (unit.cardId === 'king_tower') unitSize = '55px';
                     if (unit.cardId === 'side_tower') unitSize = '38px';
 
-                    const isKing = unit.cardId === 'king_tower';
+                    const unitCardId = unit.cardId || (unit.id ? unit.id.split('_')[0] : 'knight');
+                    const isKing = unitCardId === 'king_tower';
+
                     // Check if unit is on the opponent's side (top part of the field)
                     // P1 is bottom (y=0 to 9), P2 is top (y=9 to 18)
-                    // isOpponentTop means it's on the side away from the player
-                    const isOpponentTop = isP1 ? unit.y > GAME_CONFIG.FIELD_HEIGHT * 0.8 : unit.y < GAME_CONFIG.FIELD_HEIGHT * 0.2;
+                    const isOpponentTop = isP1 ? unit.y > (GAME_CONFIG.FIELD_HEIGHT || 18) * 0.8 : unit.y < (GAME_CONFIG.FIELD_HEIGHT || 18) * 0.2;
 
                     return (
                         <div
                             key={unit.id}
                             style={{
                                 position: 'absolute',
-                                left: `${left}%`,
-                                bottom: `${bottom}%`,
+                                left: `${left || 0}%`,
+                                bottom: `${bottom || 0}%`,
                                 width: unitSize,
                                 height: unitSize,
                                 transform: 'translate(-50%, 50%)',
-                                backgroundImage: `url(${CARD_IMAGES[unit.cardId] || CARD_IMAGES[unit.id.split('_')[0]] || knightImg})`,
+                                backgroundImage: `url(${CARD_IMAGES[unitCardId] || knightImg})`,
                                 backgroundSize: 'contain',
                                 backgroundPosition: 'center bottom',
                                 backgroundRepeat: 'no-repeat',
                                 borderRadius: '0',
                                 border: 'none',
                                 zIndex: isKing ? 10 : 5,
-                                filter: isKing || unit.cardId === 'side_tower'
+                                filter: isKing || unitCardId === 'side_tower'
                                     ? 'drop-shadow(0 10px 10px rgba(0,0,0,0.5))'
                                     : 'drop-shadow(0 4px 6px rgba(0,0,0,0.4))',
-                                animation: (unit.type !== 'building' && !isKing)
+                                animation: (unit.type !== 'building' && !isKing && unit.type !== 'spell')
                                     ? 'unit-wobble 0.6s infinite alternate ease-in-out'
                                     : 'none',
                                 ...spellEffectStyle
@@ -910,7 +915,7 @@ export function BattleScreen({ gameState, playerId, socket }) {
                                     border: '1px solid var(--color-accent)',
                                     fontFamily: 'var(--font-title)'
                                 }}>
-                                    {cardStats.cost}
+                                    {cardStats?.cost || 0}
                                 </div>
                             </div>
                         );
