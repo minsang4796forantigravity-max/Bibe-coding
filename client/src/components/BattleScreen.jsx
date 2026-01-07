@@ -78,6 +78,10 @@ export function BattleScreen({ gameState, playerId, socket }) {
     const [dragPos, setDragPos] = useState(null); // { x, y } screen coords
     const fieldRef = useRef(null);
 
+    if (!gameState || !playerId || !gameState[playerId]) {
+        return <div className="auth-page"><div className="auth-container">SYNCHRONIZING BATTLE...</div></div>;
+    }
+
     const myState = gameState[playerId];
     const opponentId = playerId === 'p1' ? 'p2' : 'p1';
     const opponentState = gameState[opponentId];
@@ -133,16 +137,16 @@ export function BattleScreen({ gameState, playerId, socket }) {
         const cardStats = UNITS[cardId.toUpperCase()];
         if (myState.mana < cardStats.cost) return;
 
-        // Prevent default to stop scrolling on mobile
-        // e.preventDefault(); 
-
-        setDragCard(cardId);
+        // Prevent default only if necessary, but careful as it might block scroll if not dragging
+        // setDragCard(cardId);
         const { clientX, clientY } = getClientCoords(e);
+        setDragCard(cardId);
         setDragPos({ x: clientX, y: clientY });
     };
 
     const handleDragMove = (e) => {
         if (!dragCard) return;
+        if (e.cancelable) e.preventDefault(); // Stop scrolling while dragging
         const { clientX, clientY } = getClientCoords(e);
         setDragPos({ x: clientX, y: clientY });
     };
@@ -247,11 +251,12 @@ export function BattleScreen({ gameState, playerId, socket }) {
                     border: '2px solid var(--color-accent)',
                     color: 'var(--color-accent)',
                     fontFamily: 'var(--font-title)',
-                    fontSize: '1.5rem',
+                    fontSize: 'clamp(1rem, 4vw, 1.5rem)',
                     textAlign: 'center',
                     boxShadow: 'var(--shadow-glow-accent)',
                     pointerEvents: 'auto',
-                    background: 'rgba(0,0,0,0.8)'
+                    background: 'rgba(0,0,0,0.8)',
+                    minWidth: '150px'
                 }}>
                     {formatTime(gameState.matchTime ?? 180)}
                     {gameState.isOvertime && <div style={{ fontSize: '0.6rem', color: 'var(--color-danger)', marginTop: '-5px' }}>OVERTIME</div>}
@@ -803,22 +808,22 @@ export function BattleScreen({ gameState, playerId, socket }) {
                 borderTop: '2px solid rgba(52,152,219,0.3)',
             }}>
                 {/* Mana Bar */}
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px', gap: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '15px', gap: '10px' }}>
                     <div style={{
                         color: 'var(--color-accent)',
                         fontFamily: 'var(--font-title)',
-                        fontSize: '1.2rem',
-                        minWidth: '120px',
+                        fontSize: 'clamp(0.8rem, 3vw, 1.1rem)',
+                        minWidth: '80px',
                         textShadow: 'var(--shadow-glow-accent)',
                     }}>
-                        ELIXIR: {Math.floor(myState.mana)}
+                        {Math.floor(myState.mana)} ELIXIR
                     </div>
                     <div style={{
                         flex: 1,
-                        height: '20px',
+                        height: '14px',
                         background: 'rgba(0,0,0,0.5)',
                         borderRadius: '10px',
-                        border: '2px solid rgba(255,255,255,0.1)',
+                        border: '1px solid rgba(255,255,255,0.1)',
                         overflow: 'hidden',
                         padding: '2px'
                     }}>
@@ -828,7 +833,7 @@ export function BattleScreen({ gameState, playerId, socket }) {
                             background: 'var(--color-gold)',
                             transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                             borderRadius: '8px',
-                            boxShadow: '0 0 20px rgba(241, 196, 15, 0.5)',
+                            boxShadow: '0 0 15px rgba(241, 196, 15, 0.5)',
                         }} />
                     </div>
                 </div>
@@ -847,8 +852,8 @@ export function BattleScreen({ gameState, playerId, socket }) {
                                 onTouchStart={(e) => canAfford && handleDragStart(e, cardId)}
                                 className="game-card"
                                 style={{
-                                    width: '85px',
-                                    height: '115px',
+                                    width: 'clamp(60px, 18vw, 85px)',
+                                    height: 'clamp(80px, 24vw, 115px)',
                                     backgroundImage: `url(${CARD_IMAGES[cardId]})`,
                                     backgroundSize: 'cover',
                                     backgroundPosition: 'center',

@@ -192,39 +192,46 @@ export function Lobby({
                 borderBottomRightRadius: '20px',
                 boxShadow: '0 10px 40px rgba(0,0,0,0.6)'
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(8px, 2vw, 15px)', flexWrap: 'nowrap' }}>
                     <div style={{
-                        width: '45px',
-                        height: '45px',
+                        width: 'clamp(35px, 10vw, 45px)',
+                        height: 'clamp(35px, 10vw, 45px)',
                         borderRadius: '12px',
                         background: 'var(--color-gold)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '1.4rem',
+                        fontSize: 'clamp(1rem, 4vw, 1.4rem)',
                         fontWeight: 'bold',
-                        boxShadow: 'var(--shadow-glow-accent)'
+                        boxShadow: 'var(--shadow-glow-accent)',
+                        flexShrink: 0
                     }}>
                         {user?.username?.[0]?.toUpperCase() || 'P'}
                     </div>
-                    <div>
-                        <div style={{ fontWeight: '900', fontSize: '1rem', color: '#fff' }}>{user?.username || 'Guest'}</div>
-                        <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
-                            <span style={{ fontSize: '0.8rem', color: 'var(--color-accent)', fontWeight: 'bold' }}>🏆 {rating}</span>
-                            <span style={{ fontSize: '0.8rem', color: 'var(--color-secondary)', fontWeight: 'bold' }}>💰 {coins}</span>
+                    <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: '900', fontSize: 'clamp(0.85rem, 3vw, 1rem)', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.username || 'Guest'}</div>
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '2px' }}>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--color-accent)', fontWeight: 'bold' }}>🏆 {rating}</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--color-secondary)', fontWeight: 'bold' }}>💰 {coins}</span>
                         </div>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <button onClick={() => setShowEncyclopedia(true)} className="glass-panel" style={{ border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}>📖 ENCYCLOPEDIA</button>
-                    <button onClick={() => setShowAttendance(true)} className="premium-button" style={{ padding: '8px 16px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '900' }}>🎁 REWARD</button>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <button onClick={() => setShowEncyclopedia(true)} className="glass-panel" style={{ border: 'none', color: '#fff', padding: '8px 12px', borderRadius: '20px', cursor: 'pointer', fontSize: 'clamp(0.7rem, 2.5vw, 0.85rem)', fontWeight: 'bold' }}>
+                        <span className="hide-mobile">📖 ENCYCLOPEDIA</span>
+                        <span className="show-mobile">📖</span>
+                    </button>
+                    <button onClick={() => setShowAttendance(true)} className="premium-button" style={{ padding: '8px 12px', borderRadius: '20px', fontSize: 'clamp(0.7rem, 2.5vw, 0.85rem)', fontWeight: '900' }}>
+                        <span className="hide-mobile">🎁 REWARD</span>
+                        <span className="show-mobile">🎁</span>
+                    </button>
                     <div style={{ position: 'relative' }}>
-                        <div onClick={() => setShowProfileMenu(!showProfileMenu)} style={{ cursor: 'pointer', width: '35px', height: '35px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', border: '1px solid rgba(255,255,255,0.2)' }}>⚙️</div>
+                        <div onClick={() => setShowProfileMenu(!showProfileMenu)} style={{ cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', border: '1px solid rgba(255,255,255,0.2)' }}>⚙️</div>
                         {showProfileMenu && (
-                            <div className="glass-panel" style={{ position: 'absolute', top: '45px', right: 0, width: '160px', borderRadius: '15px', overflow: 'hidden', zIndex: 200 }}>
-                                <button onClick={onProfileClick} style={{ width: '100%', padding: '12px', background: 'transparent', border: 'none', color: 'white', textAlign: 'left', cursor: 'pointer', fontWeight: 'bold' }}>📊 STATS</button>
-                                <button onClick={onLogout} style={{ width: '100%', padding: '12px', background: 'rgba(231,76,60,0.2)', border: 'none', color: '#e74c3c', textAlign: 'left', cursor: 'pointer', fontWeight: 'bold' }}>🚪 LOGOUT</button>
+                            <div className="glass-panel" style={{ position: 'absolute', top: '40px', right: 0, width: '140px', borderRadius: '15px', overflow: 'hidden', zIndex: 200 }}>
+                                <button onClick={onProfileClick} style={{ width: '100%', padding: '10px', background: 'transparent', border: 'none', color: 'white', textAlign: 'left', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>📊 STATS</button>
+                                <button onClick={onLogout} style={{ width: '100%', padding: '10px', background: 'rgba(231,76,60,0.2)', border: 'none', color: '#e74c3c', textAlign: 'left', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>🚪 LOGOUT</button>
                             </div>
                         )}
                     </div>

@@ -49,7 +49,7 @@ const userSchema = new mongoose.Schema({
         default: []
     },
     inventory: {
-        type: [String], // List of item IDs (e.g. 'emote_laugh', 'buff_rating_2x')
+        type: [mongoose.Schema.Types.Mixed], // Flexible list of items (IDs or objects)
         default: []
     },
     activeBuffs: {
@@ -59,6 +59,10 @@ const userSchema = new mongoose.Schema({
             count: { type: Number, default: 1 } // For consumable stacks
         }],
         default: []
+    },
+    dailyStreak: {
+        type: Number,
+        default: 0
     },
     equippedEmotes: {
         type: [String],

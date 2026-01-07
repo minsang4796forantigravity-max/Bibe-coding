@@ -262,10 +262,12 @@ export function DeckSelector({ username, activeDeck, onActiveDeckChange }) {
     return (
         <div style={{ height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <style>{`
-                .deck-section { background: rgba(0,0,0,0.3); padding: 25px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); }
-                .slot { width: 85px; height: 110px; transition: var(--transition-bouncy); }
+                .deck-section { background: rgba(0,0,0,0.3); padding: clamp(10px, 4vw, 25px); border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); }
+                .slot { width: clamp(55px, 18vw, 85px); height: clamp(75px, 24vw, 110px); transition: var(--transition-bouncy); }
                 .slot:hover { transform: scale(1.05); }
-                @media (max-width: 600px) { .slot { width: 65px; height: 85px; } }
+                @media (max-width: 600px) { 
+                    .slot { width: clamp(50px, 15vw, 65px); height: clamp(70px, 20vw, 85px); } 
+                }
             `}</style>
 
             <div className="deck-section">
@@ -323,9 +325,9 @@ export function DeckSelector({ username, activeDeck, onActiveDeckChange }) {
 
             {isSaveModalOpen && (
                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.9)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div className="game-card" style={{ maxWidth: '400px', width: '90%', padding: '40px' }}>
-                        <h2 style={{ marginBottom: '20px' }}>SAVE DECK</h2>
-                        <input value={newDeckName} onChange={e => setNewDeckName(e.target.value)} placeholder="Enter deck name..." style={{ width: '100%', padding: '15px', borderRadius: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '1rem', marginBottom: '25px', boxSizing: 'border-box' }} />
+                    <div className="game-card" style={{ maxWidth: '400px', width: '90%', padding: 'clamp(20px, 8vw, 40px)' }}>
+                        <h2 style={{ marginBottom: '20px', fontSize: 'clamp(1.2rem, 5vw, 1.8rem)' }}>SAVE DECK</h2>
+                        <input value={newDeckName} onChange={e => setNewDeckName(e.target.value)} placeholder="Enter deck name..." style={{ width: '100%', padding: 'clamp(10px, 4vw, 15px)', borderRadius: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '1rem', marginBottom: '25px', boxSizing: 'border-box' }} />
                         <div style={{ display: 'flex', gap: '15px' }}>
                             <button onClick={handleSaveDeck} className="premium-button" style={{ flex: 1, padding: '15px' }}>{isLoading ? 'SAVING...' : 'SAVE'}</button>
                             <button onClick={() => setIsSaveModalOpen(false)} style={{ flex: 1, background: 'none', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '12px' }}>CANCEL</button>

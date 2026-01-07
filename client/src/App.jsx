@@ -142,6 +142,7 @@ function App() {
           difficulty,
           username: user ? user.username : 'Guest'
         });
+        setWinner(null); // Clear previous results
       } else {
         const id = String(roomId).trim();
         console.log("join_game emit:", id, "with deck:", deck);
@@ -150,6 +151,7 @@ function App() {
           deck,
           username: user ? user.username : 'Guest'
         });
+        setWinner(null); // Clear previous results
       }
     };
 
@@ -186,7 +188,32 @@ function App() {
   }
 
   if (status === 'deck_select') {
-    return <DeckSelector onDeckSelected={handleDeckSelected} username={user ? user.username : null} />;
+    return <DeckSelector username={user?.username} activeDeck={activeDeck} onActiveDeckChange={setActiveDeck} />;
+  }
+
+  // Final Game Over Modal - Priority over lobby or waiting, but not active playing
+  if (winner) {
+    const isWinner = (winner === 'p1' && playerId === 'p1') || (winner === 'p2' && playerId === 'p2');
+    return (
+      <div className="auth-page">
+        <div className="auth-container" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '5rem', marginBottom: '20px' }}>{isWinner ? '🏆' : '💀'}</div>
+          <h1 style={{ fontFamily: 'var(--font-title)', fontSize: '3rem', color: isWinner ? 'var(--color-accent)' : 'var(--color-danger)' }}>
+            {isWinner ? 'VICTORY' : 'DEFEAT'}
+          </h1>
+          <p style={{ fontSize: '1.2rem', fontWeight: '900', margin: '20px 0', opacity: 0.8 }}>
+            {isWinner ? 'YOU HAVE DOMINATED THE ARENA!' : 'TRAIN HARDER FOR THE NEXT BATTLE.'}
+          </p>
+          <button
+            onClick={() => { setWinner(null); setStatus('lobby'); }}
+            className="premium-button"
+            style={{ width: '100%', padding: '20px', fontSize: '1.2rem' }}
+          >
+            RETURN TO LOBBY
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (status === 'lobby') {
@@ -220,30 +247,6 @@ function App() {
     );
   }
 
-  // Final Game Over Modal
-  if (winner) {
-    const isWinner = (winner === 'p1' && playerId === 'p1') || (winner === 'p2' && playerId === 'p2');
-    return (
-      <div className="auth-page">
-        <div className="auth-container" style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '5rem', marginBottom: '20px' }}>{isWinner ? '🏆' : '💀'}</div>
-          <h1 style={{ fontFamily: 'var(--font-title)', fontSize: '3rem', color: isWinner ? 'var(--color-accent)' : 'var(--color-danger)' }}>
-            {isWinner ? 'VICTORY' : 'DEFEAT'}
-          </h1>
-          <p style={{ fontSize: '1.2rem', fontWeight: '900', margin: '20px 0', opacity: 0.8 }}>
-            {isWinner ? 'YOU HAVE DOMINATED THE ARENA!' : 'TRAIN HARDER FOR THE NEXT BATTLE.'}
-          </p>
-          <button
-            onClick={() => { setWinner(null); setStatus('lobby'); }}
-            className="premium-button"
-            style={{ width: '100%', padding: '20px', fontSize: '1.2rem' }}
-          >
-            RETURN TO LOBBY
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return null;
 }
