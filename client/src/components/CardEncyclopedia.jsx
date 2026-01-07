@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { UNITS, EVOLVED_STATS } from '../game/constants';
 
 // 카드 이미지 import

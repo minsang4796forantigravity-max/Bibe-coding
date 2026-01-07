@@ -266,7 +266,9 @@ class BotAI {
     }
 
     pickCard(hand, preferredCards) {
-        const candidates = hand.filter(c => preferredCards.includes(c));
+        if (!hand || hand.length === 0) return null;
+        const lowerPreferred = preferredCards.map(c => c.toLowerCase());
+        const candidates = hand.filter(c => lowerPreferred.includes(c.toLowerCase()));
         if (candidates.length > 0) {
             return candidates[Math.floor(Math.random() * candidates.length)];
         }

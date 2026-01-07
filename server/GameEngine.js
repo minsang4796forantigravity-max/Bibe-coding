@@ -113,6 +113,7 @@ class GameEngine {
     }
 
     start() {
+        console.log(`[GameEngine] Starting game ${this.roomId}`);
         this.lastTime = Date.now();
 
         // Initialize Towers
@@ -120,10 +121,15 @@ class GameEngine {
         this.initTowers('p2');
 
         this.interval = setInterval(() => {
-            const now = Date.now();
-            const dt = (now - this.lastTime) / 1000;
-            this.lastTime = now;
-            this.update(dt);
+            try {
+                const now = Date.now();
+                const dt = (now - this.lastTime) / 1000;
+                this.lastTime = now;
+                this.update(dt);
+            } catch (err) {
+                console.error(`[GameEngine ERROR] Loop crash in ${this.roomId}:`, err);
+                this.stop();
+            }
         }, 1000 / 60); // 60 FPS
     }
 
@@ -180,6 +186,7 @@ class GameEngine {
 
     update(dt) {
         if (this.state.gameOver) return;
+        // console.log(`[DEBUG] Updating game ${this.roomId}, dt: ${dt}`);
 
         const now = Date.now();
 
@@ -242,23 +249,23 @@ class GameEngine {
         // Note: King Tower destruction checked in dealDamage
         // Match Timer check already handled above
 
+        if (Math.random() < 0.01) { // 1% frequency log to avoid spam
+            console.log(`[GameEngine] Emitting update to room ${this.roomId}`);
+        }
         this.io.to(this.roomId).emit('game_update', this.getSerializableState());
     }
 
     endGame(winnerId) {
         if (this.state.gameOver) return;
         this.state.gameOver = true;
-        this.state.winner = winnerId === 'p1' ? 'Player 1' : 'Player 2';
+        this.state.winner = winnerId;
+        this.stop();
 
         this.saveMatchHistory(winnerId);
-
         this.io.to(this.roomId).emit('game_over', { winner: this.state.winner });
-
         if (this.onGameEnd) {
             this.onGameEnd(this.roomId);
         }
-
-        this.stop();
     }
 
     calculateRatingChange(myRating, opponentRating, result, isNewPlayer = false, userBuffs = []) {
@@ -611,8 +618,15 @@ class GameEngine {
                 const distance = Math.hypot(dx, dy);
 
                 if (distance > 0.1) {
-                    unit.x += (dx / distance) * currentSpeed * dt;
-                    unit.y += (dy / distance) * currentSpeed * dt;
+                    const stepX = (dx / distance) * currentSpeed * dt;
+                    const stepY = (dy / distance) * currentSpeed * dt;
+
+                    if (!isNaN(stepX) && !isNaN(stepY)) {
+                        unit.x += stepX;
+                        unit.y += stepY;
+                    } else {
+                        console.warn(`[GameEngine] NaN position detected for ${unit.id}`);
+                    }
                 }
             }
 
@@ -926,10 +940,20 @@ class GameEngine {
     }
 
     deployCard(playerId, cardId, x, y) {
+        if (!cardId) return;
         const playerState = this.state[playerId];
-        let unitStats = UNITS[cardId.toUpperCase()];
+        const cardKey = cardId.toUpperCase();
+        let unitStats = UNITS[cardKey];
 
-        if (!unitStats || playerState.mana < unitStats.cost) return;
+        if (!unitStats) {
+            console.warn(`[GameEngine] Unknown cardId: ${cardId}`);
+            return;
+        }
+
+        if (playerState.mana < unitStats.cost) {
+            console.log(`[GameEngine] Not enough mana for ${cardId} (Need ${unitStats.cost}, have ${playerState.mana})`);
+            return;
+        }
 
         const isEvolved = playerState.evolutions.includes(cardId);
         if (isEvolved && EVOLVED_STATS[cardId.toUpperCase()]) {
