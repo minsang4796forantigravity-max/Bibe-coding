@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Leaderboard from './Leaderboard';
 import Shop from './Shop';
+import CardEncyclopedia from './CardEncyclopedia';
 import { API_URL } from '../socket';
 
 export function Lobby({
@@ -23,6 +24,7 @@ export function Lobby({
     const [isAdminMode, setIsAdminMode] = useState(false);
     const [showAttendance, setShowAttendance] = useState(false);
     const [showShop, setShowShop] = useState(false);
+    const [showEncyclopedia, setShowEncyclopedia] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
 
     const isAdmin = user?.username === 'Grand Warden';
@@ -186,6 +188,27 @@ export function Lobby({
                 </div>
 
                 <div className="header-controls" style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                    <button
+                        onClick={() => setShowEncyclopedia(true)}
+                        style={{
+                            backgroundColor: 'transparent',
+                            border: '1px solid rgba(52, 152, 219, 0.5)',
+                            color: '#3498db',
+                            padding: '8px 14px',
+                            borderRadius: '20px',
+                            cursor: 'pointer',
+                            fontSize: '0.85rem',
+                            fontWeight: 'bold',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'all 0.3s ease',
+                            background: 'rgba(52, 152, 219, 0.05)'
+                        }}
+                    >
+                        <span style={{ fontSize: '1.1rem' }}>📖</span> 도감
+                    </button>
+
                     <button
                         onClick={() => setShowShop(true)}
                         style={{
@@ -567,6 +590,13 @@ export function Lobby({
                     </div>
                 </section>
             </div>
+
+            {/* Encyclopedia Modal */}
+            {showEncyclopedia && (
+                <CardEncyclopedia
+                    onClose={() => setShowEncyclopedia(false)}
+                />
+            )}
 
             {/* Shop Modal */}
             {showShop && (
