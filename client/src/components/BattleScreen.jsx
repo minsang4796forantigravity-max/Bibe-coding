@@ -14,6 +14,8 @@ import sniperImg from '../assets/sniper_card.png';
 import goblinHutImg from '../assets/goblin_hut_card.png';
 import goblinImg from '../assets/goblin_card.png';
 import towerImg from '../assets/tower_asset.png';
+import kingTowerPremium from '../assets/king_tower_premium.png';
+import princessTowerPremium from '../assets/princess_tower_premium.png';
 import valkyrieImg from '../assets/valkyrie_card.png';
 import hogRiderImg from '../assets/hog_rider_card.png';
 import witchImg from '../assets/witch_card.png';
@@ -33,6 +35,7 @@ import egg2Img from '../assets/egg_tier_2.png';
 import egg3Img from '../assets/egg_tier_3.png';
 import egg4Img from '../assets/egg_tier_4.png';
 import egg5Img from '../assets/egg_tier_5.png';
+import battleBg from '../assets/battle_bg.png';
 
 const CARD_IMAGES = {
     knight: knightImg,
@@ -69,8 +72,8 @@ const CARD_IMAGES = {
     egg_4: egg4Img,
     egg_5: egg5Img,
     chicken: goblinHutImg,
-    king_tower: towerImg,
-    side_tower: towerImg,
+    king_tower: kingTowerPremium,
+    side_tower: princessTowerPremium,
 };
 
 export function BattleScreen({ gameState, playerId, socket }) {
@@ -273,14 +276,11 @@ export function BattleScreen({ gameState, playerId, socket }) {
                 style={{
                     flex: 1,
                     position: 'relative',
-                    background: '#27ae60', // Base green
-                    backgroundImage: `
-                        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px),
-                        linear-gradient(0deg, #1e3c25 0%, transparent 40%, transparent 60%, #1e3c25 100%),
-                        radial-gradient(circle at 50% 50%, rgba(46,204,113,0.4) 0%, transparent 70%)
-                    `,
-                    backgroundSize: '20px 20px, 20px 20px, 100% 100%, 100% 100%',
+                    background: '#2c3e50', // Dark fallback
+                    backgroundImage: `url(${battleBg})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
                     overflow: 'hidden',
                     boxShadow: 'inset 0 0 100px rgba(0,0,0,0.8), 0 0 40px rgba(0,0,0,0.5)',
                     margin: '0 auto',
@@ -310,33 +310,34 @@ export function BattleScreen({ gameState, playerId, socket }) {
                     </div>
                 )}
 
-                {/* Arena Grid Decor */}
+                {/* Arena Grid Decor - Reduced opacity to stay subtle over new background */}
                 <div style={{
                     position: 'absolute',
                     top: 0,
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)',
+                    backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
                     backgroundSize: '10% 5.55%',
-                    pointerEvents: 'none'
+                    pointerEvents: 'none',
+                    zIndex: 2
                 }} />
 
-                {/* River & Bridges */}
+                {/* River & Bridges - Adjusted for AI background (more subtle, stone-like) */}
                 <div style={{
                     position: 'absolute',
                     top: '50%',
                     left: 0,
                     right: 0,
-                    height: '11%',
-                    background: 'linear-gradient(180deg, #2980b9 0%, #3498db 50%, #2980b9 100%)',
+                    height: '12%',
+                    background: 'rgba(0, 0, 0, 0.2)', // Very subtle shadow for the river area
                     transform: 'translateY(-50%)',
-                    boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)',
                     zIndex: 1,
-                    opacity: 0.6,
+                    pointerEvents: 'none'
                 }}>
-                    <div style={{ position: 'absolute', left: '10%', width: '25%', height: '100%', backgroundColor: '#7f8c8d', borderLeft: '2px solid #555', borderRight: '2px solid #555' }} />
-                    <div style={{ position: 'absolute', right: '10%', width: '25%', height: '100%', backgroundColor: '#7f8c8d', borderLeft: '2px solid #555', borderRight: '2px solid #555' }} />
+                    {/* Visual markers for bridges if needed, but keeping it clean for now */}
+                    <div style={{ position: 'absolute', left: '10%', width: '25%', height: '100%', borderBottom: '4px solid rgba(255,255,255,0.1)', borderTop: '4px solid rgba(255,255,255,0.1)' }} />
+                    <div style={{ position: 'absolute', right: '10%', width: '25%', height: '100%', borderBottom: '4px solid rgba(255,255,255,0.1)', borderTop: '4px solid rgba(255,255,255,0.1)' }} />
                 </div>
 
                 {/* Active Spells */}
@@ -471,14 +472,36 @@ export function BattleScreen({ gameState, playerId, socket }) {
                                 height: unitSize,
                                 transform: 'translate(-50%, 50%)',
                                 backgroundImage: `url(${CARD_IMAGES[unit.cardId] || CARD_IMAGES[unit.id.split('_')[0]] || knightImg})`,
-                                backgroundSize: 'cover',
-                                borderRadius: unit.type === 'building' ? '5px' : '50%',
-                                border: isKing ? `4px solid gold` : `3px solid ${isMine ? '#3498db' : '#e74c3c'}`,
+                                backgroundSize: 'contain',
+                                backgroundPosition: 'center bottom',
+                                backgroundRepeat: 'no-repeat',
+                                borderRadius: '0',
+                                border: 'none',
                                 zIndex: isKing ? 10 : 5,
-                                boxShadow: isKing ? '0 0 20px rgba(241, 196, 15, 0.6), 0 4px 6px rgba(0,0,0,0.5)' : '0 4px 6px rgba(0,0,0,0.5)',
+                                filter: isKing || unit.cardId === 'side_tower'
+                                    ? 'drop-shadow(0 10px 10px rgba(0,0,0,0.5))'
+                                    : 'drop-shadow(0 4px 6px rgba(0,0,0,0.4))',
+                                animation: (unit.type !== 'building' && !isKing)
+                                    ? 'unit-wobble 0.6s infinite alternate ease-in-out'
+                                    : 'none',
                                 ...spellEffectStyle
                             }}
                         >
+                            {/* Unit Shadow */}
+                            {unit.type !== 'building' && !isKing && (
+                                <div style={{
+                                    position: 'absolute',
+                                    bottom: '-2px',
+                                    left: '50%',
+                                    width: '60%',
+                                    height: '20%',
+                                    backgroundColor: 'rgba(0,0,0,0.4)',
+                                    borderRadius: '50%',
+                                    transform: 'translateX(-50%)',
+                                    filter: 'blur(3px)',
+                                    zIndex: -1
+                                }} />
+                            )}
                             {/* Special Visual Effects */}
                             {unit.type === 'egg' && (
                                 <div style={{
@@ -894,6 +917,17 @@ export function BattleScreen({ gameState, playerId, socket }) {
                     })}
                 </div>
             </div>
+            {/* Simple CSS Animations */}
+            <style>{`
+                @keyframes unit-wobble {
+                    0% { transform: translate(-50%, 50%) rotate(-3deg) translateY(0); }
+                    100% { transform: translate(-50%, 50%) rotate(3deg) translateY(-2px); }
+                }
+                @keyframes pulse-glow {
+                    0% { box-shadow: 0 0 10px var(--color-accent); }
+                    100% { box-shadow: 0 0 30px var(--color-accent); }
+                }
+            `}</style>
         </div>
     );
 }
